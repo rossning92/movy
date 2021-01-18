@@ -1,0 +1,31 @@
+{
+  "author": {
+    "name": "Ross Ning",
+    "email": "rossning92@gmail.com"
+  },
+  "name": "movy",
+  "version": "0.0.3",
+  "main": "src/movy.ts",
+  "license": "MIT",
+  "dependencies": {
+    "@types/dat.gui": "^0.7.6",
+    "ccapture.js": "^1.1.0",
+    "dat.gui": "^0.7.6",
+    "gsap": "^3.1.1",
+    "html-webpack-plugin": "^5.0.0-beta.6",
+    "minimist": "^1.2.5",
+    "seedrandom": "^3.0.5",
+    "three": "^0.124.0",
+    "ts-loader": "^8.0.14",
+    "typescript": "^4.1.3",
+    "webpack": "^5.18.0",
+    "webpack-dev-server": "^3.10.1"
+  },
+  "scripts": {
+    "dev": "webpack --mode development",
+    "start": "webpack-dev-server --env.entryFolder=./scene/src --open --watch"
+  },
+  "bin": {
+    "movy": "bin/movy.js"
+  }
+}

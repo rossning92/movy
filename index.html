@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>movy.js</title>
+    <style></style>
+  </head>
+  <body>
+    <ul>
+      <% for (const name of htmlWebpackPlugin.options.movySceneNames) { %>
+      <li><a href="<%= name %>.html"><%= name %></a></li>
+      <% } %>
+    </ul>
+  </body>
+</html>
