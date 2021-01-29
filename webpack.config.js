@@ -9,7 +9,7 @@ const plugins = [];
 const entries = {};
 
 function addEntry(file) {
-  const name = path.basename(file, ".js");
+  const name = path.parse(file).name;
   entries[name] = file;
 
   plugins.push(
@@ -31,7 +31,7 @@ module.exports = (env) => {
 
   if (env && env.file) {
     addEntry(env.file);
-    openPage = path.basename(env.file, ".js") + ".html";
+    openPage = path.parse(env.file).name + ".html";
     contentBase.push(path.dirname(env.file));
   } else {
     // The folder that contains source code and resource files (images, videos,
@@ -74,7 +74,12 @@ module.exports = (env) => {
       rules: [
         {
           test: /\.tsx?$/,
-          use: path.resolve(__dirname, "node_modules/ts-loader"),
+          use: {
+            loader: path.resolve(__dirname, "node_modules/ts-loader"),
+            options: {
+              configFile: path.resolve(__dirname, "tsconfig.json"),
+            },
+          },
         },
       ],
     },
