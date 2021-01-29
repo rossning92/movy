@@ -75,7 +75,6 @@ module.exports = (env) => {
         {
           test: /\.tsx?$/,
           use: path.resolve(__dirname, "node_modules/ts-loader"),
-          exclude: /node_modules/,
         },
       ],
     },
