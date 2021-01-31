@@ -2,7 +2,16 @@
 
 **movy.js** is an easy-to-use animation engine based on three.js and gsap.
 
+
+
 ![gallery](img/gallery.png)
+
+## Prerequisite
+
+Please also make sure your node version is 12.x
+
+> Notice: ReferenceError: BigInt is not defined ，you should make sure your node version is 12.x.
+
 
 ## Getting Started
 
