@@ -1046,40 +1046,50 @@ class SceneObject {
     commandQueue.push(() => {
       const object3d = this._threeObject3d;
 
-      let localPlane;
+      const clippingPlanes: THREE.Plane[] = [];
+      const empty = Object.freeze([]);
 
       const box = getBoundingBox(object3d);
+
+      const materials = getAllMaterials(object3d);
 
       const tl = gsap.timeline({
         defaults: { duration, ease },
       });
 
+      tl.set(materials, { clippingPlanes });
+
       if (direction === "right") {
-        localPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), -box.min.x);
+        clippingPlanes.push(
+          new THREE.Plane(new THREE.Vector3(1, 0, 0), -box.min.x)
+        );
         tl.from(object3d.position, {
           x: object3d.position.x - (box.max.x - box.min.x),
         });
       } else if (direction === "left") {
-        localPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), box.max.x);
+        clippingPlanes.push(
+          new THREE.Plane(new THREE.Vector3(-1, 0, 0), box.max.x)
+        );
         tl.from(object3d.position, {
           x: object3d.position.x + (box.max.x - box.min.x),
         });
       } else if (direction === "up") {
-        localPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -box.min.y);
+        clippingPlanes.push(
+          new THREE.Plane(new THREE.Vector3(0, 1, 0), -box.min.y)
+        );
         tl.from(object3d.position, {
           y: object3d.position.y - (box.max.y - box.min.y),
         });
       } else if (direction === "down") {
-        localPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), box.max.y);
+        clippingPlanes.push(
+          new THREE.Plane(new THREE.Vector3(0, -1, 0), box.max.y)
+        );
         tl.from(object3d.position, {
           y: object3d.position.y + (box.max.y - box.min.y),
         });
       }
 
-      const materials = getAllMaterials(object3d);
-      for (const material of materials) {
-        material.clippingPlanes = [localPlane];
-      }
+      tl.set(materials, { clippingPlanes: empty });
 
       mainTimeline.add(tl, t);
     });
@@ -1089,7 +1099,7 @@ class SceneObject {
   wipeIn({
     direction = "right",
     t,
-    duration,
+    duration = 0.5,
     ease = "power.out",
   }: WipeInParameters = {}) {
     commandQueue.push(() => {
@@ -1650,7 +1660,7 @@ export function addArrow(params: AddLineParameters = {}): SceneObject {
 interface AddGridParameters extends Transform, BasicMaterial {
   gridSize?: number;
 }
-export function addGrid(params: AddGridParameters): SceneObject {
+export function addGrid(params: AddGridParameters = {}): SceneObject {
   const { gridSize = 10, color = 0xc0c0c0 } = params;
 
   const obj = new SceneObject();
