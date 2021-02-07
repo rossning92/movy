@@ -4,7 +4,7 @@
     "email": "rossning92@gmail.com"
   },
   "name": "movy",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "src/movy.ts",
   "license": "MIT",
   "dependencies": {
