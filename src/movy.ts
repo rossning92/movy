@@ -1327,6 +1327,40 @@ function toThreeColor(color: string | number): THREE.Color {
     : new THREE.Color(color);
 }
 
+interface ChangeTextParameters extends AnimationParameters {
+  from?: number;
+  to?: number;
+}
+
+class TextObject extends GroupObject {
+  changeText(
+    func: (val: number) => string,
+    {
+      from = 0,
+      to = 1,
+      duration = 5,
+      ease = "expo.out",
+      t,
+    }: ChangeTextParameters = {}
+  ) {
+    commandQueue.push(() => {
+      const textMesh = this._threeObject3d as TextMesh;
+      const tl = gsap.timeline({ defaults: { duration, ease } });
+
+      const data = { val: from };
+      tl.to(data, {
+        val: to,
+        onUpdate: () => {
+          const text = func(data.val);
+          textMesh.text = text;
+        },
+      });
+
+      mainTimeline.add(tl, t);
+    });
+  }
+}
+
 interface AddTextParameters extends Transform, BasicMaterial {
   font?: string;
   fontSize?: number;
@@ -1335,10 +1369,10 @@ interface AddTextParameters extends Transform, BasicMaterial {
 export function addText(
   text: string,
   params: AddTextParameters = {}
-): GroupObject {
+): TextObject {
   const { color, letterSpacing, font, fontSize = 1 } = params;
 
-  const obj = new GroupObject();
+  const obj = new TextObject();
 
   commandQueue.push(async () => {
     obj._threeObject3d = new TextMesh({
