@@ -29,6 +29,8 @@ function loadFont(fontName = undefined, letter = undefined) {
       font = fontLoader.parse(require("../fonts/source-han-medium"));
     } else if (fontName == "en") {
       font = fontLoader.parse(require("../fonts/muli-bold"));
+    } else if (fontName == "condensed") {
+      font = fontLoader.parse(require("../fonts/bebas-neue-bold"));
     } else if (fontName == "math") {
       font = fontLoader.parse(require("../fonts/latin-modern-math-regular"));
     } else if (fontName == "code") {
