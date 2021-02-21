@@ -1886,8 +1886,8 @@ export function setSeed(val: any) {
   rng = seedrandom(val);
 }
 
-export function random() {
-  return rng();
+export function random(min = 0, max = 1) {
+  return min + rng() * (max - min);
 }
 
 function getGridPosition({ rows = 1, cols = 1, width = 25, height = 14 } = {}) {
