@@ -29,7 +29,7 @@ let screenHeight = 1080;
 let antiAliasMethod = "msaa";
 let motionBlurSamples = 1;
 let bloomEnabled = false;
-let globalTimeline = gsap.timeline({ onComplete: stopCapture });
+let globalTimeline = gsap.timeline({ onComplete: stopRender });
 const mainTimeline = gsap.timeline();
 let stats: Stats = undefined;
 let capturer: CCapture = undefined;
@@ -52,7 +52,7 @@ let options = {
   format: "webm",
   framerate: 25,
   render: function () {
-    startCapture();
+    startRender();
   },
   timeline: 0,
 };
@@ -67,7 +67,7 @@ let rng = seedrandom("hello.");
 
 const commandQueue: Function[] = [];
 
-function startCapture({ resetTiming = true, name = document.title } = {}) {
+function startRender({ resetTiming = true, name = document.title } = {}) {
   if (gridHelper !== undefined) {
     gridHelper.visible = false;
   }
@@ -94,14 +94,23 @@ function startCapture({ resetTiming = true, name = document.title } = {}) {
   });
 
   (capturer as any).start();
+
+  (window as any).movy.isRendering = true;
 }
 
-function stopCapture() {
-  if (capturer !== undefined) {
+(window as any).movy = {
+  startRender,
+  isRendering: false,
+};
+
+function stopRender() {
+  if (capturer) {
     (capturer as any).stop();
     (capturer as any).save();
     capturer = undefined;
   }
+
+  (window as any).movy.isRendering = false;
 }
 
 function setupOrthoCamera() {
