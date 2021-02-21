@@ -1357,6 +1357,23 @@ class TextObject extends GroupObject {
       mainTimeline.add(tl, t);
     });
   }
+
+  typeText({ t, duration = 1 }: ChangeTextParameters = {}) {
+    commandQueue.push(() => {
+      const textMesh = this._threeObject3d as TextMesh;
+      const interval = duration / textMesh.children.length;
+
+      const tl = gsap.timeline({
+        defaults: { duration: interval, ease: "steps(1)" },
+      });
+
+      textMesh.children.forEach((letter) => {
+        tl.fromTo(letter, { visible: false }, { visible: true });
+      });
+
+      mainTimeline.add(tl, t);
+    });
+  }
 }
 
 interface AddTextParameters extends Transform, BasicMaterial {
