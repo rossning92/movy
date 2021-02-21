@@ -1445,14 +1445,17 @@ export function addImage(
       });
 
       const geometry = new THREE.PlaneBufferGeometry(1, 1);
-      obj._threeObject3d = new THREE.Mesh(geometry, material);
+      const mesh = new THREE.Mesh(geometry, material);
 
       const ratio = texture.image.width / texture.image.height;
       if (ratio > 1) {
-        obj._threeObject3d.scale.y /= ratio;
+        mesh.scale.y /= ratio;
       } else {
-        obj._threeObject3d.scale.x *= ratio;
+        mesh.scale.x *= ratio;
       }
+
+      obj._threeObject3d = new THREE.Group();
+      obj._threeObject3d.add(mesh);
     }
 
     updateTransform(obj._threeObject3d, params);
