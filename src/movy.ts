@@ -1061,7 +1061,12 @@ class SceneObject {
         defaults: { duration, ease },
       });
 
-      tl.set(materials, { clippingPlanes });
+      // TODO: Clipping planes should be removed after animation.
+      // Dynamically attaching or detaching clipping planes are not well
+      // supported in three.js.
+      for (const material of materials) {
+        material.clippingPlanes = clippingPlanes;
+      }
 
       if (direction === "right") {
         clippingPlanes.push(
@@ -1092,8 +1097,6 @@ class SceneObject {
           y: object3d.position.y + (box.max.y - box.min.y),
         });
       }
-
-      tl.set(materials, { clippingPlanes: empty });
 
       mainTimeline.add(tl, t);
     });
