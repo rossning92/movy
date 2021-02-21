@@ -934,22 +934,17 @@ class SceneObject {
     return this;
   }
 
-  rotateIn({ t, duration = 0.5 }: AnimationParameters = {}) {
+  rotateIn({ t, duration = 0.5, ease = "expo.out" }: AnimationParameters = {}) {
     commandQueue.push(() => {
-      const tl = gsap.timeline({ defaults: { duration } });
+      const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      tl.from(
-        this._threeObject3d.rotation,
-        { z: Math.PI * 4, ease: "power.in", duration },
-        "<"
-      );
+      tl.from(this._threeObject3d.rotation, { z: Math.PI * 4, duration }, "<");
       tl.from(
         this._threeObject3d.scale,
         {
           x: Number.EPSILON,
           y: Number.EPSILON,
           z: Number.EPSILON,
-          ease: "power.in",
           duration,
         },
         "<"
