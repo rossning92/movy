@@ -50,7 +50,7 @@ globalTimeline.add(mainTimeline, "0");
 
 let options = {
   format: "webm",
-  framerate: 25,
+  framerate: 30,
   render: function () {
     startRender();
   },
