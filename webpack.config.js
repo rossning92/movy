@@ -22,17 +22,17 @@ function addEntry(file) {
   );
 }
 
-module.exports = (env) => {
+module.exports = ({ file, open = true } = {}) => {
   let openPage = undefined;
   const contentBase = [
     path.resolve(__dirname, "examples"),
     path.resolve(__dirname, "node_modules/ccapture.js/build"),
   ];
 
-  if (env && env.file) {
-    addEntry(env.file);
-    openPage = path.parse(env.file).name + ".html";
-    contentBase.push(path.dirname(env.file));
+  if (file) {
+    addEntry(file);
+    openPage = path.parse(file).name + ".html";
+    contentBase.push(path.dirname(file));
   } else {
     // The folder that contains source code and resource files (images, videos,
     // etc.)
@@ -86,7 +86,7 @@ module.exports = (env) => {
     devServer: {
       compress: true,
       contentBase,
-      open: true,
+      open: open,
       openPage,
       stats: "minimal",
     },
