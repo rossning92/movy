@@ -1201,6 +1201,16 @@ class SceneObject {
     });
     return this;
   }
+
+  show({ duration = 0.001, t }: Shake2DParameters = {}) {
+    commandQueue.push(() => {
+      const tl = gsap.timeline({ defaults: { ease: "none", duration } });
+      tl.fromTo(this._threeObject3d, { visible: false }, { visible: true });
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
 }
 
 interface ExplodeParameters extends AnimationParameters {
