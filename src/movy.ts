@@ -411,8 +411,8 @@ function createExplosionAnimation(
   {
     ease = "expo.out",
     duration = 2,
-    minRotation = -2 * Math.PI,
-    maxRotation = 2 * Math.PI,
+    minRotation = -4 * Math.PI,
+    maxRotation = 4 * Math.PI,
     minRadius = 1,
     maxRadius = 4,
     minScale = 1,
@@ -1231,41 +1231,27 @@ class GroupObject extends SceneObject {
     duration = 2,
     minRotation = -2 * Math.PI,
     maxRotation = 2 * Math.PI,
-    minRadius = 2,
+    minRadius = 0,
     maxRadius = 4,
     minScale = 1,
     maxScale = 1,
-    stagger = 0.03,
+    stagger = 0,
     speed,
   }: ExplodeParameters = {}) {
     commandQueue.push(() => {
       let tl: gsap.core.Timeline;
 
-      if (speed === "fastest") {
-        tl = createExplosionAnimation(this._threeObject3d, {
-          ease,
-          duration: 1.0,
-          minRotation,
-          maxRotation,
-          minRadius,
-          maxRadius,
-          minScale,
-          maxScale,
-          stagger: 0,
-        });
-      } else {
-        tl = createExplosionAnimation(this._threeObject3d, {
-          ease,
-          duration,
-          minRotation,
-          maxRotation,
-          minRadius,
-          maxRadius,
-          minScale,
-          maxScale,
-          stagger,
-        });
-      }
+      tl = createExplosionAnimation(this._threeObject3d, {
+        ease,
+        duration,
+        minRotation,
+        maxRotation,
+        minRadius,
+        maxRadius,
+        minScale,
+        maxScale,
+        stagger,
+      });
 
       mainTimeline.add(tl, t);
     });
