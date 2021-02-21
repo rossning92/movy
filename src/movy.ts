@@ -1802,7 +1802,7 @@ function createBasicMaterial(basicMaterial: BasicMaterial) {
 function updateTransform(mesh: THREE.Object3D, transform: Transform) {
   // Scale
   if (transform.scale !== undefined) {
-    mesh.scale.setScalar(transform.scale);
+    mesh.scale.multiplyScalar(transform.scale);
   } else {
     if (transform.sx !== undefined) {
       mesh.scale.x = transform.sx;
