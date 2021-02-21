@@ -134,6 +134,7 @@ export default class TextMesh extends Object3D {
           geom.computeBoundingBox();
           const mat = new MeshBasicMaterial({
             color: this.color,
+            side: DoubleSide,
           });
           const mesh = new Mesh(geom, mat);
 
