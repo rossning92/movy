@@ -25,6 +25,7 @@ function addEntry(file) {
 module.exports = ({ file, open = true } = {}) => {
   let openPage = undefined;
   const contentBase = [
+    path.resolve(__dirname, "public"),
     path.resolve(__dirname, "examples"),
     path.resolve(__dirname, "node_modules/ccapture.js/build"),
   ];
