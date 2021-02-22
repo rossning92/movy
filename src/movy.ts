@@ -634,6 +634,9 @@ export function run() {
       }
     }
 
+    // Always add 0.5s to the end of animation to avoid zero-length video.
+    mainTimeline.set({}, {}, "+=0.5");
+
     {
       // Create timeline GUI
 
