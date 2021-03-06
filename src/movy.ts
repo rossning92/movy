@@ -431,7 +431,7 @@ function createExplosionAnimation(
   objectGroup.children.forEach((child, i) => {
     const r = minRadius + (maxRadius - minRadius) * rng();
     const theta = rng() * 2 * Math.PI;
-    const x = r * 2.0 * Math.cos(theta);
+    const x = r * Math.cos(theta);
     const y = r * Math.sin(theta);
     child.position.z += 0.01 * i; // z-fighting
 
