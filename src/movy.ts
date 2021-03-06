@@ -926,6 +926,36 @@ class SceneObject {
     return this;
   }
 
+  changeColor(
+    color: string | number,
+    { duration = 0.25, ease = "power1.inOut", t }: AnimationParameters = {}
+  ) {
+    commandQueue.push(() => {
+      const tl = gsap.timeline({ defaults: { duration, ease } });
+
+      const materials = getAllMaterials(this._threeObject3d);
+      for (const material of materials) {
+        if (material instanceof THREE.MeshBasicMaterial) {
+          const basicMaterial = material as THREE.MeshBasicMaterial;
+          const threeColor = basicMaterial.color;
+          const destColor = new THREE.Color(color);
+          tl.to(
+            threeColor,
+            {
+              r: destColor.r,
+              g: destColor.g,
+              b: destColor.b,
+            },
+            "<"
+          );
+        }
+      }
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
   rotate({ t, duration = 5, ease = "none" }: RotateParameters = {}) {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
