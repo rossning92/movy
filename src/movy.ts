@@ -1484,13 +1484,18 @@ export function addImage(
   return obj;
 }
 
-export function addRect(params: AddTextParameters = {}): SceneObject {
+interface AddRectParameters extends Transform, BasicMaterial {
+  width?: number;
+  height?: number;
+}
+export function addRect(params: AddRectParameters = {}): SceneObject {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
     const material = createBasicMaterial(params);
 
-    const geometry = new THREE.PlaneGeometry(1, 1);
+    const { width = 1, height = 1 } = params;
+    const geometry = new THREE.PlaneGeometry(width, height);
 
     obj._threeObject3d = new THREE.Mesh(geometry, material);
 
