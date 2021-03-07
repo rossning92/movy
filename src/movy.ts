@@ -1295,7 +1295,7 @@ class GroupObject extends SceneObject {
       const tl = gsap.timeline({
         defaults: {
           duration,
-          ease: "expo.out",
+          ease: "expo.inOut",
         },
       });
 
@@ -1315,8 +1315,18 @@ class GroupObject extends SceneObject {
         },
         0
       );
+      tl.to(
+        this._threeObject3d.children.map((x) => x.rotation),
+        {
+          x: 0,
+          y: 0,
+          z: 0,
+        },
+        0
+      );
       mainTimeline.add(tl, t);
     });
+    return this;
   }
 
   flyIn({ t, duration = 0.5, ease = "power.in" }: AnimationParameters = {}) {
