@@ -1288,6 +1288,7 @@ class GroupObject extends SceneObject {
 
       mainTimeline.add(tl, t);
     });
+    return this;
   }
 
   implode2D({ t = undefined, duration = 0.5 }: AnimationParameters = {}) {
@@ -1355,6 +1356,7 @@ class GroupObject extends SceneObject {
 
       return tl;
     });
+    return this;
   }
 }
 
@@ -1395,6 +1397,7 @@ class TextObject extends GroupObject {
 
       mainTimeline.add(tl, t);
     });
+    return this;
   }
 
   typeText({ t, duration = 1 }: ChangeTextParameters = {}) {
@@ -1412,6 +1415,7 @@ class TextObject extends GroupObject {
 
       mainTimeline.add(tl, t);
     });
+    return this;
   }
 }
 
