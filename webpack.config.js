@@ -79,6 +79,7 @@ module.exports = ({ file, open = true } = {}) => {
             loader: path.resolve(__dirname, "node_modules/ts-loader"),
             options: {
               configFile: path.resolve(__dirname, "tsconfig.json"),
+              transpileOnly: true,
             },
           },
         },
@@ -90,6 +91,12 @@ module.exports = ({ file, open = true } = {}) => {
       open: open,
       openPage,
       stats: "minimal",
+    },
+    optimization: {
+      runtimeChunk: true,
+      removeAvailableModules: false,
+      removeEmptyChunks: false,
+      splitChunks: false,
     },
   };
 };
