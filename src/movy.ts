@@ -16,12 +16,15 @@ import * as THREE from "three";
 import gsap from "gsap";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import TextMesh from "./objects/TextMesh";
+import * as mediaRecorder from "./utils/MediaRecorder";
 
 declare class CCapture {
   constructor(params: any);
 }
 
 gsap.ticker.remove(gsap.updateRoot);
+
+const USE_MEDIA_RECORDER = false;
 
 let glitchPassEnabled = false;
 let screenWidth = 1920;
@@ -79,21 +82,24 @@ function startRender({ resetTiming = true, name = document.title } = {}) {
     lastTimestamp = undefined;
   }
 
-  capturer = new CCapture({
-    verbose: true,
-    display: false,
-    framerate: options.framerate,
-    motionBlurFrames: motionBlurSamples,
-    quality: 100,
-    format: options.format,
-    workersPath: "dist/src/",
-    timeLimit: 0,
-    frameLimit: 0,
-    autoSaveTime: 0,
-    name,
-  });
-
-  (capturer as any).start();
+  if (USE_MEDIA_RECORDER) {
+    mediaRecorder.start();
+  } else {
+    capturer = new CCapture({
+      verbose: true,
+      display: false,
+      framerate: options.framerate,
+      motionBlurFrames: motionBlurSamples,
+      quality: 100,
+      format: options.format,
+      workersPath: "dist/src/",
+      timeLimit: 0,
+      frameLimit: 0,
+      autoSaveTime: 0,
+      name,
+    });
+    (capturer as any).start();
+  }
 
   (window as any).movy.isRendering = true;
 }
@@ -104,10 +110,14 @@ function startRender({ resetTiming = true, name = document.title } = {}) {
 };
 
 function stopRender() {
-  if (capturer) {
-    (capturer as any).stop();
-    (capturer as any).save();
-    capturer = undefined;
+  if (USE_MEDIA_RECORDER) {
+    mediaRecorder.stop();
+  } else {
+    if (capturer) {
+      (capturer as any).stop();
+      (capturer as any).save();
+      capturer = undefined;
+    }
   }
 
   (window as any).movy.isRendering = false;
