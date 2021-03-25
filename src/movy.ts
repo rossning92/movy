@@ -494,8 +494,8 @@ function createGroupFlyInAnimation(
 
 function getCompoundBoundingBox(object3D: THREE.Object3D) {
   let box: THREE.Box3;
-  object3D.traverse(function (obj3D) {
-    const geometry: THREE.Geometry = (obj3D as any).geometry;
+  object3D.traverse(function (obj3D: any) {
+    const geometry = obj3D.geometry;
     if (geometry === undefined) {
       return;
     }
@@ -752,13 +752,15 @@ function createLine(
     if (i === 0 && !arrowStart) continue;
     if (i === 1 && !arrowEnd) continue;
 
-    const geometry = new THREE.Geometry();
-    geometry.vertices = [
-      new THREE.Vector3(-lineWidth * 2, -lineWidth * 4, 0),
-      new THREE.Vector3(lineWidth * 2, -lineWidth * 4, 0),
-      new THREE.Vector3(0, 0, 0),
-    ];
-    geometry.faces.push(new THREE.Face3(0, 1, 2));
+    const geometry = new THREE.BufferGeometry();
+
+    // prettier-ignore
+    const vertices = new Float32Array([
+      -lineWidth * 2.0, -lineWidth * 4.0, 0.0,
+      lineWidth * 2.0, -lineWidth * 4.0, 0.0,
+      0.0, 0.0, 0.0,
+    ]);
+    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
 
     const mesh = new THREE.Mesh(geometry, material);
     group.add(mesh);
@@ -1555,10 +1557,26 @@ export function addTriangle(params: AddTextParameters = {}): SceneObject {
   commandQueue.push(async () => {
     const material = createBasicMaterial(params);
 
-    const geometry = new THREE.Geometry();
     const vertices = createPolygonVertices();
-    geometry.vertices.push(vertices[0], vertices[1], vertices[2]);
-    geometry.faces.push(new THREE.Face3(0, 1, 2));
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        new Float32Array([
+          vertices[0].x,
+          vertices[0].y,
+          vertices[0].z,
+          vertices[1].x,
+          vertices[1].y,
+          vertices[1].z,
+          vertices[2].x,
+          vertices[2].y,
+          vertices[2].z,
+        ]),
+        3
+      )
+    );
 
     obj._threeObject3d = new THREE.Mesh(geometry, material);
 
