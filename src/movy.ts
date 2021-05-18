@@ -1669,13 +1669,18 @@ export function addRectOutline(params: AddOutlineParameters = {}) {
   return obj;
 }
 
-function createPhoneMaterial(material: BasicMaterial) {
-  return new THREE.MeshPhongMaterial({
-    color: toThreeColor(material.color),
-    // emissive: 0x072534,
-    // side: THREE.DoubleSide,
-    flatShading: true,
-  });
+function createStandardMaterial(material: BasicMaterial) {
+  if (material.wireframe) {
+    return new THREE.MeshBasicMaterial({
+      color: toThreeColor(material.color),
+      wireframe: material.wireframe,
+    });
+  } else {
+    return new THREE.MeshStandardMaterial({
+      color: toThreeColor(material.color),
+      flatShading: true,
+    });
+  }
 }
 
 export function addPyramid(params: AddObjectParameters = {}): SceneObject {
@@ -1684,7 +1689,7 @@ export function addPyramid(params: AddObjectParameters = {}): SceneObject {
   commandQueue.push(async () => {
     addDefaultLights();
 
-    const material = createPhoneMaterial(params);
+    const material = createStandardMaterial(params);
 
     const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, 32);
     obj._threeObject3d = new THREE.Mesh(geometry, material);
@@ -1724,7 +1729,7 @@ export function addCube(params: AddObjectParameters = {}): SceneObject {
   commandQueue.push(async () => {
     addDefaultLights();
 
-    const material = createPhoneMaterial(params);
+    const material = createStandardMaterial(params);
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     obj._threeObject3d = new THREE.Mesh(geometry, material);
@@ -1853,7 +1858,6 @@ interface Transform {
 
 interface AddObjectParameters extends Transform, BasicMaterial {
   vertices?: any;
-  wireframe?: any;
   outline?: any;
   outlineWidth?: any;
   width?: any;
@@ -1877,6 +1881,7 @@ interface AddObjectParameters extends Transform, BasicMaterial {
 interface BasicMaterial {
   color?: string | number;
   opacity?: number;
+  wireframe?: boolean;
 }
 
 function createBasicMaterial(basicMaterial: BasicMaterial) {
