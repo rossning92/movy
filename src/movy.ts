@@ -25,6 +25,7 @@ declare class CCapture {
 gsap.ticker.remove(gsap.updateRoot);
 
 const USE_MEDIA_RECORDER = false;
+const DEFAULT_SEGS = 16;
 
 let glitchPassEnabled = false;
 let screenWidth = 1920;
@@ -283,7 +284,7 @@ export function randomInt(min: number, max: number) {
   return Math.floor(random() * (max - min + 1)) + min;
 }
 
-function createLine3D(
+function createLine3d(
   material: THREE.Material,
   {
     points = [],
@@ -825,7 +826,9 @@ interface RevealParameters extends AnimationParameters {
   direction?: "up" | "down" | "left" | "right";
 }
 
-interface RotateParameters extends AnimationParameters {}
+interface RotateParameters extends AnimationParameters {
+  repeat?: number;
+}
 
 function createTransformAnimation(
   transform: Transform,
@@ -973,6 +976,26 @@ class SceneObject {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       tl.to(this._threeObject3d.rotation, { y: duration }, "<");
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
+  rotate3d({
+    t,
+    duration = 5,
+    repeat = 2,
+    ease = "none",
+  }: RotateParameters = {}) {
+    commandQueue.push(() => {
+      const tl = gsap.timeline({ defaults: { duration, ease, repeat } });
+
+      tl.to(
+        this._threeObject3d.rotation,
+        { x: Math.PI * 2, y: Math.PI * 2 },
+        "<"
+      );
 
       mainTimeline.add(tl, t);
     });
@@ -1602,7 +1625,7 @@ export function addTriangleOutline(params: AddOutlineParameters = {}) {
     const material = createBasicMaterial(params);
 
     const vertices = createPolygonVertices();
-    obj._threeObject3d = createLine3D(material, {
+    obj._threeObject3d = createLine3d(material, {
       points: vertices.concat(vertices[0]),
       lineWidth,
       color: toThreeColor(color),
@@ -1625,7 +1648,7 @@ export function addCircleOutline(params: AddOutlineParameters = {}) {
     const material = createBasicMaterial(params);
 
     const vertices = createPolygonVertices({ sides: 128 });
-    obj._threeObject3d = createLine3D(material, {
+    obj._threeObject3d = createLine3d(material, {
       points: vertices.concat(vertices[0]),
       lineWidth,
       color: toThreeColor(color),
@@ -1649,7 +1672,7 @@ export function addRectOutline(params: AddOutlineParameters = {}) {
 
     const halfWidth = width * 0.5;
     const halfHeight = height * 0.5;
-    obj._threeObject3d = createLine3D(material, {
+    obj._threeObject3d = createLine3d(material, {
       points: [
         new THREE.Vector3(-halfWidth, -halfHeight, 0),
         new THREE.Vector3(-halfWidth, halfHeight, 0),
@@ -1683,7 +1706,10 @@ function createStandardMaterial(material: BasicMaterial) {
   }
 }
 
-export function addPyramid(params: AddObjectParameters = {}): SceneObject {
+function add3DGeometry(
+  params: AddObjectParameters = {},
+  geometry: THREE.Geometry
+) {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
@@ -1691,7 +1717,6 @@ export function addPyramid(params: AddObjectParameters = {}): SceneObject {
 
     const material = createStandardMaterial(params);
 
-    const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, 32);
     obj._threeObject3d = new THREE.Mesh(geometry, material);
 
     updateTransform(obj._threeObject3d, params);
@@ -1702,44 +1727,39 @@ export function addPyramid(params: AddObjectParameters = {}): SceneObject {
   return obj;
 }
 
-export function addSphere(params: AddObjectParameters = {}): SceneObject {
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    addDefaultLights();
-
-    const material = new THREE.MeshLambertMaterial({
-      color: toThreeColor(params.color),
-    });
-
-    const geometry = new THREE.SphereGeometry(0.5, 64, 64);
-    obj._threeObject3d = new THREE.Mesh(geometry, material);
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
+export function addPyramid(params: AddObjectParameters = {}): SceneObject {
+  const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, DEFAULT_SEGS);
+  return add3DGeometry(params, geometry);
 }
 
 export function addCube(params: AddObjectParameters = {}): SceneObject {
-  const obj = new SceneObject();
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  return add3DGeometry(params, geometry);
+}
 
-  commandQueue.push(async () => {
-    addDefaultLights();
+export function addSphere(params: AddObjectParameters = {}): SceneObject {
+  const geometry = new THREE.SphereGeometry(0.5, DEFAULT_SEGS, DEFAULT_SEGS);
+  return add3DGeometry(params, geometry);
+}
 
-    const material = createStandardMaterial(params);
+export function addCone(params: AddObjectParameters = {}): SceneObject {
+  const geometry = new THREE.ConeGeometry(0.5, 1.0, DEFAULT_SEGS, DEFAULT_SEGS);
+  return add3DGeometry(params, geometry);
+}
 
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    obj._threeObject3d = new THREE.Mesh(geometry, material);
+export function addCylinder(params: AddObjectParameters = {}): SceneObject {
+  const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, DEFAULT_SEGS);
+  return add3DGeometry(params, geometry);
+}
 
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
+export function addTorus(params: AddObjectParameters = {}): SceneObject {
+  const geometry = new THREE.TorusGeometry(
+    0.375,
+    0.125,
+    DEFAULT_SEGS,
+    DEFAULT_SEGS
+  );
+  return add3DGeometry(params, geometry);
 }
 
 interface AddLineParameters extends Transform, BasicMaterial {
