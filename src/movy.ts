@@ -989,7 +989,9 @@ class SceneObject {
     ease = "none",
   }: RotateParameters = {}) {
     commandQueue.push(() => {
-      const tl = gsap.timeline({ defaults: { duration, ease, repeat } });
+      const tl = gsap.timeline({
+        defaults: { duration, ease, repeat: repeat ? repeat - 1 : undefined },
+      });
 
       tl.to(
         this._threeObject3d.rotation,
@@ -1708,7 +1710,7 @@ function createStandardMaterial(material: BasicMaterial) {
 
 function add3DGeometry(
   params: AddObjectParameters = {},
-  geometry: THREE.Geometry
+  geometry: THREE.BufferGeometry
 ) {
   const obj = new SceneObject();
 
