@@ -244,22 +244,42 @@ function animate() {
 
 interface MoveCameraParameters extends Transform, AnimationParameters {
   lookAt?: { x?: number; y?: number; z?: number } | number[];
+  fov?: number;
 }
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
-  const { t, lookAt, duration = 0.5, ease = "expo.out" } = params;
-
   commandQueue.push(() => {
+    const { t, lookAt, duration = 0.5, ease = "expo.out", fov } = params;
+
     const tl = gsap.timeline({
       defaults: {
         duration,
         ease,
         onUpdate: () => {
+          // Keep looking at the target while camera is moving.
           if (lookAt) {
             camera.lookAt(toThreeVector3(lookAt));
           }
         },
       },
     });
+
+    if (camera instanceof THREE.PerspectiveCamera) {
+      const perspectiveCamera = camera as THREE.PerspectiveCamera;
+
+      // Animate FoV
+      if (fov !== undefined) {
+        tl.to(
+          perspectiveCamera,
+          {
+            fov,
+            onUpdate: () => {
+              perspectiveCamera.updateProjectionMatrix();
+            },
+          },
+          "<"
+        );
+      }
+    }
 
     createTransformAnimation(params, tl, camera);
 
