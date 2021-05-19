@@ -1776,6 +1776,25 @@ export function addTorus(params: AddObjectParameters = {}): SceneObject {
   return add3DGeometry(params, geometry);
 }
 
+export function _addMesh(
+  mesh: THREE.Mesh,
+  params: AddObjectParameters = {}
+): SceneObject {
+  const obj = new SceneObject();
+
+  commandQueue.push(async () => {
+    addDefaultLights();
+
+    obj._threeObject3d = mesh;
+
+    updateTransform(obj._threeObject3d, params);
+
+    addObjectToScene(obj, params);
+  });
+
+  return obj;
+}
+
 interface AddLineParameters extends Transform, BasicMaterial {
   from?: { x?: number; y?: number; z?: number } | number[];
   to?: { x?: number; y?: number; z?: number } | number[];
