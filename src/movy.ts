@@ -4,6 +4,7 @@
  */
 
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GlitchPass } from "./utils/GlitchPass";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -183,8 +184,8 @@ function setupScene() {
   composer.setSize(screenWidth, screenHeight);
   composer.addPass(renderScene);
 
+  // Bloom pass
   if (bloomEnabled) {
-    // Bloom pass
     let bloomPass = new UnrealBloomPass(
       new THREE.Vector2(screenWidth, screenHeight),
       0.5, // Strength
@@ -194,6 +195,7 @@ function setupScene() {
     composer.addPass(bloomPass);
   }
 
+  // FXAA Pass
   if (antiAliasMethod === "fxaa") {
     const fxaaPass = new ShaderPass(FXAAShader);
 
@@ -204,9 +206,17 @@ function setupScene() {
     composer.addPass(fxaaPass);
   }
 
+  // Glitch pass
   if (glitchPassEnabled) {
     glitchPass = new GlitchPass();
     composer.addPass(glitchPass);
+  }
+
+  // Gamma correction
+  if (composer.passes.length > 1) {
+    composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
+  } else {
+    renderer.outputEncoding = THREE.sRGBEncoding;
   }
 }
 
@@ -427,11 +437,11 @@ function addDefaultLights() {
     lightGroup = new THREE.Group();
     scene.add(lightGroup);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(0.3, 1, 0.5);
     lightGroup.add(directionalLight);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3); // soft white light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // soft white light
     lightGroup.add(ambientLight);
   }
 }
@@ -972,7 +982,7 @@ class SceneObject {
         if (material instanceof THREE.MeshBasicMaterial) {
           const basicMaterial = material as THREE.MeshBasicMaterial;
           const threeColor = basicMaterial.color;
-          const destColor = new THREE.Color(color);
+          const destColor = toThreeColor(color);
           tl.to(
             threeColor,
             {
@@ -1416,10 +1426,10 @@ class GroupObject extends SceneObject {
   }
 }
 
-function toThreeColor(color: string | number): THREE.Color {
+function toThreeColor(color?: string | number): THREE.Color {
   return color === undefined
     ? new THREE.Color(0xffffff)
-    : new THREE.Color(color);
+    : new THREE.Color(color).convertSRGBToLinear();
 }
 
 interface ChangeTextParameters extends AnimationParameters {
@@ -1519,10 +1529,11 @@ export function addImage(
     if (file.endsWith(".svg")) {
       obj._threeObject3d = await loadSVG(file, {
         ccw,
-        color: color === undefined ? undefined : toThreeColor(color),
+        color: toThreeColor(color),
       });
     } else {
       const texture = await loadTexture(file);
+      texture.encoding = THREE.sRGBEncoding;
       // TODO: do not hardcode anisotropy value, use renderer.getMaxAnisotropy();
       texture.anisotropy = 16;
 
@@ -1905,7 +1916,7 @@ export function addGrid(params: AddGridParameters = {}): SceneObject {
       gridSize,
       gridSize,
       0x00ff00,
-      new THREE.Color(color)
+      toThreeColor(color)
     );
     obj._threeObject3d.rotation.x = Math.PI / 2;
 
@@ -1983,9 +1994,7 @@ function createBasicMaterial(basicMaterial: BasicMaterial) {
 
   return new THREE.MeshBasicMaterial({
     side: THREE.DoubleSide,
-    color: new THREE.Color(
-      basicMaterial.color === undefined ? 0xffffff : basicMaterial.color
-    ),
+    color: toThreeColor(basicMaterial.color),
     transparent: opacity < 1.0 ? true : false,
     opacity,
   });
