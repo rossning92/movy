@@ -25,7 +25,6 @@ declare class CCapture {
 gsap.ticker.remove(gsap.updateRoot);
 
 const USE_MEDIA_RECORDER = false;
-const DEFAULT_SEGS = 16;
 
 let glitchPassEnabled = false;
 let screenWidth = 1920;
@@ -1729,8 +1728,12 @@ function add3DGeometry(
   return obj;
 }
 
+function defaultSeg({ wireframe }: AddObjectParameters) {
+  return wireframe ? 16 : 64;
+}
+
 export function addPyramid(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, DEFAULT_SEGS);
+  const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, defaultSeg(params));
   return add3DGeometry(params, geometry);
 }
 
@@ -1740,17 +1743,26 @@ export function addCube(params: AddObjectParameters = {}): SceneObject {
 }
 
 export function addSphere(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.SphereGeometry(0.5, DEFAULT_SEGS, DEFAULT_SEGS);
+  const geometry = new THREE.SphereGeometry(
+    0.5,
+    defaultSeg(params),
+    defaultSeg(params)
+  );
   return add3DGeometry(params, geometry);
 }
 
 export function addCone(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.ConeGeometry(0.5, 1.0, DEFAULT_SEGS, DEFAULT_SEGS);
+  const geometry = new THREE.ConeGeometry(
+    0.5,
+    1.0,
+    defaultSeg(params),
+    defaultSeg(params)
+  );
   return add3DGeometry(params, geometry);
 }
 
 export function addCylinder(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, DEFAULT_SEGS);
+  const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, defaultSeg(params));
   return add3DGeometry(params, geometry);
 }
 
@@ -1758,8 +1770,8 @@ export function addTorus(params: AddObjectParameters = {}): SceneObject {
   const geometry = new THREE.TorusGeometry(
     0.375,
     0.125,
-    DEFAULT_SEGS,
-    DEFAULT_SEGS
+    defaultSeg(params),
+    defaultSeg(params)
   );
   return add3DGeometry(params, geometry);
 }
