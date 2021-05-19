@@ -1815,6 +1815,26 @@ export function _addMesh(
   return obj;
 }
 
+export function _addPanoramicSkybox(file: string) {
+  const obj = new SceneObject();
+
+  commandQueue.push(async () => {
+    const geometry = new THREE.SphereGeometry(500, 60, 40);
+    // invert the geometry on the x-axis so that all of the faces point inward
+    geometry.scale(-1, 1, 1);
+
+    const texture = new THREE.TextureLoader().load(file);
+    texture.encoding = THREE.sRGBEncoding;
+    const material = new THREE.MeshBasicMaterial({ map: texture });
+    const skySphere = new THREE.Mesh(geometry, material);
+    scene.add(skySphere);
+
+    obj._threeObject3d = skySphere;
+  });
+
+  return obj;
+}
+
 interface AddLineParameters extends Transform, BasicMaterial {
   from?: { x?: number; y?: number; z?: number } | number[];
   to?: { x?: number; y?: number; z?: number } | number[];
