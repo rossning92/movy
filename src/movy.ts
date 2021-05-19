@@ -1703,7 +1703,7 @@ function createStandardMaterial(material: BasicMaterial) {
   } else {
     return new THREE.MeshStandardMaterial({
       color: toThreeColor(material.color),
-      flatShading: true,
+      roughness: 0.3,
     });
   }
 }
