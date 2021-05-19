@@ -3,20 +3,21 @@
  * @author Ross Ning
  */
 
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
-import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
-import { GlitchPass } from "./utils/GlitchPass";
+import * as dat from "dat.gui";
+import gsap from "gsap";
+import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import Stats from "three/examples/jsm/libs/stats.module.js";
+import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import * as dat from "dat.gui";
-import * as THREE from "three";
-import gsap from "gsap";
-import Stats from "three/examples/jsm/libs/stats.module.js";
+import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
+import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
+import { WEBGL } from "three/examples/jsm/WebGL.js";
 import TextMesh from "./objects/TextMesh";
+import { GlitchPass } from "./utils/GlitchPass";
 import * as mediaRecorder from "./utils/MediaRecorder";
 
 declare class CCapture {
@@ -28,9 +29,8 @@ gsap.ticker.remove(gsap.updateRoot);
 const USE_MEDIA_RECORDER = false;
 
 let glitchPassEnabled = false;
-let screenWidth = 1920;
-let screenHeight = 1080;
-let antiAliasMethod = "msaa";
+let renderTargetWidth = 1920;
+let renderTargetHeight = 1080;
 let motionBlurSamples = 1;
 let bloomEnabled = false;
 let globalTimeline = gsap.timeline({ onComplete: stopRender });
@@ -126,7 +126,7 @@ function stopRender() {
 
 function setupOrthoCamera() {
   if (camera === undefined) {
-    const aspect = screenWidth / screenHeight;
+    const aspect = renderTargetWidth / renderTargetHeight;
     const frustumSize = 16;
     camera = new THREE.OrthographicCamera(
       (frustumSize * aspect) / -2,
@@ -144,7 +144,7 @@ function setupPespectiveCamera() {
     // This will ensure the size of 10 in the vertical direction.
     camera = new THREE.PerspectiveCamera(
       60,
-      screenWidth / screenHeight,
+      renderTargetWidth / renderTargetHeight,
       0.1,
       5000
     );
@@ -154,13 +154,18 @@ function setupPespectiveCamera() {
 }
 
 function setupScene() {
+  if (WEBGL.isWebGL2Available() === false) {
+    document.body.appendChild(WEBGL.getWebGL2ErrorMessage());
+    return;
+  }
+
+  // Create renderer
   renderer = new THREE.WebGLRenderer({
     alpha: true,
-    antialias: antiAliasMethod === "msaa",
   });
   renderer.localClippingEnabled = true;
-
-  renderer.setSize(screenWidth, screenHeight);
+  renderer.setSize(renderTargetWidth, renderTargetHeight);
+  renderer.setClearColor(0x000000, backgroundAlpha);
   document.body.appendChild(renderer.domElement);
 
   {
@@ -169,40 +174,43 @@ function setupScene() {
     document.body.appendChild(stats.dom);
   }
 
-  renderer.setClearColor(0x000000, backgroundAlpha);
   scene.background = new THREE.Color(0);
 
   setupPespectiveCamera();
 
   cameraControls = new OrbitControls(camera, renderer.domElement);
 
-  scene.add(new THREE.AmbientLight(0x000000));
-
   let renderScene = new RenderPass(scene, camera);
 
-  composer = new EffectComposer(renderer);
-  composer.setSize(screenWidth, screenHeight);
+  // Create multi-sample render target in order to reduce aliasing (better
+  // quality than FXAA).
+  const renderTarget = new THREE.WebGLMultisampleRenderTarget(
+    renderTargetWidth,
+    renderTargetHeight
+  );
+  renderTarget.samples = 8; // TODO: don't hardcode
+
+  composer = new EffectComposer(renderer, renderTarget);
+  composer.setSize(renderTargetWidth, renderTargetHeight);
+
+  // Base pass
   composer.addPass(renderScene);
 
   // Bloom pass
   if (bloomEnabled) {
     let bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(screenWidth, screenHeight),
+      new THREE.Vector2(renderTargetWidth, renderTargetHeight),
       0.5, // Strength
       0.4, // radius
       0.85 // threshold
     );
     composer.addPass(bloomPass);
-  }
 
-  // FXAA Pass
-  if (antiAliasMethod === "fxaa") {
+    // TODO: find a better way to remove the aliasing introduced in BloomPass.
     const fxaaPass = new ShaderPass(FXAAShader);
-
-    const pixelRatio = renderer.getPixelRatio();
-    fxaaPass.uniforms["resolution"].value.x = 1 / (screenWidth * pixelRatio);
-    fxaaPass.uniforms["resolution"].value.y = 1 / (screenHeight * pixelRatio);
-
+    const ratio = renderer.getPixelRatio();
+    fxaaPass.uniforms["resolution"].value.x = 1 / (renderTargetWidth * ratio);
+    fxaaPass.uniforms["resolution"].value.y = 1 / (renderTargetHeight * ratio);
     composer.addPass(fxaaPass);
   }
 
@@ -212,12 +220,9 @@ function setupScene() {
     composer.addPass(glitchPass);
   }
 
-  // Gamma correction
-  if (composer.passes.length > 1) {
-    composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
-  } else {
-    renderer.outputEncoding = THREE.sRGBEncoding;
-  }
+  // Always use a render pass for gamma correction. This avoid adding an extra
+  // copy pass to resolve MSAA samples.
+  composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
 }
 
 function animate() {
@@ -649,7 +654,6 @@ async function loadSVG(
 
 export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
   glitchPassEnabled = true;
-  antiAliasMethod = "fxaa";
 
   commandQueue.push(() => {
     const tl = gsap.timeline();
@@ -2154,12 +2158,11 @@ function getGridPosition({ rows = 1, cols = 1, width = 25, height = 14 } = {}) {
 
 export function enableMotionBlur({ samples = 16 } = {}) {
   motionBlurSamples = samples;
-  antiAliasMethod = "fxaa";
 }
 
 export function setResolution(w: number, h: number) {
-  screenWidth = w;
-  screenHeight = h;
+  renderTargetWidth = w;
+  renderTargetHeight = h;
 }
 
 export function setBackgroundColor(color: number | string) {
@@ -2192,5 +2195,4 @@ export function addEmptyAnimation(t: number | string) {
 
 export function enableBloom() {
   bloomEnabled = true;
-  antiAliasMethod = "fxaa";
 }
