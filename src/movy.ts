@@ -139,7 +139,7 @@ function setupOrthoCamera() {
   }
 }
 
-function setupPespectiveCamera() {
+function setupCamera() {
   if (camera === undefined) {
     // This will ensure the size of 10 in the vertical direction.
     camera = new THREE.PerspectiveCamera(
@@ -176,7 +176,7 @@ function setupScene() {
 
   scene.background = new THREE.Color(0);
 
-  setupPespectiveCamera();
+  setupCamera();
 
   cameraControls = new OrbitControls(camera, renderer.domElement);
 
@@ -2195,4 +2195,8 @@ export function addEmptyAnimation(t: number | string) {
 
 export function enableBloom() {
   bloomEnabled = true;
+}
+
+export function _setCamera(cam: THREE.Camera) {
+  camera = cam;
 }
