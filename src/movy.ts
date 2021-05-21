@@ -35,19 +35,19 @@ let motionBlurSamples = 1;
 let bloomEnabled = false;
 let globalTimeline = gsap.timeline({ onComplete: stopRender });
 const mainTimeline = gsap.timeline();
-let stats: Stats = undefined;
-let capturer: CCapture = undefined;
-let renderer: THREE.WebGLRenderer = undefined;
-let composer: EffectComposer = undefined;
-let scene: THREE.Scene = undefined;
-let camera: THREE.Camera = undefined;
-let lightGroup: THREE.Group = undefined;
-let cameraControls: OrbitControls = undefined;
+let stats: Stats;
+let capturer: CCapture;
+let renderer: THREE.WebGLRenderer;
+let composer: EffectComposer;
+let scene: THREE.Scene;
+let camera: THREE.Camera;
+let lightGroup: THREE.Group;
+let cameraControls: OrbitControls;
 let glitchPass: any;
 let gridHelper: THREE.GridHelper;
 let backgroundAlpha = 1.0;
 
-let lastTimestamp: number = undefined;
+let lastTimestamp: number;
 let timeElapsed = 0;
 
 globalTimeline.add(mainTimeline, "0");
