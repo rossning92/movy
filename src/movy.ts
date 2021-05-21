@@ -748,7 +748,7 @@ export function run() {
   })();
 }
 
-function createLine(
+function createArrowLine3d(
   material: THREE.Material,
   {
     from = new THREE.Vector3(0, 0, 0),
@@ -771,27 +771,24 @@ function createLine(
 
   const group = new THREE.Group();
 
-  if (0) {
-    const geometry = new THREE.CylinderBufferGeometry(
-      lineWidth,
-      lineWidth,
-      halfLength * 2,
-      32
-    );
-    const cylinder = new THREE.Mesh(geometry, material);
-    group.add(cylinder);
-  }
+  let length = halfLength * 2;
+  let offset = halfLength;
+  const arrowLength = lineWidth * 6;
 
   {
-    let length = halfLength * 2;
-    let offset = halfLength;
-
+    // Create line
     if (arrowEnd) {
-      length -= lineWidth * 4;
-      offset -= lineWidth * 4 * 0.5;
+      length -= arrowLength;
+      offset -= arrowLength * 0.5;
     }
 
-    const geometry = new THREE.PlaneGeometry(lineWidth, length);
+    // const geometry = new THREE.PlaneGeometry(lineWidth, length);
+    const geometry = new THREE.CylinderGeometry(
+      lineWidth / 2,
+      lineWidth / 2,
+      length,
+      16
+    );
 
     const plane = new THREE.Mesh(geometry, material);
     plane.translateY(offset);
@@ -799,19 +796,13 @@ function createLine(
     group.add(plane);
   }
 
+  // Create arrows
   for (let i = 0; i < 2; i++) {
     if (i === 0 && !arrowStart) continue;
     if (i === 1 && !arrowEnd) continue;
 
-    const geometry = new THREE.BufferGeometry();
-
-    // prettier-ignore
-    const vertices = new Float32Array([
-      -lineWidth * 2.0, -lineWidth * 4.0, 0.0,
-      lineWidth * 2.0, -lineWidth * 4.0, 0.0,
-      0.0, 0.0, 0.0,
-    ]);
-    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+    const geometry = new THREE.ConeGeometry(lineWidth * 2, arrowLength, 16);
+    geometry.translate(0, -arrowLength / 2, 0);
 
     const mesh = new THREE.Mesh(geometry, material);
     group.add(mesh);
@@ -1881,7 +1872,7 @@ export function addLine(params: AddLineParameters = {}): SceneObject {
 
     const material = createBasicMaterial(params);
 
-    obj._threeObject3d = createLine(material, {
+    obj._threeObject3d = createArrowLine3d(material, {
       from: toThreeVector3(from),
       to: toThreeVector3(to),
       arrowStart: false,
@@ -1897,21 +1888,31 @@ export function addLine(params: AddLineParameters = {}): SceneObject {
   return obj;
 }
 
-export function addArrow(params: AddLineParameters = {}): SceneObject {
+interface AddArrowParameters extends AddLineParameters {
+  arrowStart?: boolean;
+  arrowEnd?: boolean;
+}
+export function addArrow(params: AddArrowParameters = {}): SceneObject {
   const obj = new SceneObject();
 
-  const { from = [0, 0, 0], to = [1, 0, 0], color, lineWidth = 0.1 } = params;
+  const {
+    from = [0, 0, 0],
+    to = [1, 0, 0],
+    lineWidth = 0.05,
+    arrowStart = false,
+    arrowEnd = true,
+  } = params;
 
   commandQueue.push(async () => {
     addDefaultLights();
 
     const material = createBasicMaterial(params);
 
-    obj._threeObject3d = createLine(material, {
+    obj._threeObject3d = createArrowLine3d(material, {
       from: toThreeVector3(from),
       to: toThreeVector3(to),
-      arrowStart: false,
-      arrowEnd: true,
+      arrowStart,
+      arrowEnd,
       lineWidth,
     });
 
