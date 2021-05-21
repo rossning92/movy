@@ -2011,15 +2011,15 @@ interface BasicMaterial {
   wireframe?: boolean;
 }
 
-function createBasicMaterial(basicMaterial: BasicMaterial) {
-  const opacity =
-    basicMaterial.opacity === undefined ? 1.0 : basicMaterial.opacity;
+function createBasicMaterial(params: BasicMaterial) {
+  const opacity = params.opacity === undefined ? 1.0 : params.opacity;
 
   return new THREE.MeshBasicMaterial({
     side: THREE.DoubleSide,
-    color: toThreeColor(basicMaterial.color),
+    color: toThreeColor(params.color),
     transparent: opacity < 1.0 ? true : false,
     opacity,
+    wireframe: params.wireframe,
   });
 }
 
