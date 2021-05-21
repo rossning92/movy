@@ -301,7 +301,7 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
       }
     }
 
-    createTransformAnimation(params, tl, camera);
+    createTransformAnimation(params, tl, camera, new THREE.Vector3(1, 1, 1));
 
     mainTimeline.add(tl, t);
   });
@@ -876,7 +876,8 @@ interface RotateParameters extends AnimationParameters {
 function createTransformAnimation(
   transform: Transform,
   tl: gsap.core.Timeline,
-  object3d: THREE.Object3D
+  object3d: THREE.Object3D,
+  preScale: THREE.Vector3
 ) {
   const { position, x, y, z, rx, ry, rz, sx, sy, sz, scale } = transform;
 
@@ -897,9 +898,9 @@ function createTransformAnimation(
     tl.to(
       object3d.scale,
       {
-        x: scale,
-        y: scale,
-        z: scale,
+        x: scale * preScale.x,
+        y: scale * preScale.y,
+        z: scale * preScale.z,
       },
       "<"
     );
@@ -912,6 +913,7 @@ function createTransformAnimation(
 
 class SceneObject {
   _threeObject3d: THREE.Object3D;
+  _preScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
 
   moveTo(params: MoveObjectParameters = {}) {
     const { t, duration = 0.5, ease = "power2.out" } = params;
@@ -924,7 +926,7 @@ class SceneObject {
         },
       });
 
-      createTransformAnimation(params, tl, this._threeObject3d);
+      createTransformAnimation(params, tl, this._threeObject3d, this._preScale);
 
       mainTimeline.add(tl, t);
     });
@@ -1558,15 +1560,15 @@ export function addImage(
       const geometry = new THREE.PlaneBufferGeometry(1, 1);
       const mesh = new THREE.Mesh(geometry, material);
 
-      const ratio = texture.image.width / texture.image.height;
-      if (ratio > 1) {
-        mesh.scale.y /= ratio;
+      const aspect = texture.image.width / texture.image.height;
+      if (aspect > 1) {
+        mesh.scale.y /= aspect;
       } else {
-        mesh.scale.x *= ratio;
+        mesh.scale.x *= aspect;
       }
 
-      obj._threeObject3d = new THREE.Group();
-      obj._threeObject3d.add(mesh);
+      obj._threeObject3d = mesh;
+      obj._preScale = mesh.scale.clone();
     }
 
     updateTransform(obj._threeObject3d, params);
