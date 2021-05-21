@@ -46,6 +46,7 @@ let cameraControls: OrbitControls;
 let glitchPass: any;
 let gridHelper: THREE.GridHelper;
 let backgroundAlpha = 1.0;
+let fxaaEnabled: boolean = false;
 
 let lastTimestamp: number;
 let timeElapsed = 0;
@@ -207,6 +208,10 @@ function setupScene() {
     composer.addPass(bloomPass);
 
     // TODO: find a better way to remove the aliasing introduced in BloomPass.
+    fxaaEnabled = true;
+  }
+
+  if (fxaaEnabled) {
     const fxaaPass = new ShaderPass(FXAAShader);
     const ratio = renderer.getPixelRatio();
     fxaaPass.uniforms["resolution"].value.x = 1 / (renderTargetWidth * ratio);
@@ -2199,4 +2204,8 @@ export function enableBloom() {
 
 export function _setCamera(cam: THREE.Camera) {
   camera = cam;
+}
+
+export function _enableFXAA() {
+  fxaaEnabled = true;
 }
