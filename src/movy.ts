@@ -865,6 +865,8 @@ interface RevealParameters extends AnimationParameters {
 }
 
 interface RotateParameters extends AnimationParameters {
+  x?: number;
+  y?: number;
   repeat?: number;
 }
 
@@ -1025,17 +1027,15 @@ class SceneObject {
     duration = 5,
     repeat = 2,
     ease = "none",
+    x = Math.PI * 2,
+    y = -Math.PI * 2,
   }: RotateParameters = {}) {
     commandQueue.push(() => {
       const tl = gsap.timeline({
         defaults: { duration, ease, repeat: repeat ? repeat - 1 : undefined },
       });
 
-      tl.to(
-        this._threeObject3d.rotation,
-        { x: Math.PI * 2, y: Math.PI * 2 },
-        "<"
-      );
+      tl.to(this._threeObject3d.rotation, { x, y }, "<");
 
       mainTimeline.add(tl, t);
     });
