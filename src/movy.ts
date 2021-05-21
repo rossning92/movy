@@ -447,12 +447,22 @@ function addDefaultLights() {
     lightGroup = new THREE.Group();
     scene.add(lightGroup);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(0.3, 1, 0.5);
-    lightGroup.add(directionalLight);
+    if (0) {
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      directionalLight.position.set(0.3, 1, 0.5);
+      lightGroup.add(directionalLight);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // soft white light
-    lightGroup.add(ambientLight);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.1); // soft white light
+      lightGroup.add(ambientLight);
+    } else {
+      // Experiment with HemisphereLight
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+      directionalLight.position.set(0.3, 1, 0.5);
+      lightGroup.add(directionalLight);
+
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f3f3f, 0.3);
+      lightGroup.add(hemiLight);
+    }
   }
 }
 
