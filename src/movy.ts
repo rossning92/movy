@@ -1466,7 +1466,7 @@ interface ChangeTextParameters extends AnimationParameters {
 
 class TextObject extends GroupObject {
   changeText(
-    func: (val: number) => string,
+    func: (val: number) => any,
     {
       from = 0,
       to = 1,
@@ -1483,7 +1483,7 @@ class TextObject extends GroupObject {
       tl.to(data, {
         val: to,
         onUpdate: () => {
-          const text = func(data.val);
+          const text = func(data.val).toString();
           textMesh.text = text;
         },
       });
