@@ -8,13 +8,13 @@ const plugins = [];
 // files under `./examples` folder and add them as webpack entries.
 const entries = {};
 
-function addEntry(file) {
+function addEntry(file, html_file) {
   const name = path.parse(file).name;
   entries[name] = file;
 
   plugins.push(
     new HtmlWebpackPlugin({
-      filename: name + ".html",
+      filename: html_file ? html_file : name + ".html",
       template: path.resolve(__dirname, "player.html"),
       chunks: [name],
       title: name,
@@ -23,7 +23,6 @@ function addEntry(file) {
 }
 
 module.exports = ({ file, open = true } = {}) => {
-  let openPage = undefined;
   const contentBase = [
     path.resolve(__dirname, "public"),
     path.resolve(__dirname, "examples"),
@@ -31,8 +30,7 @@ module.exports = ({ file, open = true } = {}) => {
   ];
 
   if (file) {
-    addEntry(file);
-    openPage = path.parse(file).name + ".html";
+    addEntry(file, "index.html");
     contentBase.push(path.dirname(file));
   } else {
     // The folder that contains source code and resource files (images, videos,
@@ -48,16 +46,16 @@ module.exports = ({ file, open = true } = {}) => {
         addEntry(fullPath);
       });
     });
-  }
 
-  plugins.push(
-    new HtmlWebpackPlugin({
-      filename: "index.html",
-      template: path.resolve(__dirname, "index.html"),
-      chunks: [],
-      movySceneNames: Object.keys(entries),
-    })
-  );
+    plugins.push(
+      new HtmlWebpackPlugin({
+        filename: "index.html",
+        template: path.resolve(__dirname, "index.html"),
+        chunks: [],
+        movySceneNames: Object.keys(entries),
+      })
+    );
+  }
 
   return {
     entry: entries,
@@ -89,7 +87,6 @@ module.exports = ({ file, open = true } = {}) => {
       compress: true,
       contentBase,
       open: open,
-      openPage,
       stats: "minimal",
     },
     optimization: {
