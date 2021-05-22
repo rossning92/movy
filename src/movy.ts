@@ -39,8 +39,13 @@ let stats: Stats;
 let capturer: CCapture;
 let renderer: THREE.WebGLRenderer;
 let composer: EffectComposer;
+
+let currentLayer = "default";
 let scene: THREE.Scene;
 let camera: THREE.Camera;
+let uiScene: THREE.Scene;
+let uiCamera: THREE.Camera;
+
 let lightGroup: THREE.Group;
 let cameraControls: OrbitControls;
 let glitchPass: any;
@@ -140,21 +145,23 @@ function setupOrthoCamera() {
   }
 }
 
-function setupCamera() {
-  if (camera === undefined) {
-    // This will ensure the size of 10 in the vertical direction.
-    camera = new THREE.PerspectiveCamera(
-      60,
-      renderTargetWidth / renderTargetHeight,
-      0.1,
-      5000
-    );
-    camera.position.set(0, 0, 8.66);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
-  }
+function createPerspectiveCamera(): THREE.Camera {
+  // This will ensure the size of 10 in the vertical direction.
+  const camera = new THREE.PerspectiveCamera(
+    60,
+    renderTargetWidth / renderTargetHeight,
+    0.1,
+    5000
+  );
+  camera.position.set(0, 0, 8.66);
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
+  return camera;
 }
 
 function setupScene() {
+  scene = new THREE.Scene();
+  uiScene = new THREE.Scene();
+
   if (WEBGL.isWebGL2Available() === false) {
     document.body.appendChild(WEBGL.getWebGL2ErrorMessage());
     return;
@@ -177,7 +184,11 @@ function setupScene() {
 
   scene.background = new THREE.Color(0);
 
-  setupCamera();
+  if (!camera) {
+    camera = createPerspectiveCamera();
+  }
+
+  uiCamera = createPerspectiveCamera();
 
   cameraControls = new OrbitControls(camera, renderer.domElement);
 
@@ -257,6 +268,10 @@ function animate() {
 
   composer.render();
 
+  renderer.autoClearColor = false;
+  renderer.render(uiScene, uiCamera);
+  renderer.autoClearColor = true;
+
   stats.update();
 
   if (capturer) (capturer as any).capture(renderer.domElement);
@@ -306,8 +321,6 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
     mainTimeline.add(tl, t);
   });
 }
-
-scene = new THREE.Scene();
 
 export function generateRandomString(length: number) {
   let result = "";
@@ -2058,8 +2071,18 @@ function addObjectToScene(obj: SceneObject, transform: Transform) {
   if (transform.parent !== undefined) {
     transform.parent._threeObject3d.add(obj._threeObject3d);
   } else {
-    scene.add(obj._threeObject3d);
+    if (currentLayer === "ui") {
+      uiScene.add(obj._threeObject3d);
+    } else {
+      scene.add(obj._threeObject3d);
+    }
   }
+}
+
+export function _setUILayer() {
+  commandQueue.push(() => {
+    currentLayer = "ui";
+  });
 }
 
 interface AddGroupParameters extends Transform {}
