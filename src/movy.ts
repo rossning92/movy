@@ -45,6 +45,7 @@ let scene: THREE.Scene;
 let camera: THREE.Camera;
 let uiScene: THREE.Scene;
 let uiCamera: THREE.Camera;
+let renderTarget: THREE.WebGLMultisampleRenderTarget;
 
 let lightGroup: THREE.Group;
 let cameraControls: OrbitControls;
@@ -192,11 +193,9 @@ function setupScene() {
 
   cameraControls = new OrbitControls(camera, renderer.domElement);
 
-  let renderScene = new RenderPass(scene, camera);
-
   // Create multi-sample render target in order to reduce aliasing (better
   // quality than FXAA).
-  const renderTarget = new THREE.WebGLMultisampleRenderTarget(
+  renderTarget = new THREE.WebGLMultisampleRenderTarget(
     renderTargetWidth,
     renderTargetHeight
   );
@@ -204,9 +203,6 @@ function setupScene() {
 
   composer = new EffectComposer(renderer, renderTarget);
   composer.setSize(renderTargetWidth, renderTargetHeight);
-
-  // Base pass
-  composer.addPass(renderScene);
 
   // Bloom pass
   if (bloomEnabled) {
@@ -219,7 +215,7 @@ function setupScene() {
     composer.addPass(bloomPass);
 
     // TODO: find a better way to remove the aliasing introduced in BloomPass.
-    fxaaEnabled = true;
+    // fxaaEnabled = true;
   }
 
   if (fxaaEnabled) {
@@ -266,11 +262,21 @@ function animate() {
 
   // cameraControls.update();
 
-  composer.render();
+  renderer.setRenderTarget(renderTarget);
 
+  // Render scene
+  renderer.render(scene, camera);
+
+  // Render UI on top of the scene
   renderer.autoClearColor = false;
   renderer.render(uiScene, uiCamera);
   renderer.autoClearColor = true;
+
+  renderer.setRenderTarget(null);
+
+  // Post processing
+  composer.readBuffer = renderTarget;
+  composer.render();
 
   stats.update();
 
