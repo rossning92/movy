@@ -1605,7 +1605,8 @@ export function addRect(params: AddRectParameters = {}): SceneObject {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
     const { width = 1, height = 1 } = params;
     const geometry = new THREE.PlaneGeometry(width, height);
@@ -1624,7 +1625,8 @@ export function addCircle(params: AddTextParameters = {}): SceneObject {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
     const geometry = new THREE.CircleGeometry(0.5, 128);
 
@@ -1638,32 +1640,50 @@ export function addCircle(params: AddTextParameters = {}): SceneObject {
   return obj;
 }
 
-export function addTriangle(params: AddTextParameters = {}): SceneObject {
+interface AddTriangleParameters extends Transform, BasicMaterial {
+  verts?: number[][];
+}
+export function addTriangle(params: AddTriangleParameters = {}): SceneObject {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
-    const vertices = createPolygonVertices();
+    let verts: THREE.Vector3[] = [];
+    if (!params.verts) {
+      verts = createPolygonVertices();
+    } else {
+      for (let i = 0; i < 3; i++) {
+        verts.push(
+          new THREE.Vector3(
+            params.verts[i][0],
+            params.verts[i][1],
+            params.verts[i][2]
+          )
+        );
+      }
+    }
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       "position",
       new THREE.BufferAttribute(
         new Float32Array([
-          vertices[0].x,
-          vertices[0].y,
-          vertices[0].z,
-          vertices[1].x,
-          vertices[1].y,
-          vertices[1].z,
-          vertices[2].x,
-          vertices[2].y,
-          vertices[2].z,
+          verts[0].x,
+          verts[0].y,
+          verts[0].z,
+          verts[1].x,
+          verts[1].y,
+          verts[1].z,
+          verts[2].x,
+          verts[2].y,
+          verts[2].z,
         ]),
         3
       )
     );
+    geometry.computeVertexNormals();
 
     obj._threeObject3d = new THREE.Mesh(geometry, material);
 
@@ -1686,7 +1706,8 @@ export function addTriangleOutline(params: AddOutlineParameters = {}) {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
     const vertices = createPolygonVertices();
     obj._threeObject3d = createLine3d(material, {
@@ -1709,7 +1730,8 @@ export function addCircleOutline(params: AddOutlineParameters = {}) {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
     const vertices = createPolygonVertices({ sides: 128 });
     obj._threeObject3d = createLine3d(material, {
@@ -1732,7 +1754,8 @@ export function addRectOutline(params: AddOutlineParameters = {}) {
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
     const halfWidth = width * 0.5;
     const halfHeight = height * 0.5;
@@ -1756,20 +1779,6 @@ export function addRectOutline(params: AddOutlineParameters = {}) {
   return obj;
 }
 
-function createStandardMaterial(material: BasicMaterial) {
-  if (material.wireframe) {
-    return new THREE.MeshBasicMaterial({
-      color: toThreeColor(material.color),
-      wireframe: material.wireframe,
-    });
-  } else {
-    return new THREE.MeshStandardMaterial({
-      color: toThreeColor(material.color),
-      roughness: 0.3,
-    });
-  }
-}
-
 function add3DGeometry(
   params: AddObjectParameters = {},
   geometry: THREE.BufferGeometry
@@ -1777,9 +1786,8 @@ function add3DGeometry(
   const obj = new SceneObject();
 
   commandQueue.push(async () => {
-    addDefaultLights();
-
-    const material = createStandardMaterial(params);
+    if (params.lighting === undefined) params.lighting = true;
+    const material = createMaterial(params);
 
     obj._threeObject3d = new THREE.Mesh(geometry, material);
 
@@ -1891,7 +1899,8 @@ export function addLine(params: AddLineParameters = {}): SceneObject {
   commandQueue.push(async () => {
     addDefaultLights();
 
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
     obj._threeObject3d = createArrowLine3d(material, {
       from: toThreeVector3(from),
@@ -1927,7 +1936,8 @@ export function addArrow(params: AddArrowParameters = {}): SceneObject {
   commandQueue.push(async () => {
     addDefaultLights();
 
-    const material = createBasicMaterial(params);
+    if (params.lighting === undefined) params.lighting = false;
+    const material = createMaterial(params);
 
     obj._threeObject3d = createArrowLine3d(material, {
       from: toThreeVector3(from),
@@ -2028,18 +2038,33 @@ interface BasicMaterial {
   color?: string | number;
   opacity?: number;
   wireframe?: boolean;
+  lighting?: boolean;
 }
 
-function createBasicMaterial(params: BasicMaterial) {
-  const opacity = params.opacity === undefined ? 1.0 : params.opacity;
+function createMaterial(params: BasicMaterial) {
+  if (params.wireframe) {
+    return new THREE.MeshBasicMaterial({
+      color: toThreeColor(params.color),
+      wireframe: true,
+    });
+  } else if (params.lighting) {
+    addDefaultLights();
 
-  return new THREE.MeshBasicMaterial({
-    side: THREE.DoubleSide,
-    color: toThreeColor(params.color),
-    transparent: opacity < 1.0 ? true : false,
-    opacity,
-    wireframe: params.wireframe,
-  });
+    return new THREE.MeshStandardMaterial({
+      color: toThreeColor(params.color),
+      roughness: 0.3,
+    });
+  } else {
+    const opacity = params.opacity === undefined ? 1.0 : params.opacity;
+
+    return new THREE.MeshBasicMaterial({
+      side: THREE.DoubleSide,
+      color: toThreeColor(params.color),
+      transparent: opacity < 1.0 ? true : false,
+      opacity,
+      wireframe: params.wireframe,
+    });
+  }
 }
 
 function updateTransform(mesh: THREE.Object3D, transform: Transform) {
