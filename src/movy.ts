@@ -561,6 +561,7 @@ function createGroupFlyInAnimation(
   return tl;
 }
 
+// Deprecated
 function getCompoundBoundingBox(object3D: THREE.Object3D) {
   let box: THREE.Box3;
   object3D.traverse(function (obj3D: any) {
