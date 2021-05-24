@@ -1015,12 +1015,10 @@ class SceneObject {
 
       const materials = getAllMaterials(this._threeObject3d);
       for (const material of materials) {
-        if (material instanceof THREE.MeshBasicMaterial) {
-          const basicMaterial = material as THREE.MeshBasicMaterial;
-          const threeColor = basicMaterial.color;
+        if ((material as any).color) {
           const destColor = toThreeColor(color);
           tl.to(
-            threeColor,
+            (material as any).color,
             {
               r: destColor.r,
               g: destColor.g,
@@ -2333,3 +2331,12 @@ export function _add3DModel(
   return obj;
 }
 
+export function _animateTo(
+  targets: gsap.TweenTarget,
+  vars: gsap.TweenVars,
+  t?: gsap.Position
+) {
+  commandQueue.push(() => {
+    mainTimeline.to(targets, vars, t);
+  });
+}
