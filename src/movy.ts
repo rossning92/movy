@@ -8,9 +8,9 @@ import gsap from "gsap";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Stats from "three/examples/jsm/libs/stats.module.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
@@ -2277,3 +2277,58 @@ export function _setCamera(cam: THREE.Camera) {
 export function _enableFXAA() {
   fxaaEnabled = true;
 }
+
+async function loadObj(url: string): Promise<THREE.Group> {
+  return new Promise((resolve, reject) => {
+    const loader = new OBJLoader();
+
+    loader.load(
+      url,
+      function (object) {
+        resolve(object);
+      },
+      function (xhr) {
+        console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+      },
+      function (error) {
+        reject(error);
+      }
+    );
+  });
+}
+
+export function _add3DModel(
+  url: string,
+  params: AddObjectParameters = {}
+): SceneObject {
+  const obj = new SceneObject();
+
+  commandQueue.push(async () => {
+    addDefaultLights();
+
+    const object = await loadObj(url);
+
+    const aabb = getBoundingBox(object);
+    const center = new THREE.Vector3();
+    aabb.getCenter(center);
+    object.position.sub(center);
+
+    const group = new THREE.Group();
+    group.add(object);
+
+    if (params.wireframe) {
+      const materials = getAllMaterials(object);
+      for (const material of materials) {
+        (material as any).wireframe = true;
+      }
+    }
+
+    obj._threeObject3d = group;
+    updateTransform(group, params);
+
+    addObjectToScene(obj, params);
+  });
+
+  return obj;
+}
+
