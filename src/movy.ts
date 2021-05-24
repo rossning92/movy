@@ -204,6 +204,16 @@ function setupScene() {
   composer = new EffectComposer(renderer, renderTarget);
   composer.setSize(renderTargetWidth, renderTargetHeight);
 
+  // Glitch pass
+  if (glitchPassEnabled) {
+    glitchPass = new GlitchPass();
+    composer.addPass(glitchPass);
+  }
+
+  // Always use a render pass for gamma correction. This avoid adding an extra
+  // copy pass to resolve MSAA samples.
+  composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
+
   // Bloom pass
   if (bloomEnabled) {
     let bloomPass = new UnrealBloomPass(
@@ -215,7 +225,7 @@ function setupScene() {
     composer.addPass(bloomPass);
 
     // TODO: find a better way to remove the aliasing introduced in BloomPass.
-    // fxaaEnabled = true;
+    fxaaEnabled = true;
   }
 
   if (fxaaEnabled) {
@@ -225,16 +235,6 @@ function setupScene() {
     fxaaPass.uniforms["resolution"].value.y = 1 / (renderTargetHeight * ratio);
     composer.addPass(fxaaPass);
   }
-
-  // Glitch pass
-  if (glitchPassEnabled) {
-    glitchPass = new GlitchPass();
-    composer.addPass(glitchPass);
-  }
-
-  // Always use a render pass for gamma correction. This avoid adding an extra
-  // copy pass to resolve MSAA samples.
-  composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
 }
 
 function animate() {
