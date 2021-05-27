@@ -438,29 +438,6 @@ function createFadeOutAnimation(
   return tl;
 }
 
-function createJumpInAnimation(
-  object3d: THREE.Object3D,
-  { ease = "elastic.out(1, 0.2)" } = {}
-) {
-  const duration = 0.5;
-
-  let tl = gsap.timeline();
-  tl.from(object3d.position, {
-    y: object3d.position.y + 1,
-    ease,
-    duration,
-  });
-
-  tl.add(
-    createFadeInAnimation(object3d, {
-      duration,
-    }),
-    "<"
-  );
-
-  return tl;
-}
-
 function addDefaultLights() {
   if (lightGroup === undefined) {
     lightGroup = new THREE.Group();
