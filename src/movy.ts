@@ -401,6 +401,9 @@ function createFadeInAnimation(
 ) {
   const tl = gsap.timeline({ defaults: { duration, ease } });
 
+  tl.from(object3d, { visible: false }, "<");
+  tl.set(object3d, { visible: true }, "<");
+
   const materials = getAllMaterials(object3d);
   for (const material of materials) {
     tl.set(material, { transparent: true }, "<");
@@ -412,7 +415,10 @@ function createFadeInAnimation(
       },
       "<"
     );
-    tl.set(material, { transparent: false }, ">");
+  }
+
+  for (const material of materials) {
+    tl.set(material, { transparent: false }, "<");
   }
 
   return tl;
