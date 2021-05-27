@@ -976,22 +976,20 @@ class SceneObject {
   }
 
   fadeOut(params: FadeObjectParameters = {}) {
-    this.changeOpacity({ ...params, opacity: 0 });
+    this.changeOpacity(0, { ...params });
     return this;
   }
 
-  changeOpacity({
-    duration = 0.25,
-    ease = "linear",
-    opacity = 0.5,
-    t,
-  }: FadeObjectParameters = {}) {
+  changeOpacity(
+    opacity: number,
+    { duration = 0.25, ease = "linear", t }: FadeObjectParameters = {}
+  ) {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const materials = getAllMaterials(this._threeObject3d);
       for (const material of materials) {
-        material.transparent = true;
+        tl.set(material, { transparent: true }, "<");
         tl.to(
           material,
           {
@@ -999,6 +997,11 @@ class SceneObject {
           },
           "<"
         );
+      }
+
+      if (opacity == 0) {
+        tl.set(this._threeObject3d, { visible: true }, ">");
+        tl.set(this._threeObject3d, { visible: false }, ">");
       }
 
       mainTimeline.add(tl, t);
