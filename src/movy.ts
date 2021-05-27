@@ -1553,7 +1553,7 @@ export function addImage(
     } else {
       const texture = await loadTexture(file);
       texture.encoding = THREE.sRGBEncoding;
-      texture.anisotropy = renderer.getMaxAnisotropy();
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
       const material = new THREE.MeshBasicMaterial({
         map: texture,
