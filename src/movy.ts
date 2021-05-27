@@ -403,7 +403,7 @@ function createFadeInAnimation(
 
   const materials = getAllMaterials(object3d);
   for (const material of materials) {
-    material.transparent = true;
+    tl.set(material, { transparent: true }, "<");
     tl.from(
       material,
       {
@@ -412,6 +412,7 @@ function createFadeInAnimation(
       },
       "<"
     );
+    tl.set(material, { transparent: false }, ">");
   }
 
   return tl;
