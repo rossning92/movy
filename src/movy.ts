@@ -1035,7 +1035,7 @@ class SceneObject {
     return this;
   }
 
-  rotate3d({
+  rotate3D({
     t,
     duration = 5,
     repeat = 2,
