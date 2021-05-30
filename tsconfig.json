@@ -5,6 +5,7 @@
     "noImplicitAny": true,
     "allowJs": true,
     "moduleResolution": "node",
-    "baseUrl": "src"
+    "baseUrl": "src",
+    "resolveJsonModule": true
   }
 }

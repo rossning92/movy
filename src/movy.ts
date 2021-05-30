@@ -19,6 +19,7 @@ import { WEBGL } from "three/examples/jsm/WebGL.js";
 import TextMesh from "./objects/TextMesh";
 import { GlitchPass } from "./utils/GlitchPass";
 import * as mediaRecorder from "./utils/MediaRecorder";
+import * as palettes from "./palettes/flatuicolors.json";
 
 declare class CCapture {
   constructor(params: any);
@@ -1446,6 +1447,10 @@ class GroupObject extends SceneObject {
 }
 
 function toThreeColor(color?: string | number): THREE.Color {
+  if (color in palettes) {
+    color = palettes[color as keyof typeof palettes];
+  }
+
   return color === undefined
     ? new THREE.Color(0xffffff)
     : new THREE.Color(color).convertSRGBToLinear();
