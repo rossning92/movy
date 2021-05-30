@@ -2055,7 +2055,7 @@ function createMaterial(params: BasicMaterial) {
       color: toThreeColor(params.color),
       transparent: opacity < 1.0 ? true : false,
       opacity,
-      wireframe: params.wireframe,
+      wireframe: params.wireframe ? true : false,
     });
   }
 }
