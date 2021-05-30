@@ -1,7 +1,7 @@
 import * as mo from "movy";
 
-const NAME = "symmetric-crypto.js";
-const DURATION = 10;
+const text = "loading...";
+const duration = 4;
 
 mo.setResolution(700, 60);
 
@@ -15,10 +15,9 @@ mo.addRectOutline({
 });
 mo.addRect({ sx: 114, sy: 8.6, color: "#44abda", parent: g }).wipeIn({
   dir: "right",
-  duration: DURATION,
-  ease: "linear",
+  duration,
 });
 
-mo.addText(NAME, { scale: 4, y: 0.8 });
+mo.addText(text, { scale: 4, y: 0.8 });
 
 mo.run();

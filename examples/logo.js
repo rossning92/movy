@@ -2,7 +2,6 @@ import * as mo from "movy";
 
 const LOGO_POS = [-3, 1];
 
-mo.enableMotionBlur();
 mo.enableBloom();
 mo.setBackgroundColor("#272727");
 
@@ -54,11 +53,11 @@ slash.moveTo({ x: 0.1, t: 0.2, ease: "power.in", duration: 0.5 });
 mo.cameraMoveTo({ x: 0, y: 2, z: 6, t: "<", lookAt: [0, 0, 0] });
 
 // Explosion
-slash.moveTo({ x: 0.1, y: 0.2, ease: "elastic.out(1, 0.2)", t: "+=0.5" });
+slash.moveTo({ x: 0.1, y: -0.2, ease: "elastic.out(1, 0.2)", t: "+=0.5" });
 mo.cameraMoveTo({ x: 0, y: 0, z: 8.66, t: "<", lookAt: [0, 0, 0] });
 tagGroup.shake2D({ t: "<0.05" });
 const icons = addIcons({ parent: tagGroup });
-icons.explode2D({ t: "<", minScale: 1.5, maxScale: 2 });
+icons.explode2D({ t: "<", minScale: 1, maxScale: 1.5 });
 
 // Implosion
 tagGroup.implode2D({ t: 3.5 });

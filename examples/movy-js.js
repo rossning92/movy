@@ -5,14 +5,13 @@ const TEXT2_POS = [3, 0.15];
 const DOT_POS = [2, -0.6];
 
 mo.enableBloom();
-mo.enableMotionBlur();
 
 const g = mo.addGroup();
 const r1 = mo.addCircle({
   scale: 0.1,
   position: [-10, -5],
   parent: g,
-  color: "yellow",
+  color: "#ffff00",
 });
 const r2 = mo.addCircle({
   scale: 0.1,
@@ -37,7 +36,7 @@ g.shake2D({ t: 0.6 });
 
 addParticle({ parent: g, t: 0.5 });
 
-r1.changeOpacity({ opacity: 0.3, t: 2 });
+r1.changeOpacity(0.3, { t: 2 });
 r2.fadeOut({ t: 2 });
 
 r1.moveTo({
@@ -55,7 +54,11 @@ r1.moveTo({
   t: 2.4,
   duration: 0.4,
 });
-mo.addText("js", { fontSize: 1.5, position: TEXT2_POS, color: "yellow" }).grow2({
+mo.addText("js", {
+  fontSize: 1.5,
+  position: TEXT2_POS,
+  color: "#ffff00",
+}).grow2({
   t: "<0.4",
 });
 

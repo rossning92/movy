@@ -47,8 +47,8 @@ for (let n = 2; n <= N; n++) {
       const user = mo.addImage("images/user.png", {
         x: pos.x,
         y: pos.y,
+        z: 0.01,
         scale: 1.2,
-
         t: "<",
       });
       user.grow2({ t: "<" });
@@ -76,6 +76,7 @@ for (let n = 2; n <= N; n++) {
       const key = mo.addImage("images/key.svg", {
         x: pos.x + 1 + i * 0.35,
         y: pos.y + 0.5,
+        z: 0.01,
         scale: 0.6,
         color: rainbowPalette[i],
         ccw: false,
