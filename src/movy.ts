@@ -575,7 +575,7 @@ function _getNodeName(node: any): any {
 
 async function loadSVG(
   url: string,
-  { color, ccw = true }: { color?: THREE.Color; ccw: boolean }
+  { color, ccw = true }: { color?: string | number; ccw: boolean }
 ): Promise<THREE.Object3D> {
   return new Promise((resolve, reject) => {
     // instantiate a loader
@@ -598,7 +598,9 @@ async function loadSVG(
           let path = paths[i];
 
           let material = new THREE.MeshBasicMaterial({
-            color: color === undefined ? (path as any).color : color,
+            color: toThreeColor(
+              color === undefined ? (path as any).color : color
+            ),
             side: THREE.DoubleSide,
             // depthWrite: false,
           });
@@ -1547,13 +1549,13 @@ export function addImage(
 ): SceneObject {
   const obj = new SceneObject();
 
-  const { color, ccw = false, opacity } = params;
+  const { color, ccw = false, opacity = 1.0 } = params;
 
   commandQueue.push(async () => {
     if (file.endsWith(".svg")) {
       obj._threeObject3d = await loadSVG(file, {
         ccw,
-        color: toThreeColor(color),
+        color,
       });
     } else {
       const texture = await loadTexture(file);
