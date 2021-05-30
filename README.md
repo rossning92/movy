@@ -6,50 +6,52 @@
 
 ## Getting Started
 
-Make sure you have [node.js (version >= 12)](https://nodejs.org/en/download/) installed on your computer.
+> Make sure you have [node.js (version >= 12)](https://nodejs.org/en/download/) installed on your computer.
 
-You can install **movy.js** simply by:
+Install **movy.js** by:
 
 ```sh
 npm i -g movy
 ```
 
-To run **movy.js**, enter the following command in your terminal:
+Run **movy.js** by the following command:
 
 ```sh
 movy
 ```
 
-It will show a list of example animations in the `examples` folder.
+This will show a list of examples in the `movy/examples` folder.
 
 ![examples](img/examples.png)
 
-To create your own animation, you can start a new javascript file. Following is a simple hello-world example:
+To create your own animation, start a new javascript file with the following content:
 
 ```js
 import * as mo from "movy";
 
-const t = mo
-  .addText("movy.js is simple!", {
-    scale: 1,
-    color: "yellow",
-  })
-  .reveal();
+mo.addText("movy.js is simple!", {
+  scale: 1,
+  color: "yellow",
+}).reveal();
 
-mo.run(); // Should call this method at the end!!!
+mo.run(); // Must call this at the end!!
 ```
 
-Save the file as `hello.js`. To open the animation in the browser, you can
+Save the file as `hello.js`. Run the following command to open the animation:
 
 ```sh
 movy hello.js
 ```
 
-> Note that changing the source code will automatically refresh the browser content.
+> Note: Modifying the source code will automatically refresh the browser.
+
+Click "Render" button to render the animation to a video file: `xxx.webm`
+
+![](img/click-render-button.png)
 
 ## Add objects into the scene
 
-To add new objects into the scene, you can use `mo.add___()` methods. For example:
+To add new objects, you can use `mo.add___()`. For example:
 
 | Method             | Comment        | Preview                   |
 | ------------------ | -------------- | ------------------------- |
@@ -60,7 +62,7 @@ To add new objects into the scene, you can use `mo.add___()` methods. For exampl
 
 ### Customize objects
 
-All methods above can take **extra** named arguments for object customization. For example, to set the object color, you can use
+All methods above can take **extra** named arguments for customization. For example, to set the object color and scale, you can use
 
 <img align=
 "right" src="img/add-yellow-triangle.png" />
@@ -69,7 +71,7 @@ All methods above can take **extra** named arguments for object customization. F
 mo.addTriangle({ color: "yellow", scale: 0.5 });
 ```
 
-This will create a half-size yellow triangle.
+This will create a half-sized yellow triangle.
 
 Furthermore, you can pass
 
