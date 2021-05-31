@@ -1,6 +1,6 @@
 ![logo](img/logo.png)
 
-**movy.js** is an easy-to-use animation engine based on three.js and gsap.
+**movy.js** is an easy-to-use animation engine based on three.js and gsap, supporting rendering to a video file.
 
 ![gallery](img/gallery.png)
 
