@@ -402,8 +402,12 @@ function createFadeInAnimation(
 ) {
   const tl = gsap.timeline({ defaults: { duration, ease } });
 
-  tl.from(object3d, { visible: false }, "<");
-  tl.set(object3d, { visible: true }, "<");
+  tl.fromTo(
+    object3d,
+    { visible: false },
+    { visible: true, duration: 0.001 },
+    "<"
+  );
 
   const materials = getAllMaterials(object3d);
   for (const material of materials) {
@@ -1181,6 +1185,13 @@ class SceneObject {
       const tl = gsap.timeline({
         defaults: { duration, ease },
       });
+
+      tl.fromTo(
+        object3d,
+        { visible: false },
+        { visible: true, duration: 0.001 },
+        "<"
+      );
 
       // TODO: Clipping planes should be removed after animation.
       // Dynamically attaching or detaching clipping planes are not well
