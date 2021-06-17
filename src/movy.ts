@@ -817,6 +817,7 @@ function createArrowLine3d(
   }
 
   group.setRotationFromQuaternion(quaternion);
+  group.position.copy(center);
   scene.add(group);
   return group;
 }
