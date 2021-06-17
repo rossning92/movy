@@ -2264,12 +2264,6 @@ export function pause(duration: number) {
   });
 }
 
-export function addEmptyAnimation(t: number | string) {
-  commandQueue.push(() => {
-    mainTimeline.set({}, {}, t);
-  });
-}
-
 export function enableBloom() {
   bloomEnabled = true;
 }
