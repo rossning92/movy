@@ -783,28 +783,22 @@ function createArrowLine3d(
   const group = new THREE.Group();
 
   let length = halfLength * 2;
-  let offset = halfLength;
   const arrowLength = lineWidth * 6;
 
   {
     // Create line
     if (arrowEnd) {
       length -= arrowLength;
-      offset -= arrowLength * 0.5;
     }
 
-    // const geometry = new THREE.PlaneGeometry(lineWidth, length);
     const geometry = new THREE.CylinderGeometry(
       lineWidth / 2,
       lineWidth / 2,
       length,
       16
     );
-
-    const plane = new THREE.Mesh(geometry, material);
-    plane.translateY(offset);
-
-    group.add(plane);
+    const cylinder = new THREE.Mesh(geometry, material);
+    group.add(cylinder);
   }
 
   // Create arrows
@@ -818,15 +812,11 @@ function createArrowLine3d(
     const mesh = new THREE.Mesh(geometry, material);
     group.add(mesh);
 
-    if (i === 0) {
-      mesh.rotation.z = Math.PI;
-    } else {
-      mesh.translateY(halfLength * 2);
-    }
+    if (i === 0) mesh.rotation.z = Math.PI;
+    mesh.translateY(halfLength);
   }
 
   group.setRotationFromQuaternion(quaternion);
-  group.position.set(from.x, from.y, from.z);
   scene.add(group);
   return group;
 }
