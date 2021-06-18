@@ -830,18 +830,22 @@ async function loadTexture(url: string): Promise<THREE.Texture> {
   });
 }
 
-function createPolygonVertices({ sides = 3, radius = 0.5 } = {}) {
+export function getPolygonVertices({ sides = 3, radius = 0.5 } = {}) {
   const verts = [];
   for (let i = 0; i < sides; i++) {
-    verts.push(
-      new THREE.Vector3(
-        radius * Math.sin((2 * i * Math.PI) / sides),
-        radius * Math.cos((2 * i * Math.PI) / sides),
-        0
-      )
-    );
+    verts.push([
+      radius * Math.sin((2 * i * Math.PI) / sides),
+      radius * Math.cos((2 * i * Math.PI) / sides),
+      0,
+    ]);
   }
   return verts;
+}
+
+export function getTriangleVertices({
+  radius = 0.5,
+}: { radius?: number } = {}) {
+  return getPolygonVertices({ sides: 3, radius });
 }
 
 interface AnimationParameters {
@@ -1664,19 +1668,9 @@ export function addTriangle(params: AddTriangleParameters = {}): SceneObject {
     if (params.lighting === undefined) params.lighting = false;
     const material = createMaterial(params);
 
-    let verts: THREE.Vector3[] = [];
-    if (!params.verts) {
-      verts = createPolygonVertices();
-    } else {
-      for (let i = 0; i < 3; i++) {
-        verts.push(
-          new THREE.Vector3(
-            params.verts[i][0],
-            params.verts[i][1],
-            params.verts[i][2]
-          )
-        );
-      }
+    let verts = params.verts;
+    if (!verts) {
+      verts = getPolygonVertices();
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -1684,15 +1678,15 @@ export function addTriangle(params: AddTriangleParameters = {}): SceneObject {
       "position",
       new THREE.BufferAttribute(
         new Float32Array([
-          verts[0].x,
-          verts[0].y,
-          verts[0].z,
-          verts[1].x,
-          verts[1].y,
-          verts[1].z,
-          verts[2].x,
-          verts[2].y,
-          verts[2].z,
+          verts[0][0],
+          verts[0][1],
+          verts[0][2],
+          verts[1][0],
+          verts[1][1],
+          verts[1][2],
+          verts[2][0],
+          verts[2][1],
+          verts[2][2],
         ]),
         3
       )
@@ -1723,9 +1717,10 @@ export function addTriangleOutline(params: AddOutlineParameters = {}) {
     if (params.lighting === undefined) params.lighting = false;
     const material = createMaterial(params);
 
-    const vertices = createPolygonVertices();
+    const verts = getPolygonVertices();
+    const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
     obj._threeObject3d = createLine3d(material, {
-      points: vertices.concat(vertices[0]),
+      points: v3d.concat(v3d[0]),
       lineWidth,
       color: toThreeColor(color),
     });
@@ -1747,9 +1742,10 @@ export function addCircleOutline(params: AddOutlineParameters = {}) {
     if (params.lighting === undefined) params.lighting = false;
     const material = createMaterial(params);
 
-    const vertices = createPolygonVertices({ sides: 128 });
+    const verts = getPolygonVertices({ sides: 128 });
+    const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
     obj._threeObject3d = createLine3d(material, {
-      points: vertices.concat(vertices[0]),
+      points: v3d.concat(v3d[0]),
       lineWidth,
       color: toThreeColor(color),
     });
