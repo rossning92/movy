@@ -918,8 +918,463 @@ function createTransformAnimation(
 }
 
 class SceneObject {
-  _threeObject3d: THREE.Object3D;
-  _preScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
+  object3D: THREE.Object3D;
+  private preScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
+
+  protected addObjectToScene(obj: SceneObject, transform: Transform) {
+    if (transform.parent) {
+      transform.parent.object3D.add(obj.object3D);
+    } else {
+      if (this.object3D) {
+        this.object3D.add(obj.object3D);
+      } else {
+        if (currentLayer === "ui") {
+          uiScene.add(obj.object3D);
+        } else {
+          scene.add(obj.object3D);
+        }
+      }
+    }
+  }
+
+  private add3DGeometry(
+    params: AddObjectParameters = {},
+    geometry: THREE.BufferGeometry
+  ) {
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      if (params.lighting === undefined) params.lighting = true;
+      const material = createMaterial(params);
+
+      obj.object3D = new THREE.Mesh(geometry, material);
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  _addMesh(mesh: THREE.Mesh, params: AddObjectParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      addDefaultLights();
+
+      obj.object3D = mesh;
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addGroup(params: AddGroupParameters = {}) {
+    const obj = new GroupObject();
+
+    commandQueue.push(() => {
+      obj.object3D = new THREE.Group();
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  _add3DModel(url: string, params: AddObjectParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      addDefaultLights();
+
+      const object = await loadObj(url);
+
+      const aabb = getBoundingBox(object);
+      const center = new THREE.Vector3();
+      aabb.getCenter(center);
+      object.position.sub(center);
+
+      const group = new THREE.Group();
+      group.add(object);
+
+      if (params.wireframe) {
+        const materials = getAllMaterials(object);
+        for (const material of materials) {
+          (material as any).wireframe = true;
+        }
+      }
+
+      obj.object3D = group;
+      updateTransform(group, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addCircle(params: AddTextParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      const geometry = new THREE.CircleGeometry(0.5, 128);
+
+      obj.object3D = new THREE.Mesh(geometry, material);
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addArrow(params: AddArrowParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    const {
+      from = [0, 0, 0],
+      to = [1, 0, 0],
+      lineWidth = 0.05,
+      arrowStart = false,
+      arrowEnd = true,
+    } = params;
+
+    commandQueue.push(async () => {
+      addDefaultLights();
+
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      obj.object3D = createArrowLine3d(material, {
+        from: toThreeVector3(from),
+        to: toThreeVector3(to),
+        arrowStart,
+        arrowEnd,
+        lineWidth,
+      });
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addGrid(params: AddGridParameters = {}): SceneObject {
+    const { gridSize = 10, color = 0xc0c0c0 } = params;
+
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      obj.object3D = new THREE.GridHelper(
+        gridSize,
+        gridSize,
+        0x00ff00,
+        toThreeColor(color)
+      );
+      obj.object3D.rotation.x = Math.PI / 2;
+
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addImage(file: string, params: AddTextParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    const { color, ccw = false, opacity = 1.0 } = params;
+
+    commandQueue.push(async () => {
+      if (file.endsWith(".svg")) {
+        obj.object3D = await loadSVG(file, {
+          ccw,
+          color,
+        });
+      } else {
+        const texture = await loadTexture(file);
+        texture.encoding = THREE.sRGBEncoding;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity,
+        });
+
+        const geometry = new THREE.PlaneBufferGeometry(1, 1);
+        const mesh = new THREE.Mesh(geometry, material);
+
+        const aspect = texture.image.width / texture.image.height;
+        if (aspect > 1) {
+          mesh.scale.y /= aspect;
+        } else {
+          mesh.scale.x *= aspect;
+        }
+
+        obj.object3D = mesh;
+        obj.preScale = mesh.scale.clone();
+      }
+
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addLine(params: AddLineParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    const { from = [0, 0, 0], to = [1, 0, 0], color, lineWidth = 0.1 } = params;
+
+    commandQueue.push(async () => {
+      addDefaultLights();
+
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      obj.object3D = createArrowLine3d(material, {
+        from: toThreeVector3(from),
+        to: toThreeVector3(to),
+        arrowStart: false,
+        arrowEnd: false,
+        lineWidth,
+      });
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addPyramid(params: AddObjectParameters = {}): SceneObject {
+    const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, defaultSeg(params));
+    return this.add3DGeometry(params, geometry);
+  }
+
+  addCube(params: AddObjectParameters = {}): SceneObject {
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    return this.add3DGeometry(params, geometry);
+  }
+
+  addSphere(params: AddObjectParameters = {}): SceneObject {
+    const geometry = new THREE.SphereGeometry(
+      0.5,
+      defaultSeg(params),
+      defaultSeg(params)
+    );
+    return this.add3DGeometry(params, geometry);
+  }
+
+  addCone(params: AddObjectParameters = {}): SceneObject {
+    const geometry = new THREE.ConeGeometry(
+      0.5,
+      1.0,
+      defaultSeg(params),
+      defaultSeg(params)
+    );
+    return this.add3DGeometry(params, geometry);
+  }
+
+  addCylinder(params: AddObjectParameters = {}): SceneObject {
+    const geometry = new THREE.CylinderGeometry(
+      0.5,
+      0.5,
+      1,
+      defaultSeg(params)
+    );
+    return this.add3DGeometry(params, geometry);
+  }
+
+  addTorus(params: AddObjectParameters = {}): SceneObject {
+    const geometry = new THREE.TorusGeometry(
+      0.375,
+      0.125,
+      defaultSeg(params),
+      defaultSeg(params)
+    );
+    return this.add3DGeometry(params, geometry);
+  }
+
+  addCircleOutline(params: AddOutlineParameters = {}) {
+    const { lineWidth = 0.1, color } = params;
+
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      const verts = getPolygonVertices({ sides: 128 });
+      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
+      obj.object3D = createLine3d(material, {
+        points: v3d.concat(v3d[0]),
+        lineWidth,
+        color: toThreeColor(color),
+      });
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addRectOutline(params: AddOutlineParameters = {}) {
+    const { width = 1, height = 1, lineWidth = 0.1, color } = params;
+
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      const halfWidth = width * 0.5;
+      const halfHeight = height * 0.5;
+      obj.object3D = createLine3d(material, {
+        points: [
+          new THREE.Vector3(-halfWidth, -halfHeight, 0),
+          new THREE.Vector3(-halfWidth, halfHeight, 0),
+          new THREE.Vector3(halfWidth, halfHeight, 0),
+          new THREE.Vector3(halfWidth, -halfHeight, 0),
+          new THREE.Vector3(-halfWidth, -halfHeight, 0),
+        ],
+        lineWidth,
+        color: toThreeColor(color),
+      });
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addRect(params: AddRectParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      const { width = 1, height = 1 } = params;
+      const geometry = new THREE.PlaneGeometry(width, height);
+
+      obj.object3D = new THREE.Mesh(geometry, material);
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addTriangle(params: AddTriangleParameters = {}): SceneObject {
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      let verts = params.verts;
+      if (!verts) {
+        verts = getPolygonVertices();
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(
+          new Float32Array([
+            verts[0][0],
+            verts[0][1],
+            verts[0][2],
+            verts[1][0],
+            verts[1][1],
+            verts[1][2],
+            verts[2][0],
+            verts[2][1],
+            verts[2][2],
+          ]),
+          3
+        )
+      );
+      geometry.computeVertexNormals();
+
+      obj.object3D = new THREE.Mesh(geometry, material);
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addTriangleOutline(params: AddOutlineParameters = {}) {
+    const { lineWidth = 0.1, color } = params;
+
+    const obj = new SceneObject();
+
+    commandQueue.push(async () => {
+      if (params.lighting === undefined) params.lighting = false;
+      const material = createMaterial(params);
+
+      const verts = getPolygonVertices();
+      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
+      obj.object3D = createLine3d(material, {
+        points: v3d.concat(v3d[0]),
+        lineWidth,
+        color: toThreeColor(color),
+      });
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addText(text: string, params: AddTextParameters = {}): TextObject {
+    const { color, letterSpacing, font, fontSize = 1 } = params;
+
+    const obj = new TextObject();
+
+    commandQueue.push(async () => {
+      obj.object3D = new TextMesh({
+        text,
+        font,
+        color: toThreeColor(color),
+        fontSize: fontSize,
+        letterSpacing,
+      });
+
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
 
   moveTo(params: MoveObjectParameters = {}) {
     const { t, duration = 0.5, ease = "power2.out" } = params;
@@ -932,7 +1387,7 @@ class SceneObject {
         },
       });
 
-      createTransformAnimation(params, tl, this._threeObject3d, this._preScale);
+      createTransformAnimation(params, tl, this.object3D, this.preScale);
 
       mainTimeline.add(tl, t);
     });
@@ -943,7 +1398,7 @@ class SceneObject {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      const materials = getAllMaterials(this._threeObject3d);
+      const materials = getAllMaterials(this.object3D);
       for (const material of materials) {
         material.transparent = true;
         tl.from(
@@ -973,7 +1428,7 @@ class SceneObject {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      const materials = getAllMaterials(this._threeObject3d);
+      const materials = getAllMaterials(this.object3D);
       for (const material of materials) {
         tl.set(material, { transparent: true }, "<");
         tl.to(
@@ -986,8 +1441,8 @@ class SceneObject {
       }
 
       if (opacity == 0) {
-        tl.set(this._threeObject3d, { visible: true }, ">");
-        tl.set(this._threeObject3d, { visible: false }, ">");
+        tl.set(this.object3D, { visible: true }, ">");
+        tl.set(this.object3D, { visible: false }, ">");
       }
 
       mainTimeline.add(tl, t);
@@ -1002,7 +1457,7 @@ class SceneObject {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      const materials = getAllMaterials(this._threeObject3d);
+      const materials = getAllMaterials(this.object3D);
       for (const material of materials) {
         if ((material as any).color) {
           const destColor = toThreeColor(color);
@@ -1027,7 +1482,7 @@ class SceneObject {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      tl.to(this._threeObject3d.rotation, { y: duration }, "<");
+      tl.to(this.object3D.rotation, { y: duration }, "<");
 
       mainTimeline.add(tl, t);
     });
@@ -1047,7 +1502,7 @@ class SceneObject {
         defaults: { duration, ease, repeat: repeat ? repeat - 1 : undefined },
       });
 
-      tl.to(this._threeObject3d.rotation, { x, y }, "<");
+      tl.to(this.object3D.rotation, { x, y }, "<");
 
       mainTimeline.add(tl, t);
     });
@@ -1058,9 +1513,9 @@ class SceneObject {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      tl.from(this._threeObject3d.rotation, { z: Math.PI * 4, duration }, "<");
+      tl.from(this.object3D.rotation, { z: Math.PI * 4, duration }, "<");
       tl.from(
-        this._threeObject3d.scale,
+        this.object3D.scale,
         {
           x: Number.EPSILON,
           y: Number.EPSILON,
@@ -1078,7 +1533,7 @@ class SceneObject {
   grow({ t }: AnimationParameters = {}) {
     commandQueue.push(() => {
       mainTimeline.from(
-        this._threeObject3d.scale,
+        this.object3D.scale,
         { x: 0.01, y: 0.01, z: 0.01, ease: "expo.out" },
         t
       );
@@ -1091,20 +1546,20 @@ class SceneObject {
       const tl = gsap.timeline();
 
       tl.fromTo(
-        this._threeObject3d,
+        this.object3D,
         { visible: false },
         { visible: true, ease: "none", duration: 0.001 }
       );
 
       tl.from(
-        this._threeObject3d.scale,
+        this.object3D.scale,
         {
           x: 0.01,
           y: 0.01,
           z: 0.01,
           ease: "elastic.out(1, 0.75)",
           onStart: () => {
-            this._threeObject3d.visible = true;
+            this.object3D.visible = true;
           },
         },
         "<"
@@ -1118,7 +1573,7 @@ class SceneObject {
   grow3({ t }: AnimationParameters = {}) {
     commandQueue.push(() => {
       mainTimeline.from(
-        this._threeObject3d.scale,
+        this.object3D.scale,
         {
           x: 0.01,
           y: 0.01,
@@ -1139,7 +1594,7 @@ class SceneObject {
     commandQueue.push(() => {
       const tl = gsap.timeline();
 
-      this._threeObject3d.children.forEach((x) => {
+      this.object3D.children.forEach((x) => {
         tl.fromTo(
           x.position,
           {
@@ -1168,7 +1623,7 @@ class SceneObject {
     ease = "expo.out",
   }: RevealParameters = {}) {
     commandQueue.push(() => {
-      const object3d = this._threeObject3d;
+      const object3d = this.object3D;
 
       const clippingPlanes: THREE.Plane[] = [];
       const empty = Object.freeze([]);
@@ -1237,7 +1692,7 @@ class SceneObject {
     ease = "power.out",
   }: WipeInParameters = {}) {
     commandQueue.push(() => {
-      const boundingBox = getBoundingBox(this._threeObject3d);
+      const boundingBox = getBoundingBox(this.object3D);
 
       const tl = gsap.timeline({
         defaults: { duration, ease },
@@ -1273,7 +1728,7 @@ class SceneObject {
         );
       }
 
-      const materials = getAllMaterials(this._threeObject3d);
+      const materials = getAllMaterials(this.object3D);
       for (const material of materials) {
         material.clippingPlanes = [clipPlane];
       }
@@ -1294,7 +1749,7 @@ class SceneObject {
     }
 
     commandQueue.push(() => {
-      const object3d = this._threeObject3d;
+      const object3d = this.object3D;
 
       const tl = gsap.timeline({ defaults: { ease: "none" } });
       tl.set(object3d, { x: "+=0" }); // this creates a full _gsTransform on object3d
@@ -1332,7 +1787,7 @@ class SceneObject {
   show({ duration = 0.001, t }: Shake2DParameters = {}) {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { ease: "none", duration } });
-      tl.fromTo(this._threeObject3d, { visible: false }, { visible: true });
+      tl.fromTo(this.object3D, { visible: false }, { visible: true });
 
       mainTimeline.add(tl, t);
     });
@@ -1368,7 +1823,7 @@ class GroupObject extends SceneObject {
     commandQueue.push(() => {
       let tl: gsap.core.Timeline;
 
-      tl = createExplosionAnimation(this._threeObject3d, {
+      tl = createExplosionAnimation(this.object3D, {
         ease,
         duration,
         minRotation,
@@ -1395,7 +1850,7 @@ class GroupObject extends SceneObject {
       });
 
       tl.to(
-        this._threeObject3d.children.map((x) => x.position),
+        this.object3D.children.map((x) => x.position),
         {
           x: 0,
           y: 0,
@@ -1403,7 +1858,7 @@ class GroupObject extends SceneObject {
         0
       );
       tl.to(
-        this._threeObject3d.children.map((x) => x.scale),
+        this.object3D.children.map((x) => x.scale),
         {
           x: 0.001,
           y: 0.001,
@@ -1411,7 +1866,7 @@ class GroupObject extends SceneObject {
         0
       );
       tl.to(
-        this._threeObject3d.children.map((x) => x.rotation),
+        this.object3D.children.map((x) => x.rotation),
         {
           x: 0,
           y: 0,
@@ -1433,7 +1888,7 @@ class GroupObject extends SceneObject {
         },
       });
 
-      this._threeObject3d.children.forEach((child) => {
+      this.object3D.children.forEach((child) => {
         tl.from(child.rotation, { x: -Math.PI / 2 }, "<0.03");
         tl.from(
           child.position,
@@ -1500,7 +1955,7 @@ class TextObject extends GroupObject {
     }: ChangeTextParameters = {}
   ) {
     commandQueue.push(() => {
-      const textMesh = this._threeObject3d as TextMesh;
+      const textMesh = this.object3D as TextMesh;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const data = { val: from };
@@ -1519,7 +1974,7 @@ class TextObject extends GroupObject {
 
   typeText({ t, duration = 1 }: ChangeTextParameters = {}) {
     commandQueue.push(() => {
-      const textMesh = this._threeObject3d as TextMesh;
+      const textMesh = this.object3D as TextMesh;
       const interval = duration / textMesh.children.length;
 
       const tl = gsap.timeline({
@@ -1541,166 +1996,17 @@ interface AddTextParameters extends Transform, BasicMaterial {
   fontSize?: number;
   letterSpacing?: number;
 }
-export function addText(
-  text: string,
-  params: AddTextParameters = {}
-): TextObject {
-  const { color, letterSpacing, font, fontSize = 1 } = params;
-
-  const obj = new TextObject();
-
-  commandQueue.push(async () => {
-    obj._threeObject3d = new TextMesh({
-      text,
-      font,
-      color: toThreeColor(color),
-      fontSize: fontSize,
-      letterSpacing,
-    });
-
-    updateTransform(obj._threeObject3d, params);
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
-
 interface AddTextParameters extends Transform, BasicMaterial {
   ccw?: boolean;
-}
-export function addImage(
-  file: string,
-  params: AddTextParameters = {}
-): SceneObject {
-  const obj = new SceneObject();
-
-  const { color, ccw = false, opacity = 1.0 } = params;
-
-  commandQueue.push(async () => {
-    if (file.endsWith(".svg")) {
-      obj._threeObject3d = await loadSVG(file, {
-        ccw,
-        color,
-      });
-    } else {
-      const texture = await loadTexture(file);
-      texture.encoding = THREE.sRGBEncoding;
-      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity,
-      });
-
-      const geometry = new THREE.PlaneBufferGeometry(1, 1);
-      const mesh = new THREE.Mesh(geometry, material);
-
-      const aspect = texture.image.width / texture.image.height;
-      if (aspect > 1) {
-        mesh.scale.y /= aspect;
-      } else {
-        mesh.scale.x *= aspect;
-      }
-
-      obj._threeObject3d = mesh;
-      obj._preScale = mesh.scale.clone();
-    }
-
-    updateTransform(obj._threeObject3d, params);
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
 }
 
 interface AddRectParameters extends Transform, BasicMaterial {
   width?: number;
   height?: number;
 }
-export function addRect(params: AddRectParameters = {}): SceneObject {
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    const { width = 1, height = 1 } = params;
-    const geometry = new THREE.PlaneGeometry(width, height);
-
-    obj._threeObject3d = new THREE.Mesh(geometry, material);
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
-
-export function addCircle(params: AddTextParameters = {}): SceneObject {
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    const geometry = new THREE.CircleGeometry(0.5, 128);
-
-    obj._threeObject3d = new THREE.Mesh(geometry, material);
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
 
 interface AddTriangleParameters extends Transform, BasicMaterial {
   verts?: number[][];
-}
-export function addTriangle(params: AddTriangleParameters = {}): SceneObject {
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    let verts = params.verts;
-    if (!verts) {
-      verts = getPolygonVertices();
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(
-        new Float32Array([
-          verts[0][0],
-          verts[0][1],
-          verts[0][2],
-          verts[1][0],
-          verts[1][1],
-          verts[1][2],
-          verts[2][0],
-          verts[2][1],
-          verts[2][2],
-        ]),
-        3
-      )
-    );
-    geometry.computeVertexNormals();
-
-    obj._threeObject3d = new THREE.Mesh(geometry, material);
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
 }
 
 interface AddOutlineParameters extends Transform, BasicMaterial {
@@ -1708,172 +2014,9 @@ interface AddOutlineParameters extends Transform, BasicMaterial {
   width?: number;
   height?: number;
 }
-export function addTriangleOutline(params: AddOutlineParameters = {}) {
-  const { lineWidth = 0.1, color } = params;
-
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    const verts = getPolygonVertices();
-    const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
-    obj._threeObject3d = createLine3d(material, {
-      points: v3d.concat(v3d[0]),
-      lineWidth,
-      color: toThreeColor(color),
-    });
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
-
-export function addCircleOutline(params: AddOutlineParameters = {}) {
-  const { lineWidth = 0.1, color } = params;
-
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    const verts = getPolygonVertices({ sides: 128 });
-    const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
-    obj._threeObject3d = createLine3d(material, {
-      points: v3d.concat(v3d[0]),
-      lineWidth,
-      color: toThreeColor(color),
-    });
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
-
-export function addRectOutline(params: AddOutlineParameters = {}) {
-  const { width = 1, height = 1, lineWidth = 0.1, color } = params;
-
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    const halfWidth = width * 0.5;
-    const halfHeight = height * 0.5;
-    obj._threeObject3d = createLine3d(material, {
-      points: [
-        new THREE.Vector3(-halfWidth, -halfHeight, 0),
-        new THREE.Vector3(-halfWidth, halfHeight, 0),
-        new THREE.Vector3(halfWidth, halfHeight, 0),
-        new THREE.Vector3(halfWidth, -halfHeight, 0),
-        new THREE.Vector3(-halfWidth, -halfHeight, 0),
-      ],
-      lineWidth,
-      color: toThreeColor(color),
-    });
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
-
-function add3DGeometry(
-  params: AddObjectParameters = {},
-  geometry: THREE.BufferGeometry
-) {
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    if (params.lighting === undefined) params.lighting = true;
-    const material = createMaterial(params);
-
-    obj._threeObject3d = new THREE.Mesh(geometry, material);
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
 
 function defaultSeg({ wireframe }: AddObjectParameters) {
   return wireframe ? 16 : 64;
-}
-
-export function addPyramid(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, defaultSeg(params));
-  return add3DGeometry(params, geometry);
-}
-
-export function addCube(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  return add3DGeometry(params, geometry);
-}
-
-export function addSphere(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.SphereGeometry(
-    0.5,
-    defaultSeg(params),
-    defaultSeg(params)
-  );
-  return add3DGeometry(params, geometry);
-}
-
-export function addCone(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.ConeGeometry(
-    0.5,
-    1.0,
-    defaultSeg(params),
-    defaultSeg(params)
-  );
-  return add3DGeometry(params, geometry);
-}
-
-export function addCylinder(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, defaultSeg(params));
-  return add3DGeometry(params, geometry);
-}
-
-export function addTorus(params: AddObjectParameters = {}): SceneObject {
-  const geometry = new THREE.TorusGeometry(
-    0.375,
-    0.125,
-    defaultSeg(params),
-    defaultSeg(params)
-  );
-  return add3DGeometry(params, geometry);
-}
-
-export function _addMesh(
-  mesh: THREE.Mesh,
-  params: AddObjectParameters = {}
-): SceneObject {
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    addDefaultLights();
-
-    obj._threeObject3d = mesh;
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
 }
 
 export function _addPanoramicSkybox(file: string) {
@@ -1890,7 +2033,7 @@ export function _addPanoramicSkybox(file: string) {
     const skySphere = new THREE.Mesh(geometry, material);
     scene.add(skySphere);
 
-    obj._threeObject3d = skySphere;
+    obj.object3D = skySphere;
   });
 
   return obj;
@@ -1901,94 +2044,15 @@ interface AddLineParameters extends Transform, BasicMaterial {
   to?: { x?: number; y?: number; z?: number } | number[];
   lineWidth?: number;
 }
-export function addLine(params: AddLineParameters = {}): SceneObject {
-  const obj = new SceneObject();
-
-  const { from = [0, 0, 0], to = [1, 0, 0], color, lineWidth = 0.1 } = params;
-
-  commandQueue.push(async () => {
-    addDefaultLights();
-
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    obj._threeObject3d = createArrowLine3d(material, {
-      from: toThreeVector3(from),
-      to: toThreeVector3(to),
-      arrowStart: false,
-      arrowEnd: false,
-      lineWidth,
-    });
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
 
 interface AddArrowParameters extends AddLineParameters {
   arrowStart?: boolean;
   arrowEnd?: boolean;
 }
-export function addArrow(params: AddArrowParameters = {}): SceneObject {
-  const obj = new SceneObject();
-
-  const {
-    from = [0, 0, 0],
-    to = [1, 0, 0],
-    lineWidth = 0.05,
-    arrowStart = false,
-    arrowEnd = true,
-  } = params;
-
-  commandQueue.push(async () => {
-    addDefaultLights();
-
-    if (params.lighting === undefined) params.lighting = false;
-    const material = createMaterial(params);
-
-    obj._threeObject3d = createArrowLine3d(material, {
-      from: toThreeVector3(from),
-      to: toThreeVector3(to),
-      arrowStart,
-      arrowEnd,
-      lineWidth,
-    });
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
 
 interface AddGridParameters extends Transform, BasicMaterial {
   gridSize?: number;
 }
-export function addGrid(params: AddGridParameters = {}): SceneObject {
-  const { gridSize = 10, color = 0xc0c0c0 } = params;
-
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    obj._threeObject3d = new THREE.GridHelper(
-      gridSize,
-      gridSize,
-      0x00ff00,
-      toThreeColor(color)
-    );
-    obj._threeObject3d.rotation.x = Math.PI / 2;
-
-    updateTransform(obj._threeObject3d, params);
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
-
 function toThreeVector3(v: { x?: number; y?: number; z?: number } | number[]) {
   if (Array.isArray(v)) {
     if (v.length == 1) {
@@ -2108,18 +2172,6 @@ function updateTransform(mesh: THREE.Object3D, transform: Transform) {
   if (transform.rz !== undefined) mesh.rotation.z = transform.rz;
 }
 
-function addObjectToScene(obj: SceneObject, transform: Transform) {
-  if (transform.parent !== undefined) {
-    transform.parent._threeObject3d.add(obj._threeObject3d);
-  } else {
-    if (currentLayer === "ui") {
-      uiScene.add(obj._threeObject3d);
-    } else {
-      scene.add(obj._threeObject3d);
-    }
-  }
-}
-
 export function _setUILayer() {
   commandQueue.push(() => {
     currentLayer = "ui";
@@ -2127,19 +2179,6 @@ export function _setUILayer() {
 }
 
 interface AddGroupParameters extends Transform {}
-export function addGroup(params: AddGroupParameters = {}) {
-  const obj = new GroupObject();
-
-  commandQueue.push(() => {
-    obj._threeObject3d = new THREE.Group();
-
-    updateTransform(obj._threeObject3d, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
 
 function getBoundingBox(object3D: THREE.Object3D): THREE.Box3 {
   // Force update the world matrix so that we get the correct scale.
@@ -2301,41 +2340,6 @@ async function loadObj(url: string): Promise<THREE.Group> {
   });
 }
 
-export function _add3DModel(
-  url: string,
-  params: AddObjectParameters = {}
-): SceneObject {
-  const obj = new SceneObject();
-
-  commandQueue.push(async () => {
-    addDefaultLights();
-
-    const object = await loadObj(url);
-
-    const aabb = getBoundingBox(object);
-    const center = new THREE.Vector3();
-    aabb.getCenter(center);
-    object.position.sub(center);
-
-    const group = new THREE.Group();
-    group.add(object);
-
-    if (params.wireframe) {
-      const materials = getAllMaterials(object);
-      for (const material of materials) {
-        (material as any).wireframe = true;
-      }
-    }
-
-    obj._threeObject3d = group;
-    updateTransform(group, params);
-
-    addObjectToScene(obj, params);
-  });
-
-  return obj;
-}
-
 export function _animateTo(
   targets: gsap.TweenTarget,
   vars: gsap.TweenVars,
@@ -2344,4 +2348,102 @@ export function _animateTo(
   commandQueue.push(() => {
     mainTimeline.to(targets, vars, t);
   });
+}
+
+const root = new GroupObject();
+
+export function addCircle(params: AddTextParameters = {}): SceneObject {
+  return root.addCircle(params);
+}
+
+export function addCircleOutline(
+  params: AddOutlineParameters = {}
+): SceneObject {
+  return root.addCircleOutline(params);
+}
+
+export function addCone(params: AddObjectParameters = {}): SceneObject {
+  return root.addCone(params);
+}
+
+export function addCube(params: AddObjectParameters = {}): SceneObject {
+  return root.addCube(params);
+}
+
+export function addCylinder(params: AddObjectParameters = {}): SceneObject {
+  return root.addCylinder(params);
+}
+
+export function addGrid(params: AddObjectParameters = {}): SceneObject {
+  return root.addGrid(params);
+}
+
+export function addGroup(params: AddGroupParameters = {}): SceneObject {
+  return root.addGroup(params);
+}
+
+export function addImage(
+  file: string,
+  params: AddTextParameters = {}
+): SceneObject {
+  return root.addImage(file, params);
+}
+
+export function addLine(params: AddLineParameters = {}): SceneObject {
+  return root.addLine(params);
+}
+
+export function addPyramid(params: AddObjectParameters = {}): SceneObject {
+  return root.addPyramid(params);
+}
+
+export function addRect(params: AddObjectParameters = {}): SceneObject {
+  return root.addRect(params);
+}
+
+export function addRectOutline(params: AddObjectParameters = {}): SceneObject {
+  return root.addRectOutline(params);
+}
+
+export function addSphere(params: AddObjectParameters = {}): SceneObject {
+  return root.addSphere(params);
+}
+
+export function addText(
+  text: string,
+  params: AddTextParameters = {}
+): SceneObject {
+  return root.addText(text, params);
+}
+
+export function addTorus(params: AddObjectParameters = {}): SceneObject {
+  return root.addTorus(params);
+}
+
+export function addTriangle(params: AddObjectParameters = {}): SceneObject {
+  return root.addTriangle(params);
+}
+
+export function addTriangleOutline(
+  params: AddObjectParameters = {}
+): SceneObject {
+  return root.addTriangleOutline(params);
+}
+
+export function _addMesh(
+  mesh: THREE.Mesh,
+  params: AddObjectParameters = {}
+): SceneObject {
+  return root._addMesh(mesh, params);
+}
+
+export function _add3DModel(
+  url: string,
+  params: AddObjectParameters = {}
+): SceneObject {
+  return root._add3DModel(url, params);
+}
+
+export function addArrow(params: AddArrowParameters = {}): SceneObject {
+  return root.addArrow(params);
 }
