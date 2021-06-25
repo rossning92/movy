@@ -1147,7 +1147,7 @@ class SceneObject {
   addLine(params: AddLineParameters = {}): SceneObject {
     const obj = new SceneObject();
 
-    const { from = [0, 0, 0], to = [1, 0, 0], color, lineWidth = 0.1 } = params;
+    const { from = [0, 0, 0], to = [1, 0, 0], lineWidth = 0.05 } = params;
 
     commandQueue.push(async () => {
       addDefaultLights();
