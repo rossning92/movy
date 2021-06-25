@@ -1095,7 +1095,7 @@ class SceneObject {
   addImage(file: string, params: AddTextParameters = {}): SceneObject {
     const obj = new SceneObject();
 
-    const { color, ccw = false, opacity = 1.0 } = params;
+    const { color = "white", ccw = false, opacity = 1.0 } = params;
 
     commandQueue.push(async () => {
       if (file.endsWith(".svg")) {
@@ -1113,6 +1113,7 @@ class SceneObject {
           side: THREE.DoubleSide,
           transparent: true,
           opacity,
+          color: toThreeColor(color),
         });
 
         const geometry = new THREE.PlaneBufferGeometry(1, 1);
