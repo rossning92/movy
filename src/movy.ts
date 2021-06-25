@@ -784,11 +784,17 @@ function createArrowLine3d(
 
   let length = halfLength * 2;
   const arrowLength = lineWidth * 6;
+  let offset = 0;
 
   {
     // Create line
     if (arrowEnd) {
       length -= arrowLength;
+      offset -= 0.5 * arrowLength;
+    }
+    if (arrowStart) {
+      length -= arrowLength;
+      offset += 0.5 * arrowLength;
     }
 
     const geometry = new THREE.CylinderGeometry(
@@ -798,6 +804,7 @@ function createArrowLine3d(
       16
     );
     const cylinder = new THREE.Mesh(geometry, material);
+    cylinder.translateY(offset);
     group.add(cylinder);
   }
 
