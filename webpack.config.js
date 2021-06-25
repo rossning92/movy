@@ -74,7 +74,7 @@ module.exports = ({ file, open = true } = {}) => {
         {
           test: /\.tsx?$/,
           use: {
-            loader: path.resolve(__dirname, "node_modules/ts-loader"),
+            loader: "ts-loader",
             options: {
               configFile: path.resolve(__dirname, "tsconfig.json"),
               transpileOnly: true,
