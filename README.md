@@ -8,44 +8,27 @@
 
 > Make sure you have [node.js (version >= 12)](https://nodejs.org/en/download/) installed on your computer.
 
-Install **movy.js** by:
-
-```sh
-npm i -g movy
-```
-
-Run **movy.js** by the following command:
-
-```sh
-movy
-```
-
-This will show a list of examples in the `movy/examples` folder.
+1. Install **movy.js** by: `npm i -g movy`
+2. Run `movy` to open a list of examples (example animations are located in the `movy/examples` folder):
 
 ![examples](img/examples.png)
 
-To create your own animation, start a new javascript file with the following content:
+3. To create a new animation, simply run `movy hello.js`. It will automatically create a new animation file `hello.js` (if the file does not exist):
 
 ```js
 import * as mo from "movy";
 
-mo.addText("movy.js is simple!", {
-  scale: 1,
+mo.addText("Hello, Movy!", {
+  scale: 0.8,
   color: "yellow",
-}).reveal();
+}).grow();
 
-mo.run(); // Must call this at the end!!
-```
-
-Save the file as `hello.js`. Run the following command to open the animation:
-
-```sh
-movy hello.js
+mo.run(); // must call this at the end!
 ```
 
 > Note: Modifying the source code will automatically refresh the browser.
 
-Click "Render" button to render the animation to a video file: `xxx.webm`
+4. Click "Render" button to render the animation to a video file: `xxx.webm`
 
 ![](img/click-render-button.png)
 

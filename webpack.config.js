@@ -63,6 +63,7 @@ module.exports = ({ file, open = true } = {}) => {
     mode: "development",
     resolve: {
       modules: [
+        "./",
         path.resolve(__dirname, "src"),
         path.resolve(__dirname, "node_modules"),
         "node_modules",
