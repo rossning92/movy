@@ -17,17 +17,15 @@ import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { WEBGL } from "three/examples/jsm/WebGL.js";
 import TextMesh from "./objects/TextMesh";
-import { GlitchPass } from "./utils/GlitchPass";
-import * as mediaRecorder from "./utils/MediaRecorder";
 import * as palettes from "./palettes/flatuicolors.json";
+import { GlitchPass } from "./utils/GlitchPass";
+import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 
 declare class CCapture {
   constructor(params: any);
 }
 
 gsap.ticker.remove(gsap.updateRoot);
-
-const USE_MEDIA_RECORDER = false;
 
 let glitchPassEnabled = false;
 let renderTargetWidth = 1920;
@@ -58,6 +56,8 @@ let fxaaEnabled: boolean = false;
 let lastTimestamp: number;
 let timeElapsed = 0;
 
+let recorder: WebmMediaRecorder;
+
 globalTimeline.add(mainTimeline, "0");
 
 let options = {
@@ -70,7 +70,7 @@ let options = {
 };
 
 const gui = new dat.GUI();
-gui.add(options, "format", ["webm", "png"]);
+gui.add(options, "format", ["webm", "webm-fast", "png"]);
 gui.add(options, "framerate", [10, 25, 30, 60, 120]);
 gui.add(options, "render");
 
@@ -91,8 +91,11 @@ function startRender({ resetTiming = true, name = document.title } = {}) {
     lastTimestamp = undefined;
   }
 
-  if (USE_MEDIA_RECORDER) {
-    mediaRecorder.start();
+  if (options.format == "webm-fast") {
+    if (!recorder) {
+      recorder = new WebmMediaRecorder({ name, framerate: options.framerate });
+    }
+    recorder.start();
   } else {
     capturer = new CCapture({
       verbose: true,
@@ -119,8 +122,10 @@ function startRender({ resetTiming = true, name = document.title } = {}) {
 };
 
 function stopRender() {
-  if (USE_MEDIA_RECORDER) {
-    mediaRecorder.stop();
+  if (options.format == "webm-fast") {
+    if (recorder) {
+      recorder.stop();
+    }
   } else {
     if (capturer) {
       (capturer as any).stop();
