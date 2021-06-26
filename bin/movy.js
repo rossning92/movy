@@ -25,9 +25,10 @@ mo.run();`
 }
 
 // Create jsconfig.json for vscode IntelliSense.
-if (!fs.existsSync("jsconfig.json")) {
+const jsconfig = path.resolve(path.dirname(file), "jsconfig.json");
+if (!fs.existsSync(jsconfig)) {
   fs.writeFileSync(
-    "jsconfig.json",
+    jsconfig,
     JSON.stringify(
       {
         compilerOptions: {
