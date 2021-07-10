@@ -9,11 +9,12 @@ const fs = require("fs");
 
 const file = argv["_"].length > 0 ? path.resolve(argv["_"][0]) : undefined;
 
-// Automatically create a boilerplate file if not exists.
-if (!fs.existsSync(file)) {
-  fs.writeFileSync(
-    file,
-    `import * as mo from "movy";
+if (file) {
+  // Automatically create a boilerplate file if not exists.
+  if (!fs.existsSync(file)) {
+    fs.writeFileSync(
+      file,
+      `import * as mo from "movy";
   
 mo.addText("Hello, Movy!", {
   scale: 0.8,
@@ -21,28 +22,29 @@ mo.addText("Hello, Movy!", {
 }).grow();
 
 mo.run();`
-  );
-}
+    );
+  }
 
-// Create jsconfig.json for vscode IntelliSense.
-const jsconfig = path.resolve(path.dirname(file), "jsconfig.json");
-if (!fs.existsSync(jsconfig)) {
-  fs.writeFileSync(
-    jsconfig,
-    JSON.stringify(
-      {
-        compilerOptions: {
-          module: "commonjs",
-          target: "es2016",
-          jsx: "preserve",
-          baseUrl: path.resolve(__dirname, "..", "src"),
+  // Create jsconfig.json for vscode IntelliSense.
+  const jsconfig = path.resolve(path.dirname(file), "jsconfig.json");
+  if (!fs.existsSync(jsconfig)) {
+    fs.writeFileSync(
+      jsconfig,
+      JSON.stringify(
+        {
+          compilerOptions: {
+            module: "commonjs",
+            target: "es2016",
+            jsx: "preserve",
+            baseUrl: path.resolve(__dirname, "..", "src"),
+          },
+          exclude: ["node_modules", "**/node_modules/*"],
         },
-        exclude: ["node_modules", "**/node_modules/*"],
-      },
-      null,
-      2
-    )
-  );
+        null,
+        2
+      )
+    );
+  }
 }
 
 const port = argv["port"] ? Number.parseInt(argv["port"]) : undefined;
