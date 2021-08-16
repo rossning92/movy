@@ -2391,7 +2391,7 @@ export function addGrid(params: AddObjectParameters = {}): SceneObject {
   return root.addGrid(params);
 }
 
-export function addGroup(params: AddGroupParameters = {}): SceneObject {
+export function addGroup(params: AddGroupParameters = {}): GroupObject {
   return root.addGroup(params);
 }
 
