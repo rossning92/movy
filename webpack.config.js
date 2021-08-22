@@ -27,6 +27,7 @@ module.exports = ({ file, open = true } = {}) => {
     path.resolve(__dirname, "public"),
     path.resolve(__dirname, "examples"),
     path.resolve(__dirname, "node_modules/ccapture.js/build"),
+    path.resolve(__dirname, "node_modules/mathjax/es5"),
   ];
 
   if (file) {

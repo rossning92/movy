@@ -16,6 +16,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { WEBGL } from "three/examples/jsm/WebGL.js";
+import { tex2canvas } from "utils/tex";
 import TextMesh from "./objects/TextMesh";
 import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
@@ -1388,6 +1389,37 @@ class SceneObject {
     return obj;
   }
 
+  addTex(tex: string, params: AddTextParameters = {}): TextObject {
+    const obj = new TextObject();
+
+    commandQueue.push(async () => {
+      const { color } = params;
+      const canvas = await tex2canvas(tex, {
+        color: "#" + toThreeColor(color as string).getHexString(),
+      });
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+        transparent: true,
+      });
+      const geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.scale.x = texture.image.width / 120;
+      mesh.scale.y = texture.image.height / 120;
+
+      const parent = new THREE.Group();
+      parent.add(mesh);
+
+      obj.object3D = parent;
+
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
   moveTo(params: MoveObjectParameters = {}) {
     const { t, duration = 0.5, ease = "power2.out" } = params;
 
@@ -2426,6 +2458,13 @@ export function addText(
   params: AddTextParameters = {}
 ): TextObject {
   return root.addText(text, params);
+}
+
+export function addTex(
+  tex: string,
+  params: AddTextParameters = {}
+): SceneObject {
+  return root.addTex(tex, params);
 }
 
 export function addTorus(params: AddObjectParameters = {}): SceneObject {

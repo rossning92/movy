@@ -14,6 +14,7 @@
     "dat.gui": "^0.7.6",
     "gsap": "^3.6.1",
     "html-webpack-plugin": "^5.3.1",
+    "mathjax": "3",
     "minimist": "^1.2.5",
     "seedrandom": "^3.0.5",
     "three": "^0.128.0",
