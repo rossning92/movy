@@ -2316,9 +2316,13 @@ export function fadeOutAll({ t }: AnimationParameters = {}) {
   });
 }
 
-export function pause(duration: number) {
+export function pause(duration: number | string) {
   commandQueue.push(() => {
-    mainTimeline.set({}, {}, "+=" + duration.toString());
+    mainTimeline.set(
+      {},
+      {},
+      typeof duration === "number" ? "+=" + duration.toString() : duration
+    );
   });
 }
 
