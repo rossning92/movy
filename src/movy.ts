@@ -17,7 +17,6 @@ import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { WEBGL } from "three/examples/jsm/WebGL.js";
 import TextMesh from "./objects/TextMesh";
-import * as palettes from "./palettes/flatuicolors.json";
 import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 
@@ -1923,10 +1922,6 @@ class GroupObject extends SceneObject {
 }
 
 function toThreeColor(color?: string | number): THREE.Color {
-  if (color in palettes) {
-    color = palettes[color as keyof typeof palettes];
-  }
-
   return color === undefined
     ? new THREE.Color(0xffffff)
     : new THREE.Color(color).convertSRGBToLinear();
