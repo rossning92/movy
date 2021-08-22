@@ -1,22 +1,21 @@
 import * as mo from "movy";
 
 const TEXT1_POS = [-1, 0];
-const TEXT2_POS = [3, 0.15];
-const DOT_POS = [2, -0.6];
+const TEXT2_POS = [3, 0];
+const DOT_POS = [1.85, -0.35];
 
 mo.enableBloom();
 
 const g = mo.addGroup();
-const r1 = mo.addCircle({
+const r1 = g.addCircle({
   scale: 0.1,
   position: [-10, -5],
-  parent: g,
+
   color: "#ffff00",
 });
-const r2 = mo.addCircle({
+const r2 = g.addCircle({
   scale: 0.1,
   position: [10, 5],
-  parent: g,
 });
 
 r1.moveTo({
@@ -34,7 +33,7 @@ r2.moveTo({
 
 g.shake2D({ t: 0.6 });
 
-addParticle({ parent: g, t: 0.5 });
+addParticle({ t: 0.5 });
 
 r1.changeOpacity(0.3, { t: 2 });
 r2.fadeOut({ t: 2 });
@@ -63,7 +62,7 @@ mo.addText("js", {
 });
 
 r1.moveTo({ position: DOT_POS, scale: 0.3 });
-r1.changeOpacity({ t: "<", opacity: 1 });
+r1.changeOpacity(1, { t: "<" });
 
 mo.addGlitch({ t: 3.2 });
 mo.addGlitch({ t: 3.7 });
@@ -73,12 +72,12 @@ mo.pause(1);
 mo.run();
 
 function addParticle({ position, t }) {
-  const particleGroup = mo.addGroup({ scale: 0.5, position });
+  const particles = mo.addGroup({ scale: 0.5, position });
   for (let i = 0; i < 3; i++) {
-    mo.addRectOutline({ parent: particleGroup, opacity: 0.7, scale: 0.8 });
-    mo.addTriangleOutline({ parent: particleGroup, opacity: 0.7, scale: 0.8 });
-    mo.addCircleOutline({ parent: particleGroup, opacity: 0.7, scale: 0.8 });
+    particles.addRectOutline({ opacity: 0.7, scale: 0.8 });
+    particles.addTriangleOutline({ opacity: 0.7, scale: 0.8 });
+    particles.addCircleOutline({ opacity: 0.7, scale: 0.8 });
   }
-  particleGroup.explode2D({ t });
-  particleGroup.fadeOut({ t: "1.5", duration: 1 });
+  particles.explode2D({ t });
+  particles.fadeOut({ t: "1.5", duration: 1 });
 }
