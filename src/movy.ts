@@ -2425,7 +2425,7 @@ export function addSphere(params: AddObjectParameters = {}): SceneObject {
 export function addText(
   text: string,
   params: AddTextParameters = {}
-): SceneObject {
+): TextObject {
   return root.addText(text, params);
 }
 
