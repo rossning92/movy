@@ -1576,11 +1576,22 @@ class SceneObject {
 
   grow({ t }: AnimationParameters = {}) {
     commandQueue.push(() => {
-      mainTimeline.from(
+      const tl = gsap.timeline();
+
+      tl.fromTo(
+        this.object3D,
+        { visible: false },
+        { visible: true, duration: 0.001 },
+        "<"
+      );
+
+      tl.from(
         this.object3D.scale,
         { x: 0.01, y: 0.01, z: 0.01, ease: "expo.out" },
-        t
+        "<"
       );
+
+      mainTimeline.add(tl, t);
     });
     return this;
   }
