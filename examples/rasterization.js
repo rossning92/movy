@@ -27,8 +27,6 @@ for (let i = GRID_SIZE - 1; i >= 0; i--) {
   }
 }
 
-mo.run();
-
 function generateTriangleTexture() {
   const canvas = document.createElement("canvas");
   canvas.width = GRID_SIZE;

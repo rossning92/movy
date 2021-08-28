@@ -19,5 +19,3 @@ mo.addImage("images/black-moon.png", { x: -3, y: 2, scale: 2 }).moveTo({
 });
 
 mo.pause(0.5);
-
-mo.run();

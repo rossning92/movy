@@ -19,5 +19,3 @@ mo.addRect({ sx: 114, sy: 8.6, color: "#44abda", parent: g }).wipeIn({
 });
 
 mo.addText(text, { scale: 4, y: 0.8 });
-
-mo.run();

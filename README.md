@@ -22,8 +22,6 @@ mo.addText("Hello, Movy!", {
   scale: 0.8,
   color: "yellow",
 }).grow();
-
-mo.run(); // must call this at the end!
 ```
 
 > Note: Modifying the source code will automatically refresh the browser.

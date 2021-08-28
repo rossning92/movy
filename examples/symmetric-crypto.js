@@ -88,5 +88,3 @@ for (let n = 2; n <= N; n++) {
 
   mo.pause(1);
 }
-
-mo.run();

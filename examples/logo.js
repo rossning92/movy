@@ -112,5 +112,3 @@ triangle.moveTo({ rz: (-2 * Math.PI) / 3, t: "5" });
 triangle.moveTo({ rz: (-4 * Math.PI) / 3, t: "5.5" });
 triangle.moveTo({ rz: (-6 * Math.PI) / 3, t: "7" });
 triangle.moveTo({ rz: (-8 * Math.PI) / 3, t: "7.5" });
-
-mo.run();

@@ -10,5 +10,3 @@ t2.reveal({ direction: "right" });
 
 mo.addGlitch({ t: 1 });
 mo.addGlitch({ t: 1.5 });
-
-mo.run();

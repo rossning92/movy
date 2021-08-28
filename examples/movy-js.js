@@ -69,8 +69,6 @@ mo.addGlitch({ t: 3.7 });
 
 mo.pause(1);
 
-mo.run();
-
 function addParticle({ position, t }) {
   const particles = mo.addGroup({ scale: 0.5, position });
   for (let i = 0; i < 3; i++) {

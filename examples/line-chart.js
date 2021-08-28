@@ -16,8 +16,6 @@ addLineChart({
   tickIntervalY: 2,
 });
 
-mo.run();
-
 // ---------------------------------------
 // Helper function to create a line chart.
 // ---------------------------------------

@@ -27,6 +27,8 @@ declare class CCapture {
 
 gsap.ticker.remove(gsap.updateRoot);
 
+let isRunning = false;
+
 let glitchPassEnabled = false;
 let renderTargetWidth = 1920;
 let renderTargetHeight = 1080;
@@ -695,6 +697,8 @@ export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
 }
 
 export function run() {
+  if (isRunning) return;
+  isRunning = true;
   (async () => {
     setupScene();
 
@@ -2509,3 +2513,7 @@ export function _add3DModel(
 export function addArrow(params: AddArrowParameters = {}): SceneObject {
   return root.addArrow(params);
 }
+
+document.body.onload = function () {
+  run();
+};
