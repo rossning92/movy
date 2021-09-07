@@ -2456,11 +2456,11 @@ export function addPyramid(params: AddObjectParameters = {}): SceneObject {
   return root.addPyramid(params);
 }
 
-export function addRect(params: AddObjectParameters = {}): SceneObject {
+export function addRect(params: AddRectParameters = {}): SceneObject {
   return root.addRect(params);
 }
 
-export function addRectOutline(params: AddObjectParameters = {}): SceneObject {
+export function addRectOutline(params: AddOutlineParameters = {}): SceneObject {
   return root.addRectOutline(params);
 }
 
@@ -2486,12 +2486,12 @@ export function addTorus(params: AddObjectParameters = {}): SceneObject {
   return root.addTorus(params);
 }
 
-export function addTriangle(params: AddObjectParameters = {}): SceneObject {
+export function addTriangle(params: AddTriangleParameters = {}): SceneObject {
   return root.addTriangle(params);
 }
 
 export function addTriangleOutline(
-  params: AddObjectParameters = {}
+  params: AddOutlineParameters = {}
 ): SceneObject {
   return root.addTriangleOutline(params);
 }
