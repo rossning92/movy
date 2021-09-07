@@ -1465,7 +1465,9 @@ class SceneObject {
   }
 
   fadeOut(params: FadeObjectParameters = {}) {
-    this.changeOpacity(0, { ...params });
+    this.changeOpacity(params.opacity === undefined ? 0 : params.opacity, {
+      ...params,
+    });
     return this;
   }
 
