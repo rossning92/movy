@@ -42,9 +42,9 @@ let renderer: THREE.WebGLRenderer;
 let composer: EffectComposer;
 
 let currentLayer = "default";
-let scene: THREE.Scene;
+let scene = new THREE.Scene();
 let camera: THREE.Camera;
-let uiScene: THREE.Scene;
+let uiScene = new THREE.Scene();
 let uiCamera: THREE.Camera;
 let renderTarget: THREE.WebGLMultisampleRenderTarget;
 
@@ -168,9 +168,6 @@ function createPerspectiveCamera(): THREE.Camera {
 }
 
 function setupScene() {
-  scene = new THREE.Scene();
-  uiScene = new THREE.Scene();
-
   if (WEBGL.isWebGL2Available() === false) {
     document.body.appendChild(WEBGL.getWebGL2ErrorMessage());
     return;
@@ -955,15 +952,8 @@ class SceneObject {
     if (transform.parent) {
       transform.parent.object3D.add(obj.object3D);
     } else {
-      if (this.object3D) {
+      console.assert(obj.object3D);
         this.object3D.add(obj.object3D);
-      } else {
-        if (currentLayer === "ui") {
-          uiScene.add(obj.object3D);
-        } else {
-          scene.add(obj.object3D);
-        }
-      }
     }
   }
 
@@ -2426,108 +2416,128 @@ export function _animateTo(
 }
 
 const root = new GroupObject();
+root.object3D = new THREE.Group();
+scene.add(root.object3D);
+
+const uiRoot = new GroupObject();
+uiRoot.object3D = new THREE.Group();
+uiScene.add(uiRoot.object3D);
+
+function getRoot(): GroupObject {
+  if (currentLayer === "ui") {
+    return uiRoot;
+  } else {
+    return root;
+  }
+}
 
 export function addCircle(params: AddTextParameters = {}): SceneObject {
-  return root.addCircle(params);
+  return getRoot().addCircle(params);
 }
 
 export function addCircleOutline(
   params: AddOutlineParameters = {}
 ): SceneObject {
-  return root.addCircleOutline(params);
+  return getRoot().addCircleOutline(params);
 }
 
 export function addCone(params: AddObjectParameters = {}): SceneObject {
-  return root.addCone(params);
+  return getRoot().addCone(params);
 }
 
 export function addCube(params: AddObjectParameters = {}): SceneObject {
-  return root.addCube(params);
+  return getRoot().addCube(params);
 }
 
 export function addCylinder(params: AddObjectParameters = {}): SceneObject {
-  return root.addCylinder(params);
+  return getRoot().addCylinder(params);
 }
 
 export function addGrid(params: AddObjectParameters = {}): SceneObject {
-  return root.addGrid(params);
+  return getRoot().addGrid(params);
 }
 
 export function addGroup(params: AddGroupParameters = {}): GroupObject {
-  return root.addGroup(params);
+  return getRoot().addGroup(params);
 }
 
 export function addImage(
   file: string,
   params: AddTextParameters = {}
 ): SceneObject {
-  return root.addImage(file, params);
+  return getRoot().addImage(file, params);
 }
 
 export function addLine(params: AddLineParameters = {}): SceneObject {
-  return root.addLine(params);
+  return getRoot().addLine(params);
 }
 
 export function addPyramid(params: AddObjectParameters = {}): SceneObject {
-  return root.addPyramid(params);
+  return getRoot().addPyramid(params);
 }
 
 export function addRect(params: AddRectParameters = {}): SceneObject {
-  return root.addRect(params);
+  return getRoot().addRect(params);
 }
 
 export function addRectOutline(params: AddOutlineParameters = {}): SceneObject {
-  return root.addRectOutline(params);
+  return getRoot().addRectOutline(params);
 }
 
 export function addSphere(params: AddObjectParameters = {}): SceneObject {
-  return root.addSphere(params);
+  return getRoot().addSphere(params);
 }
 
 export function addText(
   text: string,
   params: AddTextParameters = {}
 ): TextObject {
-  return root.addText(text, params);
+  return getRoot().addText(text, params);
 }
 
 export function addTex(
   tex: string,
   params: AddTextParameters = {}
 ): SceneObject {
-  return root.addTex(tex, params);
+  return getRoot().addTex(tex, params);
 }
 
 export function addTorus(params: AddObjectParameters = {}): SceneObject {
-  return root.addTorus(params);
+  return getRoot().addTorus(params);
 }
 
 export function addTriangle(params: AddTriangleParameters = {}): SceneObject {
-  return root.addTriangle(params);
+  return getRoot().addTriangle(params);
 }
 
 export function addTriangleOutline(
   params: AddOutlineParameters = {}
 ): SceneObject {
-  return root.addTriangleOutline(params);
+  return getRoot().addTriangleOutline(params);
 }
 
 export function _addMesh(
   mesh: THREE.Mesh,
   params: AddObjectParameters = {}
 ): SceneObject {
-  return root._addMesh(mesh, params);
+  return getRoot()._addMesh(mesh, params);
 }
 
 export function _add3DModel(
   url: string,
   params: AddObjectParameters = {}
 ): SceneObject {
-  return root._add3DModel(url, params);
+  return getRoot()._add3DModel(url, params);
 }
 
 export function addArrow(params: AddArrowParameters = {}): SceneObject {
-  return root.addArrow(params);
+  return getRoot().addArrow(params);
+}
+
+export function moveTo(params: MoveObjectParameters = {}) {
+  return getRoot().moveTo(params);
+}
+
 }
 
 document.body.onload = function () {
