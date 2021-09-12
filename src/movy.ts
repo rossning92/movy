@@ -294,10 +294,11 @@ function animate() {
 interface MoveCameraParameters extends Transform, AnimationParameters {
   lookAt?: { x?: number; y?: number; z?: number } | number[];
   fov?: number;
+  zoom?: number;
 }
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
   commandQueue.push(() => {
-    const { t, lookAt, duration = 0.5, ease = "expo.out", fov } = params;
+    const { t, lookAt, duration = 0.5, ease = "expo.out", fov, zoom } = params;
 
     const tl = gsap.timeline({
       defaults: {
@@ -331,6 +332,19 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
     }
 
     createTransformAnimation(params, tl, camera, new THREE.Vector3(1, 1, 1));
+
+    if (zoom !== undefined) {
+      tl.to(
+        camera,
+        {
+          zoom,
+          onUpdate: () => {
+            (camera as any).updateProjectionMatrix();
+          },
+        },
+        "<"
+      );
+    }
 
     mainTimeline.add(tl, t);
   });
