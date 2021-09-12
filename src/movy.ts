@@ -141,7 +141,7 @@ function stopRender() {
 
 function createOrthographicCamera() {
   const aspect = renderTargetWidth / renderTargetHeight;
-  const viewportHeight = 8;
+  const viewportHeight = 10;
   return new THREE.OrthographicCamera(
     (viewportHeight * aspect) / -2,
     (viewportHeight * aspect) / 2,
