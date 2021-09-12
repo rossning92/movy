@@ -139,19 +139,17 @@ function stopRender() {
   (window as any).movy.isRendering = false;
 }
 
-function setupOrthoCamera() {
-  if (camera === undefined) {
-    const aspect = renderTargetWidth / renderTargetHeight;
-    const frustumSize = 16;
-    camera = new THREE.OrthographicCamera(
-      (frustumSize * aspect) / -2,
-      (frustumSize * aspect) / 2,
-      frustumSize / 2,
-      frustumSize / -2,
-      -1000,
-      1000
-    );
-  }
+function createOrthographicCamera() {
+  const aspect = renderTargetWidth / renderTargetHeight;
+  const viewportHeight = 8;
+  return new THREE.OrthographicCamera(
+    (viewportHeight * aspect) / -2,
+    (viewportHeight * aspect) / 2,
+    viewportHeight / 2,
+    viewportHeight / -2,
+    -1000,
+    1000
+  );
 }
 
 function createPerspectiveCamera(): THREE.Camera {
@@ -953,7 +951,7 @@ class SceneObject {
       transform.parent.object3D.add(obj.object3D);
     } else {
       console.assert(obj.object3D);
-        this.object3D.add(obj.object3D);
+      this.object3D.add(obj.object3D);
     }
   }
 
@@ -2538,6 +2536,8 @@ export function moveTo(params: MoveObjectParameters = {}) {
   return getRoot().moveTo(params);
 }
 
+export function _setOrthographicCamera() {
+  camera = createOrthographicCamera();
 }
 
 document.body.onload = function () {
