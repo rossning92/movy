@@ -2115,8 +2115,11 @@ interface AddArrowParameters extends AddLineParameters {
 interface AddGridParameters extends Transform, BasicMaterial {
   gridSize?: number;
 }
-function toThreeVector3(v: { x?: number; y?: number; z?: number } | number[]) {
-  if (Array.isArray(v)) {
+
+function toThreeVector3(v?: { x?: number; y?: number; z?: number } | number[]) {
+  if (v === undefined) {
+    return new THREE.Vector3(0, 0, 0);
+  } else if (Array.isArray(v)) {
     if (v.length == 1) {
       return new THREE.Vector3(v[0]);
     } else if (v.length == 2) {
