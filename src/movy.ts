@@ -781,7 +781,7 @@ function createArrowLine3d(
   material: THREE.Material,
   {
     from = new THREE.Vector3(0, 0, 0),
-    to = new THREE.Vector3(0, 1, 0),
+    to = new THREE.Vector3(1, 0, 0),
     lineWidth = 0.1,
     arrowEnd = true,
     arrowStart = false,
@@ -822,7 +822,11 @@ function createArrowLine3d(
       16
     );
     const cylinder = new THREE.Mesh(geometry, material);
-    cylinder.translateY(offset);
+    cylinder.position.copy(
+      direction.clone().multiplyScalar(offset).add(center)
+    );
+    cylinder.setRotationFromQuaternion(quaternion);
+
     group.add(cylinder);
   }
 
@@ -834,15 +838,14 @@ function createArrowLine3d(
     const geometry = new THREE.ConeGeometry(lineWidth * 2, arrowLength, 16);
     geometry.translate(0, -arrowLength / 2, 0);
 
-    const mesh = new THREE.Mesh(geometry, material);
-    group.add(mesh);
+    const arrow = new THREE.Mesh(geometry, material);
+    arrow.setRotationFromQuaternion(quaternion);
+    arrow.position.copy(i === 0 ? from : to);
+    group.add(arrow);
 
-    if (i === 0) mesh.rotation.z = Math.PI;
-    mesh.translateY(halfLength);
+    if (i === 0) arrow.rotateZ(Math.PI);
   }
 
-  group.setRotationFromQuaternion(quaternion);
-  group.position.copy(center);
   scene.add(group);
   return group;
 }
