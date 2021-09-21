@@ -947,6 +947,8 @@ function createTransformAnimation(
 
 class SceneObject {
   object3D: THREE.Object3D;
+  children: SceneObject[] = [];
+
   private preScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
 
   protected addObjectToScene(obj: SceneObject, transform: Transform) {
@@ -963,6 +965,11 @@ class SceneObject {
     geometry: THREE.BufferGeometry
   ) {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       if (params.lighting === undefined) params.lighting = true;
@@ -980,6 +987,11 @@ class SceneObject {
 
   _addMesh(mesh: THREE.Mesh, params: AddObjectParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       addDefaultLights();
@@ -996,6 +1008,11 @@ class SceneObject {
 
   addGroup(params: AddGroupParameters = {}) {
     const obj = new GroupObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(() => {
       obj.object3D = new THREE.Group();
@@ -1010,6 +1027,11 @@ class SceneObject {
 
   _add3DModel(url: string, params: AddObjectParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       addDefaultLights();
@@ -1042,6 +1064,11 @@ class SceneObject {
 
   addCircle(params: AddTextParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1061,6 +1088,11 @@ class SceneObject {
 
   addArrow(params: AddArrowParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     const {
       from = [0, 0, 0],
@@ -1096,6 +1128,11 @@ class SceneObject {
     const { gridSize = 10, color = 0xc0c0c0 } = params;
 
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       obj.object3D = new THREE.GridHelper(
@@ -1115,6 +1152,11 @@ class SceneObject {
 
   addImage(file: string, params: AddTextParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     const { color = "white", ccw = false, opacity = 1.0 } = params;
 
@@ -1160,6 +1202,11 @@ class SceneObject {
 
   addLine(params: AddLineParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     const { from = [0, 0, 0], to = [1, 0, 0], lineWidth = 0.05 } = params;
 
@@ -1238,6 +1285,11 @@ class SceneObject {
     const { lineWidth = 0.1, color } = params;
 
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1263,6 +1315,11 @@ class SceneObject {
     const { width = 1, height = 1, lineWidth = 0.1, color } = params;
 
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1292,6 +1349,11 @@ class SceneObject {
 
   addRect(params: AddRectParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1312,6 +1374,11 @@ class SceneObject {
 
   addTriangle(params: AddTriangleParameters = {}): SceneObject {
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1356,6 +1423,11 @@ class SceneObject {
     const { lineWidth = 0.1, color } = params;
 
     const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1381,6 +1453,11 @@ class SceneObject {
     const { color, letterSpacing, font, fontSize = 1 } = params;
 
     const obj = new TextObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       obj.object3D = new TextMesh({
@@ -1400,6 +1477,11 @@ class SceneObject {
 
   addTex(tex: string, params: AddTextParameters = {}): TextObject {
     const obj = new TextObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
 
     commandQueue.push(async () => {
       const { color } = params;
