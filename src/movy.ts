@@ -2549,3 +2549,30 @@ export function _setOrthographicCamera() {
 document.body.onload = function () {
   run();
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// Raycast z plane at mouse click, then copy the intersection to clipboard.
+////////////////////////////////////////////////////////////////////////////////
+const raycaster = new THREE.Raycaster();
+const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+function onMouseMove(event: MouseEvent) {
+  if (renderer === undefined) return;
+
+  let bounds = renderer.domElement.getBoundingClientRect();
+
+  const mouse = new THREE.Vector2(
+    ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1,
+    -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1
+  );
+
+  raycaster.setFromCamera(mouse, camera);
+  const target = new THREE.Vector3();
+  raycaster.ray.intersectPlane(planeZ, target);
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(
+    `[${target.x.toFixed(3)}, ${target.y.toFixed(3)}, ${target.z.toFixed(3)}]`
+  );
+}
+window.addEventListener("click", onMouseMove, false);
