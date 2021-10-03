@@ -9,7 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/dat.gui": "^0.7.6",
-    "@types/three": "^0.128.0",
+    "@types/three": "^0.132.1",
     "ccapture.js": "^1.1.0",
     "dat.gui": "^0.7.6",
     "gsap": "^3.6.1",
@@ -17,7 +17,7 @@
     "mathjax": "3",
     "minimist": "^1.2.5",
     "seedrandom": "^3.0.5",
-    "three": "^0.128.0",
+    "three": "^0.132.2",
     "ts-loader": "^8.2.0",
     "typescript": "^4.2.4",
     "webpack": "^5.37.0",
