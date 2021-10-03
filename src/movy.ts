@@ -2246,7 +2246,7 @@ interface Transform {
   sx?: number;
   sy?: number;
   sz?: number;
-  position?: number[];
+  position?: [number, number] | [number, number, number];
   scale?: number;
   parent?: SceneObject;
 }
