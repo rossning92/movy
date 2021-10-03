@@ -21,6 +21,8 @@ import TextMesh from "./objects/TextMesh";
 import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 
+const DEFAULT_LINE_WIDTH = 0.05;
+
 declare class CCapture {
   constructor(params: any);
 }
@@ -1097,7 +1099,7 @@ class SceneObject {
     const {
       from = [0, 0, 0],
       to = [1, 0, 0],
-      lineWidth = 0.05,
+      lineWidth = DEFAULT_LINE_WIDTH,
       arrowStart = false,
       arrowEnd = true,
     } = params;
@@ -1208,7 +1210,11 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    const { from = [0, 0, 0], to = [1, 0, 0], lineWidth = 0.05 } = params;
+    const {
+      from = [0, 0, 0],
+      to = [1, 0, 0],
+      lineWidth = DEFAULT_LINE_WIDTH,
+    } = params;
 
     commandQueue.push(async () => {
       addDefaultLights();
@@ -1282,7 +1288,7 @@ class SceneObject {
   }
 
   addCircleOutline(params: AddOutlineParameters = {}) {
-    const { lineWidth = 0.1, color } = params;
+    const { lineWidth = DEFAULT_LINE_WIDTH, color } = params;
 
     const obj = new SceneObject();
     if (params.parent) {
@@ -1312,7 +1318,12 @@ class SceneObject {
   }
 
   addRectOutline(params: AddOutlineParameters = {}) {
-    const { width = 1, height = 1, lineWidth = 0.1, color } = params;
+    const {
+      width = 1,
+      height = 1,
+      lineWidth = DEFAULT_LINE_WIDTH,
+      color,
+    } = params;
 
     const obj = new SceneObject();
     if (params.parent) {
@@ -1420,7 +1431,7 @@ class SceneObject {
   }
 
   addTriangleOutline(params: AddOutlineParameters = {}) {
-    const { lineWidth = 0.1, color } = params;
+    const { lineWidth = DEFAULT_LINE_WIDTH, color } = params;
 
     const obj = new SceneObject();
     if (params.parent) {
