@@ -2237,9 +2237,9 @@ function toThreeVector3(v?: { x?: number; y?: number; z?: number } | number[]) {
 }
 
 interface Transform {
-  x?: number;
-  y?: number;
-  z?: number;
+  x?: number | ((t: number) => number);
+  y?: number | ((t: number) => number);
+  z?: number | ((t: number) => number);
   rx?: number;
   ry?: number;
   rz?: number;
@@ -2326,9 +2326,19 @@ function updateTransform(mesh: THREE.Object3D, transform: Transform) {
   if (transform.position !== undefined) {
     mesh.position.copy(toThreeVector3(transform.position));
   } else {
-    if (transform.x !== undefined) mesh.position.x = transform.x;
-    if (transform.y !== undefined) mesh.position.y = transform.y;
-    if (transform.z !== undefined) mesh.position.z = transform.z;
+    for (const prop of ["x", "y", "z"]) {
+      const T = transform as any;
+      const V = mesh.position as any;
+      if (T[prop] !== undefined) {
+        if (typeof T[prop] === "number") {
+          V[prop] = T[prop];
+        } else {
+          animationCallbacks.push((t) => {
+            V[prop] = T[prop](t);
+          });
+        }
+      }
+    }
   }
 
   // Rotation
