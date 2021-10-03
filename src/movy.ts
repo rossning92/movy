@@ -8,6 +8,9 @@ import gsap from "gsap";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Stats from "three/examples/jsm/libs/stats.module.js";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -1236,6 +1239,58 @@ class SceneObject {
         arrowEnd: false,
         lineWidth,
       });
+
+      updateTransform(obj.object3D, params);
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addPolyline(
+    points:
+      | [number, number, number][]
+      | ((t: number) => [number, number, number][]),
+    params: AddLineParameters = {}
+  ): SceneObject {
+    const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    commandQueue.push(async () => {
+      let positions: number[];
+
+      if (Array.isArray(points)) {
+        positions = [];
+        for (const pt of points) {
+          positions.push(pt[0], pt[1], pt[2]);
+        }
+      } else if (points instanceof Function) {
+        positions = points(0).reduce((acc, val) => acc.concat(val), []);
+        animationCallbacks.push((t) => {
+          const positions = points(t).reduce((acc, val) => acc.concat(val), []);
+          geometry.setPositions(positions);
+        });
+      }
+
+      const geometry = new LineGeometry();
+      geometry.setPositions(positions);
+
+      const material = new LineMaterial({
+        color: toThreeColor(params.color).getHex(),
+        linewidth: params.lineWidth || DEFAULT_LINE_WIDTH,
+        worldUnits: true,
+        opacity: params.opacity,
+        transparent: params.opacity && params.opacity < 1.0,
+      });
+
+      const line = new Line2(geometry, material);
+
+      obj.object3D = line;
 
       updateTransform(obj.object3D, params);
 
@@ -2584,6 +2639,13 @@ export function addImage(
 
 export function addLine(params: AddLineParameters = {}): SceneObject {
   return getRoot().addLine(params);
+}
+
+export function addPolyline(
+  points: [number, number, number][],
+  params: AddObjectParameters = {}
+): SceneObject {
+  return getRoot().addPolyline(points, params);
 }
 
 export function addPyramid(params: AddObjectParameters = {}): SceneObject {
