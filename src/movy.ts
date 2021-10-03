@@ -62,6 +62,8 @@ let timeElapsed = 0;
 
 let recorder: WebmMediaRecorder;
 
+const animationCallbacks: ((t: number) => void)[] = [];
+
 globalTimeline.add(mainTimeline, "0");
 
 let options = {
@@ -264,6 +266,11 @@ function animate() {
   }
 
   gsap.updateRoot(timeElapsed);
+
+  // Call animation callbacks for custom animation.
+  for (const callback of animationCallbacks) {
+    callback(timeElapsed);
+  }
 
   // cameraControls.update();
 
