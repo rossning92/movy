@@ -986,6 +986,29 @@ function createTransformAnimation({
   }
 }
 
+function createLine(
+  positions: number[],
+  {
+    lineWidth,
+    color,
+    opacity,
+  }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
+) {
+  const geometry = new LineGeometry();
+  geometry.setPositions(positions);
+
+  const material = new LineMaterial({
+    color: toThreeColor(color).getHex(),
+    linewidth: lineWidth || DEFAULT_LINE_WIDTH,
+    worldUnits: true,
+    opacity: opacity,
+    transparent: opacity && opacity < 1.0,
+  });
+
+  const line = new Line2(geometry, material);
+  return { line, geometry, material };
+}
+
 class SceneObject {
   object3D: THREE.Object3D;
   children: SceneObject[] = [];
@@ -1306,19 +1329,7 @@ class SceneObject {
         });
       }
 
-      const geometry = new LineGeometry();
-      geometry.setPositions(positions);
-
-      const material = new LineMaterial({
-        color: toThreeColor(params.color).getHex(),
-        linewidth: params.lineWidth || DEFAULT_LINE_WIDTH,
-        worldUnits: true,
-        opacity: params.opacity,
-        transparent: params.opacity && params.opacity < 1.0,
-      });
-
-      const line = new Line2(geometry, material);
-
+      const { geometry, line } = createLine(positions, params);
       obj.object3D = line;
 
       updateTransform(obj.object3D, params);
