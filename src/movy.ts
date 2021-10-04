@@ -1636,6 +1636,29 @@ class SceneObject {
     return this;
   }
 
+  scale(s: number, params: AnimationParameters = {}) {
+    const { t, duration = 0.5, ease = "power2.out" } = params;
+
+    commandQueue.push(() => {
+      let tl = gsap.timeline({
+        defaults: {
+          duration,
+          ease,
+        },
+      });
+
+      createTransformAnimation({
+        scale: s,
+        tl,
+        object3d: this.object3D,
+        preScale: this.preScale,
+      });
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
   fadeIn({ duration = 0.25, ease = "linear", t }: AnimationParameters = {}) {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
