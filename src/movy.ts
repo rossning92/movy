@@ -1913,31 +1913,38 @@ class SceneObject {
   }: RevealParameters = {}) {
     commandQueue.push(() => {
       const object3d = this.object3D;
-
       const clippingPlanes: THREE.Plane[] = [];
-      const empty = Object.freeze([]);
-
       const box = getBoundingBox(object3d);
-
       const materials = getAllMaterials(object3d);
 
       const tl = gsap.timeline({
-        defaults: { duration, ease },
+        defaults: {
+          duration,
+          ease,
+        },
       });
+
+      // Attach clipping planes to each material.
+      tl.set(
+        {},
+        {
+          onComplete: () => {
+            for (const material of materials) {
+              material.clippingPlanes = clippingPlanes;
+            }
+          },
+        }
+      );
 
       tl.fromTo(
         object3d,
         { visible: false },
-        { visible: true, duration: 0.001 },
+        {
+          visible: true,
+          duration: 0.001,
+        },
         "<"
       );
-
-      // TODO: Clipping planes should be removed after animation.
-      // Dynamically attaching or detaching clipping planes are not well
-      // supported in three.js.
-      for (const material of materials) {
-        material.clippingPlanes = clippingPlanes;
-      }
 
       if (direction === "right") {
         clippingPlanes.push(
@@ -1968,6 +1975,18 @@ class SceneObject {
           y: object3d.position.y + (box.max.y - box.min.y),
         });
       }
+
+      // Detach clipping planes to each material.
+      tl.set(
+        {},
+        {
+          onComplete: () => {
+            for (const material of materials) {
+              material.clippingPlanes = null;
+            }
+          },
+        }
+      );
 
       mainTimeline.add(tl, t);
     });
