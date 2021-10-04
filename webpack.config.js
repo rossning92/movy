@@ -22,7 +22,7 @@ function addEntry(file, html_file) {
   );
 }
 
-module.exports = ({ file, open = true } = {}) => {
+module.exports = ({ file, moduleDir, open = true } = {}) => {
   const contentBase = [
     path.resolve(__dirname, "public"),
     path.resolve(__dirname, "examples"),
@@ -58,17 +58,23 @@ module.exports = ({ file, open = true } = {}) => {
     );
   }
 
+  const modules = [
+    "./",
+    path.resolve(__dirname, "src"),
+    path.resolve(__dirname, "node_modules"),
+    "node_modules",
+    "module",
+  ];
+  if (moduleDir !== undefined) {
+    modules.push(moduleDir);
+  }
+
   return {
     entry: entries,
     plugins: plugins,
     mode: "development",
     resolve: {
-      modules: [
-        "./",
-        path.resolve(__dirname, "src"),
-        path.resolve(__dirname, "node_modules"),
-        "node_modules",
-      ],
+      modules: modules,
       extensions: [".js", ".ts", ".json"],
     },
     module: {

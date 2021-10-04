@@ -51,6 +51,7 @@ const port = argv["port"] ? Number.parseInt(argv["port"]) : undefined;
 const webpackConfig = require("../webpack.config.js")({
   file,
   open: argv["open"],
+  moduleDir: argv["module-dir"],
 });
 
 const compiler = webpack(webpackConfig);
