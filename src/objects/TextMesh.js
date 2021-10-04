@@ -52,6 +52,7 @@ export default class TextMesh extends Object3D {
     letterSpacing = 0.05,
     color = new Color(0xffffff),
     font = undefined,
+    verticalAlign = undefined,
   } = {}) {
     super();
 
@@ -59,6 +60,8 @@ export default class TextMesh extends Object3D {
     this.color = color;
     this.letterSpacing = letterSpacing;
     this.fontName = font;
+    this.verticalAlign = verticalAlign;
+
     this.text = text;
   }
 
@@ -68,6 +71,9 @@ export default class TextMesh extends Object3D {
     let totalWidth = 0;
     const letters = [...text];
     const letterSize = [];
+    let minY = Number.MAX_VALUE;
+    let maxY = Number.MIN_VALUE;
+
     letters.forEach((letter) => {
       if (letter === " ") {
         totalWidth += this.fontSize * 0.5;
@@ -86,13 +92,19 @@ export default class TextMesh extends Object3D {
 
         letterSize.push(totalWidth);
         totalWidth += geom.boundingBox.max.x + this.letterSpacing;
+        minY = Math.min(minY, geom.boundingBox.min.y);
+        maxY = Math.max(maxY, geom.boundingBox.max.y);
 
         this.add(mesh);
       }
     });
 
     this.children.forEach((letter, i) => {
-      letter.position.set(-0.5 * totalWidth + letterSize[i], -0.5, 0);
+      letter.position.set(
+        -0.5 * totalWidth + letterSize[i],
+        this.verticalAlign === "center" ? -0.5 * (maxY - minY) : -0.5,
+        0
+      );
     });
   }
 }

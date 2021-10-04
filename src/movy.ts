@@ -1552,8 +1552,7 @@ class SceneObject {
   }
 
   addText(text: string, params: AddTextParameters = {}): TextObject {
-    const { color, letterSpacing, font, fontSize = 1 } = params;
-
+    const { color, letterSpacing, font, fontSize = 1, verticalAlign } = params;
     const obj = new TextObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1568,6 +1567,7 @@ class SceneObject {
         color: toThreeColor(color),
         fontSize: fontSize,
         letterSpacing,
+        verticalAlign,
       });
 
       updateTransform(obj.object3D, params);
@@ -2246,8 +2246,7 @@ interface AddTextParameters extends Transform, BasicMaterial {
   font?: string;
   fontSize?: number;
   letterSpacing?: number;
-}
-interface AddTextParameters extends Transform, BasicMaterial {
+  verticalAlign?: "center";
   ccw?: boolean;
 }
 
