@@ -338,7 +338,12 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
       }
     }
 
-    createTransformAnimation(params, tl, camera, new THREE.Vector3(1, 1, 1));
+    createTransformAnimation({
+      ...params,
+      tl,
+      object3d: camera,
+      preScale: new THREE.Vector3(1, 1, 1),
+    });
 
     if (zoom !== undefined) {
       tl.to(
@@ -919,14 +924,38 @@ interface RotateParameters extends AnimationParameters {
   repeat?: number;
 }
 
-function createTransformAnimation(
-  transform: Transform,
-  tl: gsap.core.Timeline,
-  object3d: THREE.Object3D,
-  preScale: THREE.Vector3
-) {
-  const { position, x, y, z, rx, ry, rz, sx, sy, sz, scale } = transform;
+function createTransformAnimation({
+  position,
+  x,
+  y,
+  z,
+  rx,
+  ry,
+  rz,
+  sx,
+  sy,
+  sz,
+  scale,
+  tl,
+  object3d,
+  preScale,
+}: {
+  x?: number | ((t: number) => number);
+  y?: number | ((t: number) => number);
+  z?: number | ((t: number) => number);
+  rx?: number;
+  ry?: number;
+  rz?: number;
+  sx?: number;
+  sy?: number;
+  sz?: number;
+  position?: [number, number] | [number, number, number];
+  scale?: number;
 
+  tl: gsap.core.Timeline;
+  object3d: THREE.Object3D;
+  preScale: THREE.Vector3;
+}) {
   if (position) {
     const p = toThreeVector3(position);
     tl.to(object3d.position, { x: p.x, y: p.y, z: p.z }, "<");
@@ -1595,7 +1624,12 @@ class SceneObject {
         },
       });
 
-      createTransformAnimation(params, tl, this.object3D, this.preScale);
+      createTransformAnimation({
+        ...params,
+        tl,
+        object3d: this.object3D,
+        preScale: this.preScale,
+      });
 
       mainTimeline.add(tl, t);
     });
