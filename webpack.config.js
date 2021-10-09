@@ -32,6 +32,7 @@ module.exports = ({ file, moduleDir, open = true } = {}) => {
 
   if (file) {
     addEntry(file, "index.html");
+    contentBase.push(path.join(path.dirname(file), path.parse(file).name));
     contentBase.push(path.dirname(file));
   } else {
     // The folder that contains source code and resource files (images, videos,
