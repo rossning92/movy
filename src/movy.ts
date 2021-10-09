@@ -1672,15 +1672,20 @@ class SceneObject {
 
   fadeIn({ duration = 0.25, ease = "linear", t }: AnimationParameters = {}) {
     commandQueue.push(() => {
+      // Initial value
+      this.object3D.visible = false;
+
       const tl = gsap.timeline({ defaults: { duration, ease } });
+
+      tl.set(this.object3D, { visible: true }, "<");
 
       const materials = getAllMaterials(this.object3D);
       for (const material of materials) {
-        material.transparent = true;
-        tl.from(
+        tl.set(material, { transparent: true, opacity: 0 }, "<");
+        tl.to(
           material,
           {
-            opacity: 0,
+            opacity: 1,
             duration,
           },
           "<"
@@ -1719,7 +1724,6 @@ class SceneObject {
       }
 
       if (opacity == 0) {
-        tl.set(this.object3D, { visible: true }, ">");
         tl.set(this.object3D, { visible: false }, ">");
       }
 
