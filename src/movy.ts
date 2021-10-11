@@ -794,7 +794,22 @@ export function run() {
   })();
 }
 
-function createArrowLine3d(
+function createArrow2DGeometry(arrowLength: number) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    // prettier-ignore
+    new THREE.BufferAttribute(new Float32Array([
+      -0.5 * arrowLength, -0.5 * arrowLength, 0,
+      0.5 * arrowLength, -0.5 * arrowLength, 0,
+      0, 0.5 * arrowLength, 0
+    ]), 3)
+  );
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function createArrowLine2D(
   material: THREE.Material,
   {
     from = new THREE.Vector3(0, 0, 0),
@@ -832,19 +847,20 @@ function createArrowLine3d(
       offset += 0.5 * arrowLength;
     }
 
-    const geometry = new THREE.CylinderGeometry(
-      lineWidth / 2,
-      lineWidth / 2,
-      length,
-      16
-    );
-    const cylinder = new THREE.Mesh(geometry, material);
-    cylinder.position.copy(
-      direction.clone().multiplyScalar(offset).add(center)
-    );
-    cylinder.setRotationFromQuaternion(quaternion);
+    // const geometry = new THREE.CylinderGeometry(
+    //   lineWidth / 2,
+    //   lineWidth / 2,
+    //   length,
+    //   16
+    // );
 
-    group.add(cylinder);
+    const geometry = new THREE.PlaneGeometry(lineWidth, length);
+
+    const line = new THREE.Mesh(geometry, material);
+    line.position.copy(direction.clone().multiplyScalar(offset).add(center));
+    line.setRotationFromQuaternion(quaternion);
+
+    group.add(line);
   }
 
   // Create arrows
@@ -852,7 +868,8 @@ function createArrowLine3d(
     if (i === 0 && !arrowStart) continue;
     if (i === 1 && !arrowEnd) continue;
 
-    const geometry = new THREE.ConeGeometry(lineWidth * 2, arrowLength, 16);
+    // const geometry = new THREE.ConeGeometry(lineWidth * 2, arrowLength, 16);
+    const geometry = createArrow2DGeometry(arrowLength);
     geometry.translate(0, -arrowLength / 2, 0);
 
     const arrow = new THREE.Mesh(geometry, material);
@@ -1172,7 +1189,7 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
-      obj.object3D = createArrowLine3d(material, {
+      obj.object3D = createArrowLine2D(material, {
         from: toThreeVector3(from),
         to: toThreeVector3(to),
         arrowStart,
@@ -1284,7 +1301,7 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
-      obj.object3D = createArrowLine3d(material, {
+      obj.object3D = createArrowLine2D(material, {
         from: toThreeVector3(from),
         to: toThreeVector3(to),
         arrowStart: false,
