@@ -2303,7 +2303,7 @@ class TextObject extends GroupObject {
 }
 
 interface AddTextParameters extends Transform, BasicMaterial {
-  font?: string;
+  font?: "zh" | "en" | "math" | "code" | "gdh";
   fontSize?: number;
   letterSpacing?: number;
   verticalAlign?: "center";
