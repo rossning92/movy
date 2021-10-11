@@ -1525,20 +1525,7 @@ class SceneObject {
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute(
         "position",
-        new THREE.BufferAttribute(
-          new Float32Array([
-            verts[0][0],
-            verts[0][1],
-            verts[0][2],
-            verts[1][0],
-            verts[1][1],
-            verts[1][2],
-            verts[2][0],
-            verts[2][1],
-            verts[2][2],
-          ]),
-          3
-        )
+        new THREE.BufferAttribute(new Float32Array(verts.flat()), 3)
       );
       geometry.computeVertexNormals();
 
