@@ -1126,7 +1126,7 @@ class SceneObject {
     return obj;
   }
 
-  addCircle(params: AddTextParameters = {}): SceneObject {
+  addCircle(params: AddCircleParameters = {}): SceneObject {
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1138,7 +1138,7 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
-      const geometry = new THREE.CircleGeometry(0.5, 128);
+      const geometry = new THREE.CircleGeometry(params.radius || 0.5, 128);
 
       obj.object3D = new THREE.Mesh(geometry, material);
 
@@ -1389,7 +1389,7 @@ class SceneObject {
     return this.add3DGeometry(params, geometry);
   }
 
-  addCircleOutline(params: AddOutlineParameters = {}) {
+  addCircleOutline(params: AddCircleOutlineParameters = {}) {
     const { lineWidth = DEFAULT_LINE_WIDTH, color } = params;
 
     const obj = new SceneObject();
@@ -1403,7 +1403,10 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
-      const verts = getPolygonVertices({ sides: 128 });
+      const verts = getPolygonVertices({
+        sides: 128,
+        radius: params.radius || 0.5,
+      });
       const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
       obj.object3D = createLine3d(material, {
         points: v3d.concat(v3d[0]),
@@ -2312,6 +2315,10 @@ interface AddRectParameters extends Transform, BasicMaterial {
   height?: number;
 }
 
+interface AddCircleParameters extends Transform, BasicMaterial {
+  radius?: number;
+}
+
 interface AddTriangleParameters extends Transform, BasicMaterial {
   verts?: number[][];
 }
@@ -2320,6 +2327,11 @@ interface AddOutlineParameters extends Transform, BasicMaterial {
   lineWidth?: number;
   width?: number;
   height?: number;
+}
+
+interface AddCircleOutlineParameters extends Transform, BasicMaterial {
+  lineWidth?: number;
+  radius?: number;
 }
 
 function defaultSeg({ wireframe }: AddObjectParameters) {
@@ -2690,12 +2702,12 @@ function getRoot(): GroupObject {
   }
 }
 
-export function addCircle(params: AddTextParameters = {}): SceneObject {
+export function addCircle(params: AddCircleParameters = {}): SceneObject {
   return getRoot().addCircle(params);
 }
 
 export function addCircleOutline(
-  params: AddOutlineParameters = {}
+  params: AddCircleOutlineParameters = {}
 ): SceneObject {
   return getRoot().addCircleOutline(params);
 }
