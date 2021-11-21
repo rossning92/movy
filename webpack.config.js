@@ -94,9 +94,11 @@ module.exports = ({ file, moduleDir, open = true } = {}) => {
     },
     devServer: {
       compress: true,
-      contentBase,
+      static: contentBase,
       open: open,
-      stats: "minimal",
+      devMiddleware: {
+        stats: "minimal",
+      },
     },
     optimization: {
       runtimeChunk: true,

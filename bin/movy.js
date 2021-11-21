@@ -56,6 +56,9 @@ const webpackConfig = require("../webpack.config.js")({
 
 const compiler = webpack(webpackConfig);
 
-const server = new WebpackDevServer(compiler, webpackConfig.devServer);
+const server = new WebpackDevServer(
+  { ...webpackConfig.devServer, port },
+  compiler
+);
 
-server.listen(port);
+server.startCallback(port);
