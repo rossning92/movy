@@ -81,6 +81,10 @@ module.exports = ({ file, moduleDir, open = true } = {}) => {
     module: {
       rules: [
         {
+          test: /\.css$/i,
+          use: ["style-loader", "css-loader"],
+        },
+        {
           test: /\.tsx?$/,
           use: {
             loader: "ts-loader",

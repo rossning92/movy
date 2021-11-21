@@ -3,6 +3,7 @@
  * @author Ross Ning
  */
 
+import "./style/player.css";
 import * as dat from "dat.gui";
 import gsap from "gsap";
 import * as THREE from "three";
