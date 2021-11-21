@@ -1580,14 +1580,16 @@ class SceneObject {
     }
 
     commandQueue.push(async () => {
-      obj.object3D = new TextMesh({
-        text,
+      const textMesh = new TextMesh({
         font,
         color: toThreeColor(color),
         fontSize: fontSize,
         letterSpacing,
         verticalAlign,
       });
+      await textMesh.init();
+      textMesh.setText(text);
+      obj.object3D = textMesh;
 
       updateTransform(obj.object3D, params);
       this.addObjectToScene(obj, params);
@@ -2279,7 +2281,7 @@ class TextObject extends GroupObject {
         val: to,
         onUpdate: () => {
           const text = func(data.val).toString();
-          textMesh.text = text;
+          textMesh.setText(text);
         },
       });
 

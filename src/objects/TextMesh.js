@@ -15,39 +15,32 @@ const REGEX_ZH_CN =
 
 const fontMap = {};
 
-function loadFont(fontName = undefined, letter = undefined) {
-  if (fontName === undefined && letter !== undefined) {
-    fontName = REGEX_ZH_CN.test(letter) ? "zh" : "en";
-  }
-
-  if (fontName in fontMap) {
-    return fontMap[fontName];
-  } else {
+async function preloadFont(fontName) {
+  if (!(fontName in fontMap)) {
     let font;
     if (fontName == "zh") {
-      font = fontLoader.parse(require("../fonts/source-han-medium"));
+      font = await fontLoader.loadAsync("fonts/source-han-medium.json");
     } else if (fontName == "en") {
-      font = fontLoader.parse(require("../fonts/muli-bold"));
+      font = await fontLoader.loadAsync("fonts/muli-bold.json");
     } else if (fontName == "condensed") {
-      font = fontLoader.parse(require("../fonts/bebas-neue-bold"));
+      font = await fontLoader.loadAsync("fonts/bebas-neue-bold.json");
     } else if (fontName == "math") {
-      font = fontLoader.parse(require("../fonts/latin-modern-math-regular"));
+      font = await fontLoader.loadAsync("fonts/latin-modern-math-regular.json");
     } else if (fontName == "code") {
-      font = fontLoader.parse(require("../fonts/source-code-pro-regular"));
+      font = await fontLoader.loadAsync("fonts/source-code-pro-regular.json");
     } else if (fontName == "gdh") {
-      font = fontLoader.parse(require("../fonts/gdh-regular"));
+      font = await fontLoader.loadAsync("fonts/gdh-regular.json");
     } else {
       throw `Invalid font name: ${fontName}`;
     }
 
     fontMap[fontName] = font;
-    return font;
   }
+  return fontMap[fontName];
 }
 
 export default class TextMesh extends Object3D {
   constructor({
-    text = "",
     fontSize = 1.0,
     letterSpacing = 0.05,
     color = new Color(0xffffff),
@@ -61,11 +54,26 @@ export default class TextMesh extends Object3D {
     this.letterSpacing = letterSpacing;
     this.fontName = font;
     this.verticalAlign = verticalAlign;
-
-    this.text = text;
   }
 
-  set text(text) {
+  async init() {
+    if (this.fontName !== undefined) {
+      this.font = await preloadFont(this.fontName);
+    } else {
+      await Promise.all([preloadFont("zh"), await preloadFont("en")]);
+    }
+  }
+
+  getFont(letter) {
+    if (this.font) {
+      return this.font;
+    } else {
+      const fontName = REGEX_ZH_CN.test(letter) ? "zh" : "en";
+      return fontMap[fontName];
+    }
+  }
+
+  setText(text) {
     this.children.length = 0;
 
     let totalWidth = 0;
@@ -74,11 +82,11 @@ export default class TextMesh extends Object3D {
     let minY = Number.MAX_VALUE;
     let maxY = Number.MIN_VALUE;
 
-    letters.forEach((letter) => {
+    for (const letter of letters) {
       if (letter === " ") {
         totalWidth += this.fontSize * 0.5;
       } else {
-        const font = loadFont(this.fontName, letter);
+        const font = this.getFont(letter);
 
         const geom = new ShapeBufferGeometry(
           font.generateShapes(letter, this.fontSize, 1)
@@ -97,7 +105,7 @@ export default class TextMesh extends Object3D {
 
         this.add(mesh);
       }
-    });
+    }
 
     this.children.forEach((letter, i) => {
       letter.position.set(
