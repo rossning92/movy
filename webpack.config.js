@@ -24,7 +24,7 @@ function addEntry(file, html_file) {
 
 module.exports = ({ file, moduleDir, open = true } = {}) => {
   const contentBase = [
-    path.resolve(__dirname, "public"),
+    path.resolve(__dirname, "dist"),
     path.resolve(__dirname, "examples"),
     path.resolve(__dirname, "node_modules/ccapture.js/build"),
     path.resolve(__dirname, "node_modules/mathjax/es5"),
