@@ -61,4 +61,4 @@ const server = new WebpackDevServer(
   compiler
 );
 
-server.startCallback(port);
+server.startCallback();
