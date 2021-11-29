@@ -3,7 +3,6 @@
  * @author Ross Ning
  */
 
-import "./style/player.css";
 import * as dat from "dat.gui";
 import gsap from "gsap";
 import * as THREE from "three";
@@ -21,7 +20,8 @@ import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { WEBGL } from "three/examples/jsm/WebGL.js";
 import { tex2canvas } from "utils/tex";
-import TextMesh from "./objects/TextMesh";
+import SDFTextObject from "./objects/SDFTextObject";
+import "./style/player.css";
 import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 
@@ -1580,16 +1580,16 @@ class SceneObject {
     }
 
     commandQueue.push(async () => {
-      const textMesh = new TextMesh({
+      const textObject = new SDFTextObject({
         font,
         color: toThreeColor(color),
         fontSize: fontSize,
         letterSpacing,
         verticalAlign,
       });
-      await textMesh.init();
-      textMesh.setText(text);
-      obj.object3D = textMesh;
+      await textObject.init();
+      await textObject.setText(text);
+      obj.object3D = textObject as any;
 
       updateTransform(obj.object3D, params);
       this.addObjectToScene(obj, params);
@@ -2273,7 +2273,7 @@ class TextObject extends GroupObject {
     }: ChangeTextParameters = {}
   ) {
     commandQueue.push(() => {
-      const textMesh = this.object3D as TextMesh;
+      const textObject = this.object3D as any;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const data = { val: from };
@@ -2281,7 +2281,7 @@ class TextObject extends GroupObject {
         val: to,
         onUpdate: () => {
           const text = func(data.val).toString();
-          textMesh.setText(text);
+          textObject.setText(text);
         },
       });
 
@@ -2292,14 +2292,14 @@ class TextObject extends GroupObject {
 
   typeText({ t, duration = 1 }: ChangeTextParameters = {}) {
     commandQueue.push(() => {
-      const textMesh = this.object3D as TextMesh;
-      const interval = duration / textMesh.children.length;
+      const textObject = this.object3D as any;
+      const interval = duration / textObject.children.length;
 
       const tl = gsap.timeline({
         defaults: { duration: interval, ease: "steps(1)" },
       });
 
-      textMesh.children.forEach((letter) => {
+      textObject.children.forEach((letter: any) => {
         tl.fromTo(letter, { visible: false }, { visible: true });
       });
 
