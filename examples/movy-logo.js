@@ -2,7 +2,7 @@ import * as mo from "movy";
 
 const TEXT1_POS = [-1, 0];
 const TEXT2_POS = [3, 0];
-const DOT_POS = [1.85, -0.35];
+const DOT_POS = [1.8, -0.6];
 
 mo.enableBloom();
 
@@ -45,7 +45,11 @@ r1.moveTo({
   duration: 0.4,
   scale: 4,
 });
-mo.addText("movy", { fontSize: 1.5, position: TEXT1_POS }).grow2({ t: "<0.4" });
+mo.addText("movy", {
+  fontSize: 1.5,
+  position: TEXT1_POS,
+  letterSpacing: 0.02,
+}).grow2({ t: "<0.4" });
 
 r1.moveTo({
   position: TEXT2_POS.concat([-0.1]),
@@ -57,6 +61,7 @@ mo.addText("js", {
   fontSize: 1.5,
   position: TEXT2_POS,
   color: "#ffff00",
+  letterSpacing: 0.02,
 }).grow2({
   t: "<0.4",
 });

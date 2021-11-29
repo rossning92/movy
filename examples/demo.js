@@ -24,10 +24,10 @@ symbol.moveTo({ scale: 0.001, t: "<" });
 const textParent = mo.addGroup({ scale: 1.5 });
 const bracketGroup = textParent.addGroup();
 const brackets = bracketGroup.addText("{ }", {
-  font: "condensed",
   fontSize: 0.8,
   color: "#ffff00",
   verticalAlign: "center",
+  letterSpacing: 0.1,
 });
 bracketGroup.addText("3", {
   font: "condensed",
@@ -77,7 +77,7 @@ mo.addText("奇乐编程学院", {
   letterSpacing: 0.4,
   color: "#efefef",
   position: [0, -3, 0],
-}).flyIn({ t: "<0.2" });
+}).reveal({ direction: "down", t: "<0.2" });
 
 mo.addGlitch({ t: "<-0.2" });
 mo.addGlitch({ t: "<0.25" });
@@ -85,8 +85,8 @@ mo.addGlitch({ t: "<0.75" });
 mo.addGlitch({ t: "<1" });
 
 brackets
-  .moveTo({ sy: -1, t: 5 })
-  .moveTo({ sy: 1, t: ">" })
+  .moveTo({ sx: -1, t: 5 })
+  .moveTo({ sx: 1, t: ">" })
   .moveTo({ sx: -1, t: ">1" })
   .moveTo({ sx: 1, t: ">" });
 
