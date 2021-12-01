@@ -19,7 +19,8 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { WEBGL } from "three/examples/jsm/WebGL.js";
-import { tex2canvas } from "utils/tex";
+import { toThreeColor } from "utils/color";
+import { createTexObject } from "utils/tex";
 import SDFTextObject from "./objects/SDFTextObject";
 import "./style/player.css";
 import { GlitchPass } from "./utils/GlitchPass";
@@ -434,30 +435,25 @@ function createFadeInAnimation(
   object3d: THREE.Object3D,
   { duration = 0.25, ease = "linear" }: AnimationParameters = {}
 ) {
-  const tl = gsap.timeline({ defaults: { duration, ease } });
+  const tl = gsap.timeline();
 
-  tl.fromTo(
-    object3d,
-    { visible: false },
-    { visible: true, duration: 0.001 },
-    "<"
-  );
+  // Set initial visibility to false.
+  object3d.visible = false;
+
+  tl.set(object3d, { visible: true }, "<");
 
   const materials = getAllMaterials(object3d);
   for (const material of materials) {
-    tl.set(material, { transparent: true }, "<");
-    tl.from(
+    tl.set(material, { transparent: true, opacity: 0 }, "<");
+    tl.to(
       material,
       {
-        opacity: 0,
+        opacity: 1,
         duration,
+        ease,
       },
       "<"
     );
-  }
-
-  for (const material of materials) {
-    tl.set(material, { transparent: false }, "<");
   }
 
   return tl;
@@ -956,7 +952,7 @@ function createTransformAnimation({
   scale,
   tl,
   object3d,
-  preScale,
+  preScale = new THREE.Vector3(1, 1, 1),
 }: {
   x?: number | ((t: number) => number);
   y?: number | ((t: number) => number);
@@ -972,7 +968,7 @@ function createTransformAnimation({
 
   tl: gsap.core.Timeline;
   object3d: THREE.Object3D;
-  preScale: THREE.Vector3;
+  preScale?: THREE.Vector3;
 }) {
   if (position) {
     const p = toThreeVector3(position);
@@ -1608,23 +1604,10 @@ class SceneObject {
 
     commandQueue.push(async () => {
       const { color } = params;
-      const canvas = await tex2canvas(tex, {
+
+      const parent = await createTexObject(tex, {
         color: "#" + toThreeColor(color as string).getHexString(),
       });
-      const texture = new THREE.CanvasTexture(canvas);
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        side: THREE.DoubleSide,
-        transparent: true,
-      });
-      const geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.scale.x = texture.image.width / 120;
-      mesh.scale.y = texture.image.height / 120;
-
-      const parent = new THREE.Group();
-      parent.add(mesh);
-
       obj.object3D = parent;
 
       updateTransform(obj.object3D, params);
@@ -1682,26 +1665,7 @@ class SceneObject {
 
   fadeIn({ duration = 0.25, ease = "linear", t }: AnimationParameters = {}) {
     commandQueue.push(() => {
-      // Initial value
-      this.object3D.visible = false;
-
-      const tl = gsap.timeline({ defaults: { duration, ease } });
-
-      tl.set(this.object3D, { visible: true }, "<");
-
-      const materials = getAllMaterials(this.object3D);
-      for (const material of materials) {
-        tl.set(material, { transparent: true, opacity: 0 }, "<");
-        tl.to(
-          material,
-          {
-            opacity: 1,
-            duration,
-          },
-          "<"
-        );
-      }
-
+      const tl = createFadeInAnimation(this.object3D, { duration, ease });
       mainTimeline.add(tl, t);
     });
     return this;
@@ -2231,12 +2195,6 @@ class GroupObject extends SceneObject {
   }
 }
 
-function toThreeColor(color?: string | number): THREE.Color {
-  return color === undefined
-    ? new THREE.Color(0xffffff)
-    : new THREE.Color(color).convertSRGBToLinear();
-}
-
 function addCustomAnimation(
   tl: gsap.core.Timeline,
   callback: (t: number) => void
@@ -2290,10 +2248,13 @@ class TextObject extends GroupObject {
     return this;
   }
 
-  typeText({ t, duration = 1 }: ChangeTextParameters = {}) {
+  typeText({ t, duration, interval = 0.1 }: ChangeTextParameters = {}) {
     commandQueue.push(() => {
       const textObject = this.object3D as any;
-      const interval = duration / textObject.children.length;
+
+      if (duration !== undefined) {
+        interval = duration / textObject.children.length;
+      }
 
       const tl = gsap.timeline({
         defaults: { duration: interval, ease: "steps(1)" },
@@ -2302,6 +2263,85 @@ class TextObject extends GroupObject {
       textObject.children.forEach((letter: any) => {
         tl.fromTo(letter, { visible: false }, { visible: true });
       });
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
+  transformTexTo(textObject: TextObject, params: AnimationParameters = {}) {
+    const { duration = 0.5, t } = params;
+
+    commandQueue.push(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power1.out", duration } });
+
+      const srcTexObject = this.object3D as THREE.Group;
+      const dstTexObject = textObject.object3D as THREE.Group;
+
+      srcTexObject.updateWorldMatrix(true, true);
+      dstTexObject.updateWorldMatrix(true, true);
+
+      const matchedDstSymbols = Array(dstTexObject.children.length).fill(false);
+      for (let i = 0; i < srcTexObject.children.length; ++i) {
+        const c1 = srcTexObject.children[i];
+        // find match
+
+        let found = false;
+        for (let j = 0; j < dstTexObject.children.length; ++j) {
+          if (!matchedDstSymbols[j]) {
+            const c2 = dstTexObject.children[j];
+            if (c1.name === c2.name) {
+              let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
+              posInSrcTexObject = srcTexObject.worldToLocal(posInSrcTexObject);
+
+              let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
+              scaleInSrcTexObject.divide(
+                srcTexObject.getWorldScale(new THREE.Vector3())
+              );
+
+              createTransformAnimation({
+                object3d: c1,
+                x: posInSrcTexObject.x,
+                y: posInSrcTexObject.y,
+                z: posInSrcTexObject.z,
+                sx: scaleInSrcTexObject.x,
+                sy: scaleInSrcTexObject.y,
+                sz: scaleInSrcTexObject.z,
+                tl,
+              });
+
+              found = true;
+              matchedDstSymbols[j] = true;
+
+              break;
+            }
+          }
+        }
+
+        if (!found) {
+          tl.add(
+            createFadeOutAnimation(c1, { duration, ease: "power4.out" }),
+            0
+          );
+        }
+      }
+
+      for (const i in matchedDstSymbols) {
+        const c = dstTexObject.children[i];
+        if (!matchedDstSymbols[i]) {
+          // Fade in unmatched symbols in toTextObject
+          tl.add(createFadeInAnimation(c, { duration, ease: "power4.in" }), 0);
+        } else {
+          // Hide matched symbols in toTextObject
+          c.visible = false;
+        }
+      }
+
+      // Hide all symbols in srcTexObject
+      tl.set(srcTexObject.children, { visible: false }, "+=0");
+
+      // Show all symbols in dstTexObject
+      tl.set(dstTexObject.children, { visible: true }, "+=0");
 
       mainTimeline.add(tl, t);
     });
@@ -2783,7 +2823,7 @@ export function addText(
 export function addTex(
   tex: string,
   params: AddTextParameters = {}
-): SceneObject {
+): TextObject {
   return getRoot().addTex(tex, params);
 }
 
