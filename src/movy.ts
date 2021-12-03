@@ -2771,7 +2771,7 @@ export function addCylinder(params: AddObjectParameters = {}): SceneObject {
   return getRoot().addCylinder(params);
 }
 
-export function addGrid(params: AddObjectParameters = {}): SceneObject {
+export function addGrid(params: AddGridParameters = {}): SceneObject {
   return getRoot().addGrid(params);
 }
 
