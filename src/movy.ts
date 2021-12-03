@@ -26,7 +26,7 @@ import "./style/player.css";
 import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 
-const DEFAULT_LINE_WIDTH = 0.05;
+const DEFAULT_LINE_WIDTH = 0.02;
 
 declare class CCapture {
   constructor(params: any);
@@ -811,7 +811,7 @@ function createArrowLine2D(
   {
     from = new THREE.Vector3(0, 0, 0),
     to = new THREE.Vector3(1, 0, 0),
-    lineWidth = 0.1,
+    lineWidth = DEFAULT_LINE_WIDTH,
     arrowEnd = true,
     arrowStart = false,
   } = {}
@@ -830,7 +830,7 @@ function createArrowLine2D(
   const group = new THREE.Group();
 
   let length = halfLength * 2;
-  const arrowLength = lineWidth * 6;
+  const arrowLength = lineWidth * 10;
   let offset = 0;
 
   {
