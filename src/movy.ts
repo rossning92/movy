@@ -2484,7 +2484,7 @@ interface BasicMaterial {
   lighting?: boolean;
 }
 
-function createMaterial(params: BasicMaterial) {
+function createMaterial(params: BasicMaterial = {}) {
   if (params.wireframe) {
     return new THREE.MeshBasicMaterial({
       color: toThreeColor(params.color),
