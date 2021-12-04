@@ -1164,7 +1164,18 @@ class SceneObject {
     return obj;
   }
 
-  addArrow(params: AddArrowParameters = {}): SceneObject {
+  addArrow(
+    p1: [number, number, number?],
+    p2: [number, number, number?],
+    params: AddArrowParameters = {}
+  ): SceneObject {
+    // For back compat
+    if (!Array.isArray(p1)) {
+      params = p1;
+      p1 = (params as any).from;
+      p2 = (params as any).to;
+    }
+
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1173,8 +1184,6 @@ class SceneObject {
     }
 
     const {
-      from = [0, 0, 0],
-      to = [1, 0, 0],
       lineWidth = DEFAULT_LINE_WIDTH,
       arrowStart = false,
       arrowEnd = true,
@@ -1187,8 +1196,8 @@ class SceneObject {
       const material = createMaterial(params);
 
       obj.object3D = createArrowLine2D(material, {
-        from: toThreeVector3(from),
-        to: toThreeVector3(to),
+        from: toThreeVector3(p1),
+        to: toThreeVector3(p2),
         arrowStart,
         arrowEnd,
         lineWidth,
@@ -1278,7 +1287,18 @@ class SceneObject {
     return obj;
   }
 
-  addLine(params: AddLineParameters = {}): SceneObject {
+  addLine(
+    p1: [number, number, number?],
+    p2: [number, number, number?],
+    params: AddLineParameters = {}
+  ): SceneObject {
+    // For back compat
+    if (!Array.isArray(p1)) {
+      params = p1;
+      p1 = (params as any).from;
+      p2 = (params as any).to;
+    }
+
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1286,11 +1306,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    const {
-      from = [0, 0, 0],
-      to = [1, 0, 0],
-      lineWidth = DEFAULT_LINE_WIDTH,
-    } = params;
+    const { lineWidth = DEFAULT_LINE_WIDTH } = params;
 
     commandQueue.push(async () => {
       addDefaultLights();
@@ -1299,8 +1315,8 @@ class SceneObject {
       const material = createMaterial(params);
 
       obj.object3D = createArrowLine2D(material, {
-        from: toThreeVector3(from),
-        to: toThreeVector3(to),
+        from: toThreeVector3(p1),
+        to: toThreeVector3(p2),
         arrowStart: false,
         arrowEnd: false,
         lineWidth,
@@ -2406,8 +2422,6 @@ export function _addPanoramicSkybox(file: string) {
 }
 
 interface AddLineParameters extends Transform, BasicMaterial {
-  from?: { x?: number; y?: number; z?: number } | number[];
-  to?: { x?: number; y?: number; z?: number } | number[];
   lineWidth?: number;
 }
 
@@ -2420,13 +2434,13 @@ interface AddGridParameters extends Transform, BasicMaterial {
   gridSize?: number;
 }
 
-function toThreeVector3(v?: { x?: number; y?: number; z?: number } | number[]) {
+function toThreeVector3(
+  v?: { x?: number; y?: number; z?: number } | [number, number, number?]
+) {
   if (v === undefined) {
     return new THREE.Vector3(0, 0, 0);
   } else if (Array.isArray(v)) {
-    if (v.length == 1) {
-      return new THREE.Vector3(v[0]);
-    } else if (v.length == 2) {
+    if (v.length == 2) {
       return new THREE.Vector3(v[0], v[1]);
     } else if (v.length == 3) {
       return new THREE.Vector3(v[0], v[1], v[2]);
@@ -2786,8 +2800,12 @@ export function addImage(
   return getRoot().addImage(file, params);
 }
 
-export function addLine(params: AddLineParameters = {}): SceneObject {
-  return getRoot().addLine(params);
+export function addLine(
+  p1: [number, number, number?],
+  p2: [number, number, number?],
+  params: AddLineParameters = {}
+): SceneObject {
+  return getRoot().addLine(p1, p2, params);
 }
 
 export function addPolyline(
@@ -2855,8 +2873,13 @@ export function _add3DModel(
   return getRoot()._add3DModel(url, params);
 }
 
-export function addArrow(params: AddArrowParameters = {}): SceneObject {
-  return getRoot().addArrow(params);
+export function addArrow(
+  p1: [number, number, number?],
+  p2: [number, number, number?],
+  params: AddArrowParameters = {}
+): SceneObject {
+  return getRoot().addArrow(p1, p2, params);
+}
 }
 
 export function moveTo(params: MoveObjectParameters = {}) {
