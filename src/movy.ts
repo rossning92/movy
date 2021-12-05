@@ -1211,6 +1211,51 @@ class SceneObject {
     return obj;
   }
 
+
+  addArc(
+    startAngle: number,
+    endAngle: number,
+    radius = 1,
+    params: AddLineParameters = {}
+  ): SceneObject {
+    const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    commandQueue.push(async () => {
+      addDefaultLights();
+
+      if (params.lighting === undefined) params.lighting = false;
+
+      const curve = new THREE.EllipseCurve(
+        0,
+        0,
+        radius,
+        radius,
+        startAngle * DEG2RAD,
+        endAngle * DEG2RAD,
+        false,
+        0
+      );
+
+      const points = curve.getSpacedPoints(64);
+      const points2 = [];
+      for (const pt of points) {
+        points2.push(pt.x, pt.y, 0);
+      }
+      const { line } = createLine(points2, params);
+
+      obj.object3D = line;
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
   addGrid(params: AddGridParameters = {}): SceneObject {
     const { gridSize = 10, color = 0xc0c0c0 } = params;
 
@@ -2888,6 +2933,14 @@ export function addArrow(
 ): SceneObject {
   return getRoot().addArrow(p1, p2, params);
 }
+
+export function addArc(
+  startAngle: number,
+  endAngle: number,
+  radius = 1,
+  params: AddLineParameters = {}
+): SceneObject {
+  return getRoot().addArc(startAngle, endAngle, radius, params);
 }
 
 export function moveTo(params: MoveObjectParameters = {}) {
