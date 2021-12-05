@@ -1598,12 +1598,15 @@ class SceneObject {
     }
 
     commandQueue.push(async () => {
+      const material = createMaterial(params);
+
       const textObject = new TextMeshObject({
         font,
         color: toThreeColor(color),
         fontSize: fontSize,
         letterSpacing,
         centerTextVertically,
+        material,
       });
       await textObject.init();
       await textObject.setText(text);
