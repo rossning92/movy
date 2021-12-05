@@ -2515,7 +2515,7 @@ function createMaterial(params: BasicMaterial = {}) {
 
     return new THREE.MeshStandardMaterial({
       color: toThreeColor(params.color),
-      roughness: 0.3,
+      roughness: 0.5,
     });
   } else {
     const opacity = params.opacity === undefined ? 1.0 : params.opacity;
@@ -2525,7 +2525,6 @@ function createMaterial(params: BasicMaterial = {}) {
       color: toThreeColor(params.color),
       transparent: opacity < 1.0 ? true : false,
       opacity,
-      wireframe: params.wireframe ? true : false,
     });
   }
 }
