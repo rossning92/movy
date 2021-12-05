@@ -1010,7 +1010,6 @@ function createLine(
   {
     lineWidth,
     color,
-    opacity,
   }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
 ) {
   const geometry = new LineGeometry();
@@ -1020,8 +1019,6 @@ function createLine(
     color: toThreeColor(color).getHex(),
     linewidth: lineWidth || DEFAULT_LINE_WIDTH,
     worldUnits: true,
-    opacity: opacity,
-    transparent: opacity && opacity < 1.0,
   });
 
   const line = new Line2(geometry, material);
