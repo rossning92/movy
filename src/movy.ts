@@ -21,7 +21,7 @@ import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectio
 import { WEBGL } from "three/examples/jsm/WebGL.js";
 import { toThreeColor } from "utils/color";
 import { createTexObject } from "utils/tex";
-import SDFTextObject from "./objects/SDFTextObject";
+import TextMeshObject from "./objects/TextMeshObject";
 import "./style/player.css";
 import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
@@ -1583,7 +1583,13 @@ class SceneObject {
   }
 
   addText(text: string, params: AddTextParameters = {}): TextObject {
-    const { color, letterSpacing, font, fontSize = 1, verticalAlign } = params;
+    const {
+      color,
+      letterSpacing,
+      font,
+      fontSize = 1,
+      centerTextVertically,
+    } = params;
     const obj = new TextObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1592,12 +1598,12 @@ class SceneObject {
     }
 
     commandQueue.push(async () => {
-      const textObject = new SDFTextObject({
+      const textObject = new TextMeshObject({
         font,
         color: toThreeColor(color),
         fontSize: fontSize,
         letterSpacing,
-        verticalAlign,
+        centerTextVertically,
       });
       await textObject.init();
       await textObject.setText(text);
@@ -2369,7 +2375,7 @@ interface AddTextParameters extends Transform, BasicMaterial {
   font?: "zh" | "en" | "math" | "code" | "gdh";
   fontSize?: number;
   letterSpacing?: number;
-  verticalAlign?: "center";
+  centerTextVertically?: boolean;
   ccw?: boolean;
 }
 

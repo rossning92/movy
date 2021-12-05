@@ -24,16 +24,13 @@ symbol.moveTo({ scale: 0.001, t: "<" });
 const textParent = mo.addGroup({ scale: 1.5 });
 const bracketGroup = textParent.addGroup();
 const brackets = bracketGroup.addText("{ }", {
-  fontSize: 0.8,
+  fontSize: 0.75,
   color: "#ffff00",
-  verticalAlign: "center",
   letterSpacing: 0.1,
 });
 bracketGroup.addText("3", {
-  font: "condensed",
-  fontSize: 0.8,
+  fontSize: 0.75,
   color: "#ffff00",
-  verticalAlign: "center",
 });
 bracketGroup.fadeIn({ t: "<0.4" }).grow3({ t: "<" });
 bracketGroup.shake2D({ t: "<", duration: 0.4 });
@@ -59,14 +56,12 @@ textParent
   .addText("编程", {
     font: "gdh",
     x: -10,
-    verticalAlign: "center",
   })
   .moveTo({ x: -2, t: "<", ease: "elastic.out(1, 0.2)" });
 textParent
   .addText("分钟", {
     font: "gdh",
     x: 10,
-    verticalAlign: "center",
   })
   .moveTo({ x: 2, t: "<", ease: "elastic.out(1, 0.2)" });
 textParent.shake2D({ t: "<", duration: 0.4 });
@@ -77,7 +72,7 @@ mo.addText("奇乐编程学院", {
   letterSpacing: 0.4,
   color: "#efefef",
   position: [0, -3, 0],
-}).reveal({ direction: "down", t: "<0.2" });
+}).flyIn({ direction: "down", t: "<0.2" });
 
 mo.addGlitch({ t: "<-0.2" });
 mo.addGlitch({ t: "<0.25" });
