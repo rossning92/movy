@@ -198,10 +198,10 @@ function setupScene() {
   scene.background = new THREE.Color(0);
 
   if (!camera) {
-    camera = createPerspectiveCamera();
+    camera = createOrthographicCamera();
   }
 
-  uiCamera = createPerspectiveCamera();
+  uiCamera = createOrthographicCamera();
 
   cameraControls = new OrbitControls(camera, renderer.domElement);
 
@@ -2892,7 +2892,11 @@ export function moveTo(params: MoveObjectParameters = {}) {
   return getRoot().moveTo(params);
 }
 
-export function _setOrthographicCamera() {
+export function usePerspectiveCamera() {
+  camera = createPerspectiveCamera();
+}
+
+export function useOrthographicCamera() {
   camera = createOrthographicCamera();
 }
 
