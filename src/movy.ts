@@ -1666,7 +1666,7 @@ class SceneObject {
   }
 
   moveTo(params: MoveObjectParameters = {}) {
-    const { t, duration = 0.5, ease = "power2.out" } = params;
+    const { t, duration = 0.5, ease = defaultEase } = params;
 
     commandQueue.push(() => {
       let tl = gsap.timeline({
@@ -1689,7 +1689,7 @@ class SceneObject {
   }
 
   scale(s: number, params: AnimationParameters = {}) {
-    const { t, duration = 0.5, ease = "power2.out" } = params;
+    const { t, duration = 0.5, ease = defaultEase } = params;
 
     commandQueue.push(() => {
       let tl = gsap.timeline({
@@ -1813,7 +1813,11 @@ class SceneObject {
     return this;
   }
 
-  rotateIn({ t, duration = 0.5, ease = "expo.out" }: AnimationParameters = {}) {
+  rotateIn({
+    t,
+    duration = 0.5,
+    ease = defaultEase,
+  }: AnimationParameters = {}) {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
@@ -1847,7 +1851,7 @@ class SceneObject {
 
       tl.from(
         this.object3D.scale,
-        { x: 0.01, y: 0.01, z: 0.01, ease: "expo.out" },
+        { x: 0.01, y: 0.01, z: 0.01, ease: defaultEase },
         "<"
       );
 
@@ -1935,7 +1939,7 @@ class SceneObject {
     direction = "up",
     t,
     duration = 0.5,
-    ease = "expo.out",
+    ease = defaultEase,
   }: RevealParameters = {}) {
     commandQueue.push(() => {
       const object3d = this.object3D;
