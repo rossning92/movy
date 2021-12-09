@@ -1346,40 +1346,15 @@ class SceneObject {
       p2 = (params as any).to;
     }
 
-    const obj = new SceneObject();
-    if (params.parent) {
-      params.parent.children.push(obj);
-    } else {
-      this.children.push(obj);
+    return this.addPolyline([p1, p2], params);
     }
 
-    const { lineWidth = DEFAULT_LINE_WIDTH } = params;
-
-    commandQueue.push(async () => {
-      addDefaultLights();
-
-      if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
-
-      obj.object3D = createArrowLine2D(material, {
-        from: toThreeVector3(p1),
-        to: toThreeVector3(p2),
-        arrowStart: false,
-        arrowEnd: false,
-        lineWidth,
-      });
-
-      updateTransform(obj.object3D, params);
-
-      this.addObjectToScene(obj, params);
-    });
-
-    return obj;
-  }
+  // TODO: extract this into a separate class: LineObject
+  verts: number[] = [];
 
   addPolyline(
     points:
-      | [number, number, number][]
+      | [number, number, number?][]
       | ((t: number) => [number, number, number][]),
     params: AddLineParameters = {}
   ): SceneObject {
@@ -1396,7 +1371,7 @@ class SceneObject {
       if (Array.isArray(points)) {
         positions = [];
         for (const pt of points) {
-          positions.push(pt[0], pt[1], pt[2]);
+          positions.push(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]);
         }
       } else if (points instanceof Function) {
         positions = points(0).reduce((acc, val) => acc.concat(val), []);
@@ -1405,6 +1380,7 @@ class SceneObject {
           geometry.setPositions(positions);
         });
       }
+      obj.verts = positions;
 
       const { geometry, line } = createLine(positions, params);
       obj.object3D = line;
@@ -2039,6 +2015,47 @@ class SceneObject {
       );
 
       mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
+  updateVert(
+    i: number,
+    vert: [number, number, number?],
+    params: AnimationParameters = {}
+  ) {
+    commandQueue.push(() => {
+      const mesh = this.object3D as THREE.Mesh;
+      // TODO: add support for all object types instead of just LineGeometry.
+      const geometry = mesh.geometry as LineGeometry;
+
+      const tl = gsap.timeline({
+        defaults: { duration: 0.5, ease: defaultEase },
+      });
+
+      const x = this.verts[3 * i];
+      const y = this.verts[3 * i + 1];
+      const z = this.verts[3 * i + 2];
+
+      const data = { x, y, z };
+      tl.to(data, {
+        x: vert[0],
+        y: vert[1],
+        z: vert[2] || 0,
+        onUpdate: () => {
+          this.verts[3 * i] = data.x;
+          this.verts[3 * i + 1] = data.y;
+          this.verts[3 * i + 2] = data.z;
+          // TODO: perf optimization: multiple vertice update.
+          geometry.setPositions(this.verts);
+        },
+      });
+
+      this.verts[3 * i] = vert[0];
+      this.verts[3 * i + 1] = vert[1];
+      this.verts[3 * i + 2] = vert[2] || 0;
+
+      mainTimeline.add(tl, params.t);
     });
     return this;
   }
