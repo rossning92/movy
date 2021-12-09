@@ -2019,12 +2019,15 @@ class SceneObject {
     return this;
   }
 
+  vertexToAnimate = new Map<number, THREE.Vector3>();
+
   updateVert(
     i: number,
-    vert: [number, number, number?],
+    position: [number, number, number?],
     params: AnimationParameters = {}
   ) {
     commandQueue.push(() => {
+      if (this.verts.length > 0) {
       const mesh = this.object3D as THREE.Mesh;
       // TODO: add support for all object types instead of just LineGeometry.
       const geometry = mesh.geometry as LineGeometry;
@@ -2039,9 +2042,9 @@ class SceneObject {
 
       const data = { x, y, z };
       tl.to(data, {
-        x: vert[0],
-        y: vert[1],
-        z: vert[2] || 0,
+          x: position[0],
+          y: position[1],
+          z: position[2] || 0,
         onUpdate: () => {
           this.verts[3 * i] = data.x;
           this.verts[3 * i + 1] = data.y;
@@ -2051,11 +2054,44 @@ class SceneObject {
         },
       });
 
-      this.verts[3 * i] = vert[0];
-      this.verts[3 * i + 1] = vert[1];
-      this.verts[3 * i + 2] = vert[2] || 0;
+        this.verts[3 * i] = position[0];
+        this.verts[3 * i + 1] = position[1];
+        this.verts[3 * i + 2] = position[2] || 0;
+
+        mainTimeline.add(tl, params.t);
+      } else {
+        const mesh = this.object3D as THREE.Mesh;
+        const geometry = mesh.geometry as THREE.BufferGeometry;
+        const positions = geometry.attributes.position;
+
+        const tl = gsap.timeline({
+          defaults: { duration: 0.5, ease: defaultEase },
+        });
+
+        let vertex: THREE.Vector3;
+        if (!this.vertexToAnimate.has(i)) {
+          vertex = new THREE.Vector3(
+            positions.getX(i),
+            positions.getY(i),
+            positions.getZ(i)
+          );
+          this.vertexToAnimate.set(i, vertex);
+        } else {
+          vertex = this.vertexToAnimate.get(i);
+        }
+
+        tl.to(vertex, {
+          x: position[0],
+          y: position[1],
+          z: position[2] || 0,
+          onUpdate: () => {
+            positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            geometry.attributes.position.needsUpdate = true;
+          },
+        });
 
       mainTimeline.add(tl, params.t);
+      }
     });
     return this;
   }
