@@ -20,8 +20,7 @@ mo.addText("Hello, Movy!", {
   scale: 0.8,
   color: "yellow",
 }).grow();
-
-mo.run();`
+`
     );
   }
 
