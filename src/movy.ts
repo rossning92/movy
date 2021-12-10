@@ -895,12 +895,11 @@ async function loadTexture(url: string): Promise<THREE.Texture> {
 }
 
 export function getPolygonVertices({ sides = 3, radius = 0.5 } = {}) {
-  const verts = [];
+  const verts: [number, number][] = [];
   for (let i = 0; i < sides; i++) {
     verts.push([
       radius * Math.sin((2 * i * Math.PI) / sides),
       radius * Math.cos((2 * i * Math.PI) / sides),
-      0,
     ]);
   }
   return verts;
@@ -1460,7 +1459,7 @@ class SceneObject {
         sides: 128,
         radius: params.radius || 0.5,
       });
-      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
+      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], 0));
       obj.object3D = createLine3d(material, {
         points: v3d.concat(v3d[0]),
         lineWidth,
@@ -1541,7 +1540,10 @@ class SceneObject {
     return obj;
   }
 
-  addTriangle(params: AddTriangleParameters = {}): SceneObject {
+  addPolygon(
+    vertices: [number, number][],
+    params: AddPolygonParameters = {}
+  ): SceneObject {
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1553,15 +1555,23 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
-      let verts = params.verts;
-      if (!verts) {
-        verts = getPolygonVertices();
+      // Vertex positions
+      const positions: number[] = [];
+      for (const v of vertices) {
+        positions.push(v[0], v[1], 0);
+      }
+
+      // Indices
+      const indices: number[] = [];
+      for (let i = 0; i < vertices.length - 2; i++) {
+        indices.push(0, i + 1, i + 2);
       }
 
       const geometry = new THREE.BufferGeometry();
+      geometry.setIndex(indices);
       geometry.setAttribute(
         "position",
-        new THREE.BufferAttribute(new Float32Array(verts.flat()), 3)
+        new THREE.Float32BufferAttribute(positions, 3)
       );
       geometry.computeVertexNormals();
 
@@ -1573,6 +1583,10 @@ class SceneObject {
     });
 
     return obj;
+  }
+
+  addTriangle(params: AddPolygonParameters = {}): SceneObject {
+    return this.addPolygon(getTriangleVertices(), params);
   }
 
   addTriangleOutline(params: AddOutlineParameters = {}) {
@@ -2495,9 +2509,7 @@ interface AddCircleParameters extends Transform, BasicMaterial {
   radius?: number;
 }
 
-interface AddTriangleParameters extends Transform, BasicMaterial {
-  verts?: number[][];
-}
+interface AddPolygonParameters extends Transform, BasicMaterial {}
 
 interface AddOutlineParameters extends Transform, BasicMaterial {
   lineWidth?: number;
@@ -2961,8 +2973,15 @@ export function addTorus(params: AddObjectParameters = {}): SceneObject {
   return getRoot().addTorus(params);
 }
 
-export function addTriangle(params: AddTriangleParameters = {}): SceneObject {
+export function addTriangle(params: AddPolygonParameters = {}): SceneObject {
   return getRoot().addTriangle(params);
+}
+
+export function addPolygon(
+  vertices: [number, number][],
+  params: AddPolygonParameters = {}
+): SceneObject {
+  return getRoot().addPolygon(vertices, params);
 }
 
 export function addTriangleOutline(
