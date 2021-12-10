@@ -1810,14 +1810,14 @@ class SceneObject {
   rotate3D({
     t,
     duration = 5,
-    repeat = 2,
+    repeat,
     ease = "none",
     x = Math.PI * 2,
     y = -Math.PI * 2,
   }: RotateParameters = {}) {
     commandQueue.push(() => {
       const tl = gsap.timeline({
-        defaults: { duration, ease, repeat: repeat ? repeat - 1 : undefined },
+        defaults: { duration, ease, repeat },
       });
 
       tl.to(this.object3D.rotation, { x, y }, "<");
