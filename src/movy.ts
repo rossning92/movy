@@ -1797,14 +1797,42 @@ class SceneObject {
     return this;
   }
 
-  rotate({ t, duration = 5, ease = "none" }: RotateParameters = {}) {
+  rotateTo(
+    rx?: number,
+    ry?: number,
+    rz?: number,
+    { t, duration = 0.5, ease = defaultEase }: AnimationParameters = {}
+  ) {
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      tl.to(this.object3D.rotation, { y: duration }, "<");
+      if (rx !== undefined) {
+        tl.to(this.object3D.rotation, { x: rx * DEG2RAD }, "<");
+      }
+      if (ry !== undefined) {
+        tl.to(this.object3D.rotation, { y: ry * DEG2RAD }, "<");
+      }
+      if (rz !== undefined) {
+        tl.to(this.object3D.rotation, { z: rz * DEG2RAD }, "<");
+      }
 
       mainTimeline.add(tl, t);
     });
+    return this;
+  }
+
+  rotateXTo(degrees: number, params: AnimationParameters = {}) {
+    this.rotateTo(degrees, undefined, undefined, params);
+    return this;
+  }
+
+  rotateZTo(degrees: number, params: AnimationParameters = {}) {
+    this.rotateTo(undefined, undefined, degrees, params);
+    return this;
+  }
+
+  rotateYTo(degrees: number, params: AnimationParameters = {}) {
+    this.rotateTo(undefined, degrees, undefined, params);
     return this;
   }
 
