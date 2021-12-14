@@ -1786,7 +1786,7 @@ class SceneObject {
     return this;
   }
 
-  scale(s: number, params: AnimationParameters = {}) {
+  scaleTo(scale: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
 
     commandQueue.push(() => {
@@ -1797,13 +1797,64 @@ class SceneObject {
         },
       });
 
-      createTransformAnimation({
-        scale: s,
-        tl,
-        object3d: this.object3D,
-        preScale: this.preScale,
+      tl.to(
+        this.object3D.scale,
+        {
+          x: scale,
+          y: scale,
+          z: scale,
+        },
+        "<"
+      );
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
+  scaleXTo(sx: number, params: AnimationParameters = {}) {
+    const { t, duration = 0.5, ease = defaultEase } = params;
+    commandQueue.push(() => {
+      let tl = gsap.timeline({
+        defaults: {
+          duration,
+          ease,
+        },
       });
 
+      tl.to(this.object3D.scale, { x: sx }, "<");
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
+  scaleYTo(sy: number, params: AnimationParameters = {}) {
+    const { t, duration = 0.5, ease = defaultEase } = params;
+    commandQueue.push(() => {
+      let tl = gsap.timeline({
+        defaults: {
+          duration,
+          ease,
+        },
+      });
+
+      tl.to(this.object3D.scale, { y: sy }, "<");
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
+  scaleZTo(sz: number, params: AnimationParameters = {}) {
+    const { t, duration = 0.5, ease = defaultEase } = params;
+    commandQueue.push(() => {
+      let tl = gsap.timeline({
+        defaults: {
+          duration,
+          ease,
+        },
+      });
+
+      tl.to(this.object3D.scale, { z: sz }, "<");
       mainTimeline.add(tl, t);
     });
     return this;
