@@ -27,6 +27,8 @@ import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 
 const DEFAULT_LINE_WIDTH = 0.02;
+const defaultEase = "power2.out";
+const DEG2RAD = Math.PI / 180;
 
 declare class CCapture {
   constructor(params: any);
