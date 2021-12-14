@@ -310,9 +310,10 @@ interface MoveCameraParameters extends Transform, AnimationParameters {
   fov?: number;
   zoom?: number;
 }
+
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
   commandQueue.push(() => {
-    const { t, lookAt, duration = 0.5, ease = "expo.out", fov, zoom } = params;
+    const { t, lookAt, duration = 0.5, ease = defaultEase, fov, zoom } = params;
 
     const tl = gsap.timeline({
       defaults: {
