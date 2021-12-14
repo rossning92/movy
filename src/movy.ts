@@ -1214,6 +1214,74 @@ class SceneObject {
     return obj;
   }
 
+  addAxes2D(params: AddAxes2DParameters = {}): SceneObject {
+    const {
+      xRange = [-4, 4],
+      yRange = [-4, 4],
+      tickIntervalX = 1,
+      tickIntervalY = 1,
+      showTicks = true,
+      showTickLabels = true,
+    } = params;
+
+    const textScale = 0.25;
+
+    const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    if (showTicks) {
+      // X ticks
+      const numTicksX = Math.floor((xRange[1] - xRange[0]) / tickIntervalX);
+      for (let i = 1; i <= numTicksX; i++) {
+        const x = xRange[0] + i * tickIntervalX;
+        if (x !== 0) {
+          this.addLine([x, -0.1], [x, 0.1], {
+            lineWidth: DEFAULT_LINE_WIDTH,
+          });
+          if (showTickLabels) {
+            this.addText(`${x}`, {
+              x,
+              y: -0.2,
+              scale: textScale,
+              font: "math",
+            });
+          }
+        }
+      }
+
+      // Y ticks
+      const numTicksY = Math.floor((yRange[1] - yRange[0]) / tickIntervalY);
+      for (let i = 1; i <= numTicksY; i++) {
+        const y = yRange[0] + i * tickIntervalY;
+        if (y !== 0) {
+          this.addLine([-0.1, y], [0.1, y], {
+            lineWidth: DEFAULT_LINE_WIDTH,
+          });
+          if (showTickLabels) {
+            this.addText(`${y}`, {
+              x: -0.5,
+              y,
+              scale: textScale,
+              font: "math",
+            });
+          }
+        }
+      }
+    }
+
+    this.addArrow([xRange[0] * 1.1, 0, 0], [xRange[1] * 1.1, 0, 0], {
+      lineWidth: DEFAULT_LINE_WIDTH,
+    });
+    this.addArrow([0, yRange[0] * 1.1, 0], [0, yRange[1] * 1.1, 0], {
+      lineWidth: DEFAULT_LINE_WIDTH,
+    });
+
+    return obj;
+  }
 
   addArc(
     startAngle: number,
@@ -2585,6 +2653,15 @@ interface AddArrowParameters extends AddLineParameters {
   arrowEnd?: boolean;
 }
 
+interface AddAxes2DParameters extends Transform, BasicMaterial {
+  xRange?: [number, number, number?];
+  yRange?: [number, number, number?];
+  showTicks?: boolean;
+  showTickLabels?: boolean;
+  tickIntervalX?: number;
+  tickIntervalY?: number;
+}
+
 interface AddGridParameters extends Transform, BasicMaterial {
   gridSize?: number;
 }
@@ -3065,6 +3142,10 @@ export function addArrow(
   params: AddArrowParameters = {}
 ): SceneObject {
   return getRoot().addArrow(p1, p2, params);
+}
+
+export function addAxes2D(params: AddAxes2DParameters = {}): SceneObject {
+  return getRoot().addAxes2D(params);
 }
 
 export function addArc(
