@@ -1087,6 +1087,20 @@ class SceneObject {
     return obj;
   }
 
+  clone() {
+    const obj = new SceneObject();
+    commandQueue.push(async () => {
+      obj.object3D = this.object3D.clone();
+      obj.object3D.traverse((node) => {
+        if (node.isMesh) {
+          node.material = node.material.clone();
+        }
+      });
+      this.object3D.parent.add(obj.object3D);
+    });
+    return obj;
+  }
+
   addGroup(params: AddGroupParameters = {}) {
     const obj = new GroupObject();
     if (params.parent) {
@@ -2587,6 +2601,19 @@ class TextObject extends GroupObject {
       mainTimeline.add(tl, t);
     });
     return this;
+  }
+
+  clone() {
+    const superClone = super.clone();
+    const copy = Object.assign(new TextObject(), superClone);
+    commandQueue.push(async () => {
+      for (var attr in superClone) {
+        if (superClone.hasOwnProperty(attr)) {
+          copy[attr] = superClone[attr];
+        }
+      }
+    });
+    return copy;
   }
 }
 
