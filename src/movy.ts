@@ -1292,7 +1292,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    const { color = "white", ccw = false, opacity = 1.0 } = params;
+    const { color, ccw, opacity = 1.0 } = params;
 
     commandQueue.push(async () => {
       if (file.endsWith(".svg")) {
