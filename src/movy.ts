@@ -1808,7 +1808,7 @@ class SceneObject {
     return this;
   }
 
-  rotate3D({
+  spinning({
     t,
     duration = 5,
     repeat,
