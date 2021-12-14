@@ -20,6 +20,7 @@ import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { WEBGL } from "three/examples/jsm/WebGL.js";
 import { toThreeColor } from "utils/color";
+import { computeAABB } from "utils/math";
 import { createTexObject } from "utils/tex";
 import TextMeshObject from "./objects/TextMeshObject";
 import "./style/player.css";
@@ -2621,6 +2622,7 @@ interface Transform {
   position?: [number, number] | [number, number, number];
   scale?: number;
   parent?: SceneObject;
+  anchor?: "left" | "right" | "top" | "bottom";
 }
 
 interface AddObjectParameters extends Transform, BasicMaterial {
@@ -2716,6 +2718,30 @@ function updateTransform(mesh: THREE.Object3D, transform: Transform) {
   if (transform.rx !== undefined) mesh.rotation.x = transform.rx;
   if (transform.ry !== undefined) mesh.rotation.y = transform.ry;
   if (transform.rz !== undefined) mesh.rotation.z = transform.rz;
+
+  if (transform.anchor !== undefined) {
+    console.assert(mesh.children.length > 0);
+
+    const aabb = computeAABB(mesh);
+    const size = aabb.getSize(new THREE.Vector3());
+    if (transform.anchor === "left") {
+      for (const child of mesh.children) {
+        child.translateX(size.x / 2);
+      }
+    } else if (transform.anchor === "right") {
+      for (const child of mesh.children) {
+        child.translateX(-size.x / 2);
+      }
+    } else if (transform.anchor === "top") {
+      for (const child of mesh.children) {
+        child.translateY(-size.y / 2);
+      }
+    } else if (transform.anchor === "bottom") {
+      for (const child of mesh.children) {
+        child.translateY(size.y / 2);
+      }
+    }
+  }
 }
 
 export function _setUILayer() {
