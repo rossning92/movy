@@ -1056,7 +1056,8 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = true;
       const material = createMaterial(params);
 
-      obj.object3D = new THREE.Mesh(geometry, material);
+      obj.object3D = new THREE.Group();
+      obj.object3D.add(new THREE.Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -1171,7 +1172,8 @@ class SceneObject {
 
       const geometry = new THREE.CircleGeometry(params.radius || 0.5, 128);
 
-      obj.object3D = new THREE.Mesh(geometry, material);
+      obj.object3D = new THREE.Group();
+      obj.object3D.add(new THREE.Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -1614,7 +1616,8 @@ class SceneObject {
       const { width = 1, height = 1 } = params;
       const geometry = new THREE.PlaneGeometry(width, height);
 
-      obj.object3D = new THREE.Mesh(geometry, material);
+      obj.object3D = new THREE.Group();
+      obj.object3D.add(new THREE.Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -1659,7 +1662,8 @@ class SceneObject {
       );
       geometry.computeVertexNormals();
 
-      obj.object3D = new THREE.Mesh(geometry, material);
+      obj.object3D = new THREE.Group();
+      obj.object3D.add(new THREE.Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -2777,7 +2781,15 @@ interface Transform {
   position?: [number, number] | [number, number, number];
   scale?: number;
   parent?: SceneObject;
-  anchor?: "left" | "right" | "top" | "bottom";
+  anchor?:
+    | "left"
+    | "right"
+    | "top"
+    | "bottom"
+    | "topLeft"
+    | "topRight"
+    | "bottomLeft"
+    | "bottomRight";
 }
 
 interface AddObjectParameters extends Transform, BasicMaterial {
@@ -2834,29 +2846,29 @@ function createMaterial(params: BasicMaterial = {}) {
   }
 }
 
-function updateTransform(mesh: THREE.Object3D, transform: Transform) {
+function updateTransform(obj: THREE.Object3D, transform: Transform) {
   // Scale
   if (transform.scale !== undefined) {
-    mesh.scale.multiplyScalar(transform.scale);
+    obj.scale.multiplyScalar(transform.scale);
   } else {
     if (transform.sx !== undefined) {
-      mesh.scale.x = transform.sx;
+      obj.scale.x = transform.sx;
     }
     if (transform.sy !== undefined) {
-      mesh.scale.y = transform.sy;
+      obj.scale.y = transform.sy;
     }
     if (transform.sz !== undefined) {
-      mesh.scale.z = transform.sz;
+      obj.scale.z = transform.sz;
     }
   }
 
   // Position
   if (transform.position !== undefined) {
-    mesh.position.copy(toThreeVector3(transform.position));
+    obj.position.copy(toThreeVector3(transform.position));
   } else {
     for (const prop of ["x", "y", "z"]) {
       const T = transform as any;
-      const V = mesh.position as any;
+      const V = obj.position as any;
       if (T[prop] !== undefined) {
         if (typeof T[prop] === "number") {
           V[prop] = T[prop];
@@ -2870,29 +2882,49 @@ function updateTransform(mesh: THREE.Object3D, transform: Transform) {
   }
 
   // Rotation
-  if (transform.rx !== undefined) mesh.rotation.x = transform.rx;
-  if (transform.ry !== undefined) mesh.rotation.y = transform.ry;
-  if (transform.rz !== undefined) mesh.rotation.z = transform.rz;
+  if (transform.rx !== undefined) obj.rotation.x = transform.rx;
+  if (transform.ry !== undefined) obj.rotation.y = transform.ry;
+  if (transform.rz !== undefined) obj.rotation.z = transform.rz;
 
   if (transform.anchor !== undefined) {
-    console.assert(mesh.children.length > 0);
+    console.assert(obj.children.length > 0);
 
-    const aabb = computeAABB(mesh);
+    const aabb = computeAABB(obj);
     const size = aabb.getSize(new THREE.Vector3());
     if (transform.anchor === "left") {
-      for (const child of mesh.children) {
+      for (const child of obj.children) {
         child.translateX(size.x / 2);
       }
     } else if (transform.anchor === "right") {
-      for (const child of mesh.children) {
+      for (const child of obj.children) {
         child.translateX(-size.x / 2);
       }
     } else if (transform.anchor === "top") {
-      for (const child of mesh.children) {
+      for (const child of obj.children) {
         child.translateY(-size.y / 2);
       }
     } else if (transform.anchor === "bottom") {
-      for (const child of mesh.children) {
+      for (const child of obj.children) {
+        child.translateY(size.y / 2);
+      }
+    } else if (transform.anchor === "topLeft") {
+      for (const child of obj.children) {
+        child.translateX(size.x / 2);
+        child.translateY(-size.y / 2);
+      }
+    } else if (transform.anchor === "topRight") {
+      for (const child of obj.children) {
+        child.translateX(-size.x / 2);
+        child.translateY(-size.y / 2);
+      }
+    } else if (transform.anchor === "bottomLeft") {
+      for (const child of obj.children) {
+        child.translateX(size.x / 2);
+        child.translateY(size.y / 2);
+      }
+    } else if (transform.anchor === "bottomRight") {
+      for (const child of obj.children) {
+        child.translateX(-size.x / 2);
         child.translateY(size.y / 2);
       }
     }
