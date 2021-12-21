@@ -6,5 +6,5 @@ const t3 = mo.addTex("\\begin{bmatrix}d & b\\\\c & a^2\\end{bmatrix}", {
   scale: 0.5,
 });
 
-t1.transformTexTo(t2, { t: 1, duration: 1 });
-t2.transformTexTo(t3, { t: 2, duration: 1 });
+t1.transformTexTo(t2, { t: 2, duration: 2 });
+t2.transformTexTo(t3, { t: 4, duration: 2 });

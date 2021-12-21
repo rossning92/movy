@@ -3,19 +3,14 @@ import * as mo from "movy";
 const text = "loading...";
 const duration = 4;
 
-mo.setResolution(700, 60);
-
-const g = mo.addGroup({});
-mo.addRectOutline({
-  width: 114,
-  height: 8.6,
+const progressBar = mo.addGroup();
+progressBar.addRectOutline({
+  width: 10,
   z: 0.1,
-  lineWidth: 0.9,
-  parent: g,
+  lineWidth: 0.08,
 });
-mo.addRect({ sx: 114, sy: 8.6, color: "#44abda", parent: g }).wipeIn({
+progressBar.addRect({ sx: 10, color: "#44abda" }).wipeIn({
   dir: "right",
   duration,
 });
-
-mo.addText(text, { scale: 4 });
+progressBar.addText(text, { scale: 0.5 });

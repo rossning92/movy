@@ -1,7 +1,5 @@
 import * as mo from "movy";
 
-mo.setResolution(640, 360);
-
 // Generate fake data
 const data = [];
 for (let i = 0; i < 50; i++) {
@@ -89,10 +87,8 @@ function addLineChart({
   });
 
   for (let i = 0; i < data.length - 1; i++) {
-    mo.addLine({
-      from: transform(data[i]),
-      to: transform(data[i + 1]),
-      lineWidth: 0.03,
+    mo.addLine(transform(data[i]), transform(data[i + 1]), {
+      lineWidth: 0.05,
       color: "green",
     }).fadeIn({
       t: "<0.05",

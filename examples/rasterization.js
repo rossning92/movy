@@ -1,6 +1,6 @@
 import * as mo from "movy";
 
-const GRID_SIZE = 48;
+const GRID_SIZE = 32;
 
 const group = mo.addGroup({ scale: 9 / GRID_SIZE });
 
