@@ -1444,7 +1444,7 @@ class SceneObject {
     }
 
     return this.addPolyline([p1, p2], params);
-    }
+  }
 
   // TODO: extract this into a separate class: LineObject
   verts: number[] = [];
@@ -2225,31 +2225,31 @@ class SceneObject {
   ) {
     commandQueue.push(() => {
       if (this.verts.length > 0) {
-      const mesh = this.object3D as THREE.Mesh;
-      // TODO: add support for all object types instead of just LineGeometry.
-      const geometry = mesh.geometry as LineGeometry;
+        const mesh = this.object3D as THREE.Mesh;
+        // TODO: add support for all object types instead of just LineGeometry.
+        const geometry = mesh.geometry as LineGeometry;
 
-      const tl = gsap.timeline({
-        defaults: { duration: 0.5, ease: defaultEase },
-      });
+        const tl = gsap.timeline({
+          defaults: { duration: 0.5, ease: defaultEase },
+        });
 
-      const x = this.verts[3 * i];
-      const y = this.verts[3 * i + 1];
-      const z = this.verts[3 * i + 2];
+        const x = this.verts[3 * i];
+        const y = this.verts[3 * i + 1];
+        const z = this.verts[3 * i + 2];
 
-      const data = { x, y, z };
-      tl.to(data, {
+        const data = { x, y, z };
+        tl.to(data, {
           x: position[0],
           y: position[1],
           z: position[2] || 0,
-        onUpdate: () => {
-          this.verts[3 * i] = data.x;
-          this.verts[3 * i + 1] = data.y;
-          this.verts[3 * i + 2] = data.z;
-          // TODO: perf optimization: multiple vertice update.
-          geometry.setPositions(this.verts);
-        },
-      });
+          onUpdate: () => {
+            this.verts[3 * i] = data.x;
+            this.verts[3 * i + 1] = data.y;
+            this.verts[3 * i + 2] = data.z;
+            // TODO: perf optimization: multiple vertice update.
+            geometry.setPositions(this.verts);
+          },
+        });
 
         this.verts[3 * i] = position[0];
         this.verts[3 * i + 1] = position[1];
@@ -2287,7 +2287,7 @@ class SceneObject {
           },
         });
 
-      mainTimeline.add(tl, params.t);
+        mainTimeline.add(tl, params.t);
       }
     });
     return this;
