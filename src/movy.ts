@@ -1230,6 +1230,18 @@ class SceneObject {
     return obj;
   }
 
+  addDoubleArrow(
+    p1: [number, number, number?],
+    p2: [number, number, number?],
+    params: AddLineParameters = {}
+  ): SceneObject {
+    return this.addArrow(p1, p2, {
+      ...params,
+      arrowStart: true,
+      arrowEnd: true,
+    });
+  }
+
   addAxes2D(params: AddAxes2DParameters = {}): SceneObject {
     const {
       xRange = [-4, 4],
@@ -2675,7 +2687,10 @@ class TextObject extends GroupObject {
     });
   }
 
-  transformTexTo(to: TextObject | TextObject[], params: AnimationParameters = {}) {
+  transformTexTo(
+    to: TextObject | TextObject[],
+    params: AnimationParameters = {}
+  ) {
     if (to instanceof TextObject) {
       to = [to];
     }
@@ -3290,6 +3305,14 @@ export function addArrow(
   params: AddArrowParameters = {}
 ): SceneObject {
   return getRoot().addArrow(p1, p2, params);
+}
+
+export function addDoubleArrow(
+  p1: [number, number, number?],
+  p2: [number, number, number?],
+  params: AddLineParameters = {}
+): SceneObject {
+  return getRoot().addDoubleArrow(p1, p2, params);
 }
 
 export function addAxes2D(params: AddAxes2DParameters = {}): SceneObject {
