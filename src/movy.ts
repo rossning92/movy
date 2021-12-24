@@ -1121,7 +1121,7 @@ class SceneObject {
     return obj;
   }
 
-  _add3DModel(url: string, params: AddObjectParameters = {}): SceneObject {
+  add3DModel(url: string, params: AddObjectParameters = {}): SceneObject {
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1133,20 +1133,26 @@ class SceneObject {
       addDefaultLights();
 
       const object = await loadObj(url);
+      const aabb = computeAABB(object);
 
-      const aabb = getBoundingBox(object);
+      const size = new THREE.Vector3();
+      aabb.getSize(size);
+      const length = Math.max(size.x, size.y, size.z);
+      object.scale.divideScalar(length);
+
       const center = new THREE.Vector3();
       aabb.getCenter(center);
+      center.divideScalar(length);
       object.position.sub(center);
 
       const group = new THREE.Group();
       group.add(object);
 
-      if (params.wireframe) {
-        const materials = getAllMaterials(object);
-        for (const material of materials) {
-          (material as any).wireframe = true;
-        }
+      if (params.wireframe || params.color) {
+        const material = createMaterial({ ...params, lighting: true });
+        object.traverse((o: any) => {
+          if (o.isMesh) o.material = material;
+        });
       }
 
       obj.object3D = group;
@@ -2137,7 +2143,7 @@ class SceneObject {
     commandQueue.push(() => {
       const object3d = this.object3D;
       const clippingPlanes: THREE.Plane[] = [];
-      const box = getBoundingBox(object3d);
+      const box = computeAABB(object3d);
       const materials = getAllMaterials(object3d);
 
       const tl = gsap.timeline({
@@ -2300,7 +2306,7 @@ class SceneObject {
     ease = "power.out",
   }: WipeInParameters = {}) {
     commandQueue.push(() => {
-      const boundingBox = getBoundingBox(this.object3D);
+      const boundingBox = computeAABB(this.object3D);
 
       const tl = gsap.timeline({
         defaults: { duration, ease },
@@ -2992,13 +2998,6 @@ export function _setUILayer() {
 
 interface AddGroupParameters extends Transform {}
 
-function getBoundingBox(object3D: THREE.Object3D): THREE.Box3 {
-  // Force update the world matrix so that we get the correct scale.
-  object3D.updateWorldMatrix(true, true);
-  const aabb = new THREE.Box3().expandByObject(object3D);
-  return aabb;
-}
-
 export function getQueryString(url: string = undefined) {
   // get query string from url (optional) or window
   var queryString = url ? url.split("?")[1] : window.location.search.slice(1);
@@ -3292,11 +3291,11 @@ export function _addMesh(
   return getRoot()._addMesh(mesh, params);
 }
 
-export function _add3DModel(
+export function add3DModel(
   url: string,
   params: AddObjectParameters = {}
 ): SceneObject {
-  return getRoot()._add3DModel(url, params);
+  return getRoot().add3DModel(url, params);
 }
 
 export function addArrow(
