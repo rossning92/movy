@@ -83,11 +83,6 @@ let options = {
   timeline: 0,
 };
 
-const gui = new dat.GUI();
-gui.add(options, "format", ["webm", "webm-fast", "png"]);
-gui.add(options, "framerate", [10, 25, 30, 60, 120]);
-gui.add(options, "render");
-
 const seedrandom = require("seedrandom");
 let rng = seedrandom("hello.");
 
@@ -749,7 +744,11 @@ export function run() {
     }
 
     {
-      // Create timeline GUI
+      // Create UI controls
+      const gui = new dat.GUI();
+      gui.add(options, "format", ["webm", "webm-fast", "png"]);
+      gui.add(options, "framerate", [10, 25, 30, 60, 120]);
+      gui.add(options, "render");
 
       options.timeline = 0;
       gui
