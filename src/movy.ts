@@ -1761,8 +1761,10 @@ class SceneObject {
     return obj;
   }
 
-  addTex(tex: string, params: AddTextParameters = {}): TextObject {
-    const obj = new TextObject();
+  addTex(tex: string, params: AddTextParameters = {}): TexObject {
+    const obj = new TexObject();
+    obj._initParams = params;
+
     if (params.parent) {
       params.parent.children.push(obj);
     } else {
@@ -1770,14 +1772,11 @@ class SceneObject {
     }
 
     commandQueue.push(async () => {
-      const { color } = params;
-
-      const parent = await createTexObject(tex, {
-        color: "#" + toThreeColor(color as string).getHexString(),
+      const texObject = await createTexObject(tex, {
+        color: "#" + toThreeColor(params.color).getHexString(),
       });
-      obj.object3D = parent;
-
-      updateTransform(obj.object3D, params);
+      updateTransform(texObject, params);
+      obj.object3D = texObject;
       this.addObjectToScene(obj, params);
     });
 
@@ -2591,10 +2590,14 @@ class TextObject extends GroupObject {
     });
     return this;
   }
+}
+
+class TexObject extends GroupObject {
+  _initParams: AddTextParameters;
 
   static transformTexFromTo(
-    from: TextObject[],
-    to: TextObject[],
+    from: TexObject[],
+    to: TexObject[],
     params: AnimationParameters = {}
   ) {
     const { duration = 0.5, t, ease = defaultEase } = params;
@@ -2689,32 +2692,32 @@ class TextObject extends GroupObject {
   }
 
   transformTexTo(
-    to: TextObject | TextObject[],
+    to: TexObject | TexObject[],
     params: AnimationParameters = {}
   ) {
-    if (to instanceof TextObject) {
+    if (to instanceof TexObject) {
       to = [to];
     }
 
-    TextObject.transformTexFromTo([this], to, params);
+    TexObject.transformTexFromTo([this], to, params);
     return this;
   }
 
   transformTexFrom(
-    from: TextObject | TextObject[],
+    from: TexObject | TexObject[],
     params: AnimationParameters = {}
   ) {
-    if (from instanceof TextObject) {
+    if (from instanceof TexObject) {
       from = [from];
     }
 
-    TextObject.transformTexFromTo(from, [this], params);
+    TexObject.transformTexFromTo(from, [this], params);
     return this;
   }
 
   clone() {
     const superClone = super.clone();
-    const copy = Object.assign(new TextObject(), superClone);
+    const copy = Object.assign(new TexObject(), superClone);
     commandQueue.push(async () => {
       for (var attr in superClone) {
         if (superClone.hasOwnProperty(attr)) {
@@ -2723,6 +2726,21 @@ class TextObject extends GroupObject {
       }
     });
     return copy;
+  }
+
+  updateTex(tex: string, params: AnimationParameters = {}) {
+    commandQueue.push(async () => {
+      const newTexObject = await createTexObject(tex, {
+        color: "#" + toThreeColor(this._initParams.color).getHexString(),
+      });
+      newTexObject.visible = false;
+      this.object3D.add(newTexObject);
+
+      const tl = gsap.timeline();
+      tl.set(this.object3D.children, { visible: false }, "<");
+      tl.set(newTexObject, { visible: true }, "<");
+      mainTimeline.add(tl, params.t);
+    });
   }
 }
 
@@ -3251,10 +3269,7 @@ export function addText(
   return getRoot().addText(text, params);
 }
 
-export function addTex(
-  tex: string,
-  params: AddTextParameters = {}
-): TextObject {
+export function addTex(tex: string, params: AddTextParameters = {}): TexObject {
   return getRoot().addTex(tex, params);
 }
 
