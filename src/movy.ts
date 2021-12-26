@@ -2036,7 +2036,7 @@ class SceneObject {
     return this;
   }
 
-  grow({ t }: AnimationParameters = {}) {
+  grow({ t, ease = defaultEase }: AnimationParameters = {}) {
     commandQueue.push(() => {
       const tl = gsap.timeline();
 
@@ -2047,11 +2047,7 @@ class SceneObject {
         "<"
       );
 
-      tl.from(
-        this.object3D.scale,
-        { x: 0.01, y: 0.01, z: 0.01, ease: defaultEase },
-        "<"
-      );
+      tl.from(this.object3D.scale, { x: 0.01, y: 0.01, z: 0.01, ease }, "<");
 
       mainTimeline.add(tl, t);
     });
