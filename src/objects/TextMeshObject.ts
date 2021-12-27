@@ -34,6 +34,8 @@ async function preloadFont(fontName: string): Promise<Font> {
       font = await fontLoader.loadAsync("fonts/SourceCodePro-Regular.json");
     } else if (fontName == "gdh") {
       font = await fontLoader.loadAsync("fonts/zcool-gdh-Regular.subset.json");
+    } else if (fontName == "arcade") {
+      font = await fontLoader.loadAsync("fonts/PressStart2P-Regular.json");
     } else {
       throw `Invalid font name: ${fontName}`;
     }
