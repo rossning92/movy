@@ -812,16 +812,27 @@ function createArrow2DGeometry(arrowLength: number) {
   return geometry;
 }
 
-function createArrowLine2D(
-  material: THREE.Material,
-  {
-    from = new THREE.Vector3(0, 0, 0),
-    to = new THREE.Vector3(1, 0, 0),
+interface CreateArrowLineParameters extends BasicMaterial {
+  lineWidth?: number;
+  arrowEnd?: boolean;
+  arrowStart?: boolean;
+  threeDimensional?: boolean;
+}
+
+function createArrowLine(
+  from: THREE.Vector3,
+  to: THREE.Vector3,
+  params: CreateArrowLineParameters = {}
+) {
+  const {
     lineWidth = DEFAULT_LINE_WIDTH,
     arrowEnd = true,
     arrowStart = false,
-  } = {}
-) {
+    threeDimensional = false,
+  } = params;
+
+  const material = createMaterial(params);
+
   const direction = new THREE.Vector3();
   direction.subVectors(to, from);
   const halfLength = direction.length() * 0.5;
@@ -850,14 +861,9 @@ function createArrowLine2D(
       offset += 0.5 * arrowLength;
     }
 
-    // const geometry = new THREE.CylinderGeometry(
-    //   lineWidth / 2,
-    //   lineWidth / 2,
-    //   length,
-    //   16
-    // );
-
-    const geometry = new THREE.PlaneGeometry(lineWidth, length);
+    const geometry = !threeDimensional
+      ? new THREE.PlaneGeometry(lineWidth, length)
+      : new THREE.CylinderGeometry(lineWidth / 2, lineWidth / 2, length, 16);
 
     const line = new THREE.Mesh(geometry, material);
     line.position.copy(direction.clone().multiplyScalar(offset).add(center));
@@ -871,8 +877,9 @@ function createArrowLine2D(
     if (i === 0 && !arrowStart) continue;
     if (i === 1 && !arrowEnd) continue;
 
-    // const geometry = new THREE.ConeGeometry(lineWidth * 2, arrowLength, 16);
-    const geometry = createArrow2DGeometry(arrowLength);
+    const geometry = !threeDimensional
+      ? createArrow2DGeometry(arrowLength)
+      : new THREE.ConeGeometry(arrowLength * 0.5, arrowLength, 32);
     geometry.translate(0, -arrowLength / 2, 0);
 
     const arrow = new THREE.Mesh(geometry, material);
@@ -883,7 +890,6 @@ function createArrowLine2D(
     if (i === 0) arrow.rotateZ(Math.PI);
   }
 
-  scene.add(group);
   return group;
 }
 
@@ -1217,14 +1223,12 @@ class SceneObject {
       addDefaultLights();
 
       if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
 
-      obj.object3D = createArrowLine2D(material, {
-        from: toThreeVector3(p1),
-        to: toThreeVector3(p2),
+      obj.object3D = createArrowLine(toThreeVector3(p1), toThreeVector3(p2), {
         arrowStart,
         arrowEnd,
         lineWidth,
+        color: params.color,
       });
 
       updateTransform(obj.object3D, params);
@@ -1324,6 +1328,51 @@ class SceneObject {
     return obj;
   }
 
+  addAxes3D(params: AddAxes3DParameters = {}): SceneObject {
+    const { xRange = [-4, 4], yRange = [-4, 4], zRange = [-4, 4] } = params;
+
+    const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    commandQueue.push(async () => {
+      obj.object3D = new THREE.Group();
+
+      const arrowParams = {
+        arrowStart: false,
+        arrowEnd: true,
+        threeDimensional: true,
+        lighting: true,
+        lineWidth: 0.05,
+      };
+
+      obj.object3D.add(
+        createArrowLine(
+          new THREE.Vector3(xRange[0], 0, 0),
+          new THREE.Vector3(xRange[1], 0, 0),
+          { ...arrowParams, color: "red" }
+        )
+      );
+      obj.object3D.add(
+        createArrowLine(
+          new THREE.Vector3(0, yRange[0], 0),
+          new THREE.Vector3(0, yRange[1], 0),
+          { ...arrowParams, color: "green" }
+        )
+      );
+      obj.object3D.add(
+        createArrowLine(
+          new THREE.Vector3(0, 0, zRange[0]),
+          new THREE.Vector3(0, 0, zRange[1]),
+          { ...arrowParams, color: "blue" }
+        )
+      );
+
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
     });
 
     return obj;
@@ -2832,6 +2881,12 @@ interface AddAxes2DParameters extends Transform, BasicMaterial {
   tickIntervalY?: number;
 }
 
+interface AddAxes3DParameters extends Transform, BasicMaterial {
+  xRange?: [number, number, number?];
+  yRange?: [number, number, number?];
+  zRange?: [number, number, number?];
+}
+
 interface AddGridParameters extends Transform, BasicMaterial {
   gridSize?: number;
 }
@@ -3352,6 +3407,10 @@ export function addDoubleArrow(
 
 export function addAxes2D(params: AddAxes2DParameters = {}): SceneObject {
   return getRoot().addAxes2D(params);
+}
+
+export function addAxes3D(params: AddAxes3DParameters = {}): SceneObject {
+  return getRoot().addAxes3D(params);
 }
 
 export function addArc(
