@@ -2035,19 +2035,17 @@ class SceneObject {
     return this;
   }
 
-  grow({ t, ease = defaultEase }: AnimationParameters = {}) {
+  grow({ t, ease = defaultEase, duration = 0.5 }: AnimationParameters = {}) {
     commandQueue.push(() => {
-      const tl = gsap.timeline();
+      this.object3D.visible = false;
 
-      tl.fromTo(
-        this.object3D,
-        { visible: false },
-        { visible: true, duration: 0.001 },
+      const tl = gsap.timeline();
+      tl.set(this.object3D, { visible: true });
+      tl.from(
+        this.object3D.scale,
+        { x: 0.01, y: 0.01, z: 0.01, ease, duration },
         "<"
       );
-
-      tl.from(this.object3D.scale, { x: 0.01, y: 0.01, z: 0.01, ease }, "<");
-
       mainTimeline.add(tl, t);
     });
     return this;
