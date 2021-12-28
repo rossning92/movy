@@ -1147,7 +1147,7 @@ class SceneObject {
       const group = new THREE.Group();
       group.add(object);
 
-      if (params.wireframe || params.color) {
+      if (params.wireframe || params.color || params.opacity !== undefined) {
         const material = createMaterial({ ...params, lighting: true });
         object.traverse((o: any) => {
           if (o.isMesh) o.material = material;
@@ -2905,15 +2905,15 @@ function createMaterial(params: BasicMaterial = {}) {
     return new THREE.MeshStandardMaterial({
       color: toThreeColor(params.color),
       roughness: 0.5,
+      transparent: params.opacity !== undefined && params.opacity < 1.0,
+      opacity: params.opacity || 1.0,
     });
   } else {
-    const opacity = params.opacity === undefined ? 1.0 : params.opacity;
-
     return new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
       color: toThreeColor(params.color),
-      transparent: opacity < 1.0 ? true : false,
-      opacity,
+      transparent: params.opacity !== undefined && params.opacity < 1.0,
+      opacity: params.opacity || 1.0,
     });
   }
 }
