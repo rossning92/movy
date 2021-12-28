@@ -2610,6 +2610,7 @@ class TexObject extends GroupObject {
       // From tex objects
       const fromTexObjects = [];
       for (const o of from) {
+        tl.set(o.object3D, { visible: true }, "<");
         o.object3D.updateWorldMatrix(true, true);
         console.assert(o.object3D instanceof THREE.Group);
         for (const c of o.object3D.children) {
