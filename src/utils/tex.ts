@@ -45,7 +45,15 @@ export async function createTexObject(
 
   removeEmptyPath(svg);
 
-  return parseSVG(svg.outerHTML, { color });
+  const texObject = parseSVG(svg.outerHTML, { color });
+  texObject.traverse((x) => {
+    if (x.name) {
+      // Remove prefix of MathJax "MJX-*-""
+      x.name = x.name.replace(/MJX-\d+-/g, "");
+    }
+  });
+
+  return texObject;
 }
 
 export async function createTexSprite(

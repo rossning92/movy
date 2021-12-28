@@ -23,10 +23,6 @@ export function parseSVG(
     const mesh = new THREE.Mesh(geometry, material);
 
     let name = path.userData.node.id as string;
-
-    // Remove prefix of MathJax "MJX-*-""
-    name = name.replace(/MJX-\d-/g, "");
-
     mesh.name = name;
     group.add(mesh);
   }
