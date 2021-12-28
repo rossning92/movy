@@ -2298,11 +2298,15 @@ class SceneObject {
     ease = "power.out",
   }: WipeInParameters = {}) {
     commandQueue.push(() => {
+      this.object3D.visible = false;
+
       const boundingBox = computeAABB(this.object3D);
 
       const tl = gsap.timeline({
         defaults: { duration, ease },
       });
+      tl.set(this.object3D, { visible: true });
+
       let clipPlane;
       if (direction === "right") {
         clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0));
