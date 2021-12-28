@@ -1269,7 +1269,7 @@ class SceneObject {
     if (showTicks) {
       // X ticks
       const numTicksX = Math.floor((xRange[1] - xRange[0]) / tickIntervalX);
-      for (let i = 1; i <= numTicksX; i++) {
+      for (let i = 0; i <= numTicksX; i++) {
         const x = xRange[0] + i * tickIntervalX;
         if (x !== 0) {
           this.addLine([x, -0.1], [x, 0.1], {
@@ -1288,7 +1288,7 @@ class SceneObject {
 
       // Y ticks
       const numTicksY = Math.floor((yRange[1] - yRange[0]) / tickIntervalY);
-      for (let i = 1; i <= numTicksY; i++) {
+      for (let i = 0; i <= numTicksY; i++) {
         const y = yRange[0] + i * tickIntervalY;
         if (y !== 0) {
           this.addLine([-0.1, y], [0.1, y], {
@@ -1306,11 +1306,24 @@ class SceneObject {
       }
     }
 
-    this.addArrow([xRange[0] * 1.1, 0, 0], [xRange[1] * 1.1, 0, 0], {
-      lineWidth: DEFAULT_LINE_WIDTH,
-    });
-    this.addArrow([0, yRange[0] * 1.1, 0], [0, yRange[1] * 1.1, 0], {
-      lineWidth: DEFAULT_LINE_WIDTH,
+    this.addArrow(
+      [xRange[0] - tickIntervalX * 0.25, 0, 0],
+      [xRange[1] + tickIntervalX * 0.25, 0, 0],
+      {
+        lineWidth: DEFAULT_LINE_WIDTH,
+      }
+    );
+    this.addArrow(
+      [0, yRange[0] - tickIntervalY * 0.25, 0],
+      [0, yRange[1] + tickIntervalY * 0.25, 0],
+      {
+        lineWidth: DEFAULT_LINE_WIDTH,
+      }
+    );
+
+    return obj;
+  }
+
     });
 
     return obj;
