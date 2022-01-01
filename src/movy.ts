@@ -2255,36 +2255,51 @@ class SceneObject {
       this.object3D.visible = false;
 
       const boundingBox = computeAABB(this.object3D);
+      const materials = getAllMaterials(this.object3D);
 
       const tl = gsap.timeline({
         defaults: { duration, ease },
       });
-      tl.set(this.object3D, { visible: true });
 
-      let clipPlane;
+      let clipPlane: THREE.Plane;
       if (direction === "right") {
         clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0));
+      } else if (direction === "left") {
+        clipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0));
+      } else if (direction === "up") {
+        clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0));
+      } else if (direction === "down") {
+        clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0));
+      }
+
+      tl.set(this.object3D, {
+        visible: true,
+        onComplete: () => {
+          for (const material of materials) {
+            material.clippingPlanes = [clipPlane];
+          }
+        },
+      });
+
+      if (direction === "right") {
         tl.fromTo(
           clipPlane,
           { constant: boundingBox.min.x },
           { constant: boundingBox.max.x }
         );
       } else if (direction === "left") {
-        clipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0));
         tl.fromTo(
           clipPlane,
           { constant: boundingBox.min.x },
           { constant: boundingBox.max.x }
         );
       } else if (direction === "up") {
-        clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0));
         tl.fromTo(
           clipPlane,
           { constant: boundingBox.min.y },
           { constant: boundingBox.max.y }
         );
       } else if (direction === "down") {
-        clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0));
         tl.fromTo(
           clipPlane,
           { constant: boundingBox.min.y },
@@ -2292,10 +2307,16 @@ class SceneObject {
         );
       }
 
-      const materials = getAllMaterials(this.object3D);
-      for (const material of materials) {
-        material.clippingPlanes = [clipPlane];
-      }
+      tl.set(
+        {},
+        {
+          onComplete: () => {
+            for (const material of materials) {
+              material.clippingPlanes = null;
+            }
+          },
+        }
+      );
 
       mainTimeline.add(tl, t);
     });
