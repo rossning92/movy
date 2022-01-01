@@ -3365,6 +3365,12 @@ export function useOrthographicCamera() {
   camera = createOrthographicCamera();
 }
 
+export function addFog() {
+  commandQueue.push(() => {
+    scene.fog = new THREE.FogExp2(0x0, 0.03);
+  });
+}
+
 document.body.onload = function () {
   run();
 };
