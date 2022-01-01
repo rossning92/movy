@@ -1347,13 +1347,14 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    const { color, ccw, opacity = 1.0 } = params;
+    const { color, ccw, opacity } = params;
 
     commandQueue.push(async () => {
       if (file.endsWith(".svg")) {
         obj.object3D = await loadSVG(file, {
           ccw,
           color,
+          opacity,
         });
       } else {
         const texture = await loadTexture(file);
