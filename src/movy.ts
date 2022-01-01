@@ -1314,7 +1314,7 @@ class SceneObject {
   }
 
   addGrid(params: AddGridParameters = {}): SceneObject {
-    const { gridSize = 10, color = 0xc0c0c0 } = params;
+    const { gridSize = 10, color } = params;
 
     const obj = new SceneObject();
     if (params.parent) {
@@ -1327,8 +1327,8 @@ class SceneObject {
       obj.object3D = new THREE.GridHelper(
         gridSize,
         gridSize,
-        0x00ff00,
-        toThreeColor(color)
+        color !== undefined ? toThreeColor(color) : 0x00ff00,
+        color !== undefined ? toThreeColor(color) : 0xc0c0c0
       );
       obj.object3D.rotation.x = Math.PI / 2;
 
