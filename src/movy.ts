@@ -2567,6 +2567,21 @@ class TextObject extends GroupObject {
     });
     return this;
   }
+
+  updateText(text: string, params: AnimationParameters = {}) {
+    commandQueue.push(async () => {
+      mainTimeline.set(
+        {},
+        {
+          onComplete: () => {
+            const textMesh = this.object3D as TextMeshObject;
+            textMesh.setText(text);
+          },
+        },
+        params.t
+      );
+    });
+  }
 }
 
 class TexObject extends GroupObject {
