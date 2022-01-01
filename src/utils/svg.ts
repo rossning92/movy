@@ -1,24 +1,26 @@
 import * as THREE from "three";
-import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
+import { SVGLoader, SVGResult } from "three/examples/jsm/loaders/SVGLoader";
 import { computeAABB } from "./math";
 
-export function parseSVG(
-  text: string,
-  { ccw = true }: { color?: string | number; ccw?: boolean } = {}
-): THREE.Object3D {
-  let loader = new SVGLoader();
+interface SVGParameters {
+  color?: string | number;
+  ccw?: boolean;
+  opacity?: number;
+}
 
-  const svgResult = loader.parse(text);
+function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
   const paths = svgResult.paths;
   const group = new THREE.Group();
 
   for (const path of paths) {
-    let material = new THREE.MeshBasicMaterial({
-      color: path.color,
+    const material = new THREE.MeshBasicMaterial({
+      color: params.color !== undefined ? params.color : path.color,
       side: THREE.DoubleSide,
+      opacity: params.opacity,
+      transparent: params.opacity !== undefined && params.opacity < 1,
     });
 
-    const shapes = path.toShapes(ccw);
+    const shapes = path.toShapes(params.ccw !== undefined ? params.ccw : true);
     const geometry = new THREE.ShapeBufferGeometry(shapes);
     const mesh = new THREE.Mesh(geometry, material);
 
@@ -57,4 +59,35 @@ export function parseSVG(
   }
 
   return group;
+}
+
+export async function loadSVG(
+  url: string,
+  params: SVGParameters = {}
+): Promise<THREE.Object3D> {
+  return new Promise((resolve, reject) => {
+    let loader = new SVGLoader();
+    loader.load(
+      url,
+      function (results) {
+        resolve(createSVGObject(results, params));
+      },
+      function (xhr) {
+        // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+      },
+      function (error) {
+        console.log("An error happened");
+        reject(error);
+      }
+    );
+  });
+}
+
+export function parseSVG(
+  text: string,
+  params: SVGParameters = {}
+): THREE.Object3D {
+  let loader = new SVGLoader();
+  const svgResult = loader.parse(text);
+  return createSVGObject(svgResult, params);
 }

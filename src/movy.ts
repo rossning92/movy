@@ -21,6 +21,7 @@ import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectio
 import { WEBGL } from "three/examples/jsm/WebGL.js";
 import { toThreeColor } from "utils/color";
 import { computeAABB } from "utils/math";
+import { loadSVG } from "utils/svg";
 import { createTexObject } from "utils/tex";
 import TextMeshObject from "./objects/TextMeshObject";
 import "./style/player.css";
@@ -598,116 +599,6 @@ function getCompoundBoundingBox(object3D: THREE.Object3D) {
     }
   });
   return box;
-}
-
-function _getNodeName(node: any): any {
-  if (!node) return "";
-  if (node.id) {
-    return _getNodeName(node.parentNode) + "/" + node.id;
-  } else {
-    return _getNodeName(node.parentNode);
-  }
-}
-
-async function loadSVG(
-  url: string,
-  { color, ccw = true }: { color?: string | number; ccw: boolean }
-): Promise<THREE.Object3D> {
-  return new Promise((resolve, reject) => {
-    // instantiate a loader
-    let loader = new SVGLoader();
-
-    // load a SVG resource
-    loader.load(
-      // resource URL
-      url,
-      // called when the resource is loaded
-      function (data) {
-        let paths = data.paths;
-
-        let parentGroup = new THREE.Group();
-
-        const unnamedGroup = new THREE.Group();
-        parentGroup.add(unnamedGroup);
-
-        for (let i = 0; i < paths.length; i++) {
-          let path = paths[i];
-
-          let material = new THREE.MeshBasicMaterial({
-            color: toThreeColor(
-              color === undefined ? (path as any).color : color
-            ),
-            side: THREE.DoubleSide,
-            // depthWrite: false,
-          });
-
-          const shapes = path.toShapes(ccw);
-
-          let geometry = new THREE.ShapeBufferGeometry(shapes);
-
-          let mesh = new THREE.Mesh(geometry, material);
-
-          const name = _getNodeName((path as any).userData.node);
-
-          if (name) {
-            let group = parentGroup.children.filter((x) => x.name === name)[0];
-            if (!group) {
-              group = new THREE.Group();
-              group.name = name;
-              parentGroup.add(group);
-            }
-
-            group.add(mesh);
-          } else {
-            unnamedGroup.add(mesh);
-          }
-        }
-
-        // Get bounding box of the whole object
-        const box = getCompoundBoundingBox(parentGroup);
-
-        const boxCenter = new THREE.Vector3();
-        box.getCenter(boxCenter);
-
-        const boxSize = new THREE.Vector3();
-        box.getSize(boxSize);
-
-        const scale = 1.0 / Math.max(boxSize.x, boxSize.y, boxSize.z);
-
-        parentGroup.children.forEach((group) => {
-          group.children.forEach((object3d) => {
-            const subMesh = object3d as THREE.Mesh;
-
-            // Scale and translate geometry
-            subMesh.geometry.translate(
-              -boxCenter.x,
-              -boxCenter.y,
-              -boxCenter.z
-            );
-            subMesh.geometry.scale(scale, -scale, scale);
-
-            // Set center of the subMesh to (0, 0)
-            const center = new THREE.Vector3();
-            subMesh.geometry.boundingBox.getCenter(center);
-
-            subMesh.geometry.translate(-center.x, -center.y, -center.z);
-            subMesh.position.add(center);
-          });
-        });
-
-        resolve(parentGroup);
-      },
-      // called when loading is in progresses
-      function (xhr) {
-        // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-      },
-      // called when loading has errors
-      function (error) {
-        console.log("An error happened");
-        reject(error);
-      }
-    );
-  });
 }
 
 export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
