@@ -29,8 +29,9 @@ export async function createTexObject(
 ): Promise<THREE.Object3D> {
   const svg = await tex2svg(tex, { color });
 
-  const removeEmptyPath = (node: ChildNode) => {
-    const nodes = node.childNodes;
+  // SVGLoader will throw exception if path element has empty d attribute
+  const removePathElementsWithEmptyData = (node: Element) => {
+    const nodes = node.children;
 
     for (let i = 0; i < nodes.length; i++) {
       if (nodes[i].nodeName === "path") {
@@ -38,12 +39,34 @@ export async function createTexObject(
           nodes[i].remove();
         }
       } else {
-        removeEmptyPath(nodes[i]);
+        removePathElementsWithEmptyData(nodes[i]);
       }
     }
   };
+  removePathElementsWithEmptyData(svg);
 
-  removeEmptyPath(svg);
+  // SVGLoader is not able to handle sub svg element which references defs in parent svg element.
+  const expandSubSVGElements = (node: Element) => {
+    const nodes = node.children;
+    for (const node of nodes) {
+      if (node.nodeName === "svg" && node.parentNode !== null) {
+        const translate = `translate(${node.getAttribute("x") || "0"}, ${
+          node.getAttribute("y") || "0"
+        })`;
+
+        for (const childNode of node.children) {
+          let transform = childNode.getAttribute("transform");
+          transform = transform ? `${translate} ${transform}` : translate;
+          childNode.setAttribute("transform", transform);
+          node.parentNode.appendChild(childNode);
+        }
+
+        node.remove();
+      }
+      expandSubSVGElements(node);
+    }
+  };
+  expandSubSVGElements(svg);
 
   const texObject = parseSVG(svg.outerHTML, { color });
   texObject.traverse((x) => {
