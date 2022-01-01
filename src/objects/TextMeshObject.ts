@@ -12,9 +12,6 @@ import {
 
 const fontLoader = new FontLoader();
 
-const REGEX_ZH_CN =
-  /[\u4E00-\u9FCC\u3400-\u4DB5\uFA0E\uFA0F\uFA11\uFA13\uFA14\uFA1F\uFA21\uFA23\uFA24\uFA27-\uFA29]|[\ud840-\ud868][\udc00-\udfff]|\ud869[\udc00-\uded6\udf00-\udfff]|[\ud86a-\ud86c][\udc00-\udfff]|\ud86d[\udc00-\udf34\udf40-\udfff]|\ud86e[\udc00-\udc1d]/;
-
 const fontMap: Record<string, Font> = {};
 
 async function preloadFont(fontName: string): Promise<Font> {
@@ -51,14 +48,14 @@ export default class TextMeshObject extends Object3D {
   letterSpacing: number;
   fontName: string;
   centerTextVertically: boolean;
-  font: Font;
+  fonts: Font[];
   material: Material;
 
   constructor({
     fontSize = 1.0,
     letterSpacing = 0,
     color = new Color(0xffffff),
-    font = undefined,
+    font = "en,zh",
     centerTextVertically = false,
     material,
   }: {
@@ -80,20 +77,9 @@ export default class TextMeshObject extends Object3D {
   }
 
   async init() {
-    if (this.fontName !== undefined) {
-      this.font = await preloadFont(this.fontName);
-    } else {
-      await Promise.all([preloadFont("zh"), await preloadFont("en")]);
-    }
-  }
-
-  getFont(letter: string) {
-    if (this.font) {
-      return this.font;
-    } else {
-      const fontName = REGEX_ZH_CN.test(letter) ? "zh" : "en";
-      return fontMap[fontName];
-    }
+    this.fonts = await Promise.all(
+      this.fontName.split(",").map((fontName) => preloadFont(fontName))
+    );
   }
 
   setText(text: string) {
@@ -108,12 +94,20 @@ export default class TextMeshObject extends Object3D {
       if (char === " ") {
         totalWidth += this.fontSize * 0.5;
       } else {
-        const font = this.getFont(char);
+        let font: Font;
+        let glyph: any;
+        for (let j = 0; j < this.fonts.length; j++) {
+          font = this.fonts[j];
+          glyph = (font.data as any).glyphs[char];
+          if (glyph) {
+            break;
+          } else if (j == this.fonts.length - 1) {
+            glyph = (font.data as any).glyphs["?"];
+          }
+        }
 
         const fontData = font.data as any;
         const resolution = fontData.resolution;
-        const glyph =
-          (font.data as any).glyphs[char] || (font.data as any).glyphs["?"];
         const ha = (glyph.ha / resolution) * this.fontSize;
 
         const geometry = new ShapeBufferGeometry(
