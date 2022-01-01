@@ -3018,9 +3018,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
 }
 
 export function _setUILayer() {
-  commandQueue.push(() => {
-    currentLayer = "ui";
-  });
+  currentLayer = "ui";
 }
 
 interface AddGroupParameters extends Transform {}
