@@ -2577,7 +2577,9 @@ class TexObject extends GroupObject {
     to: TexObject[],
     params: AnimationParameters = {}
   ) {
-    const { duration = 0.5, t, ease = defaultEase } = params;
+    const { duration = 1, t, ease = defaultEase } = params;
+
+    const _rightToLeft = (params as any)._rightToLeft;
 
     commandQueue.push(() => {
       const tl = gsap.timeline({ defaults: { ease, duration } });
@@ -2586,6 +2588,7 @@ class TexObject extends GroupObject {
       const fromTexObjects = [];
       for (const o of from) {
         tl.set(o.object3D, { visible: true }, "<");
+        tl.set(o.object3D.children, { visible: true }, "<");
         o.object3D.updateWorldMatrix(true, true);
         console.assert(o.object3D instanceof THREE.Group);
         for (const c of o.object3D.children) {
@@ -2604,12 +2607,14 @@ class TexObject extends GroupObject {
       }
 
       const matchedDstSymbols = Array(toTexObjects.length).fill(false);
-      for (let i = 0; i < fromTexObjects.length; ++i) {
+      const ii = [...Array(fromTexObjects.length).keys()];
+      for (let i of _rightToLeft ? ii.reverse() : ii) {
         const c1 = fromTexObjects[i];
         // find match
 
         let found = false;
-        for (let j = 0; j < toTexObjects.length; ++j) {
+        const jj = [...Array(toTexObjects.length).keys()];
+        for (let j of _rightToLeft ? jj.reverse() : jj) {
           if (!matchedDstSymbols[j]) {
             const c2 = toTexObjects[j];
             if (c1.name === c2.name) {
