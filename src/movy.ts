@@ -303,7 +303,7 @@ function animate() {
 }
 
 interface MoveCameraParameters extends Transform, AnimationParameters {
-  lookAt?: { x?: number; y?: number; z?: number } | number[];
+  lookAt?: { x?: number; y?: number; z?: number } | [number, number, number?];
   fov?: number;
   zoom?: number;
 }
@@ -984,8 +984,11 @@ class SceneObject {
     commandQueue.push(async () => {
       obj.object3D = this.object3D.clone();
       obj.object3D.traverse((node) => {
-        if (node.isMesh) {
-          node.material = node.material.clone();
+        const mesh = node as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.material = Array.isArray(mesh.material)
+            ? mesh.material.map((material) => material.clone())
+            : mesh.material.clone();
         }
       });
       this.object3D.parent.add(obj.object3D);
@@ -1660,7 +1663,7 @@ class SceneObject {
       const material = createMaterial(params);
 
       const verts = getPolygonVertices();
-      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], v[2]));
+      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], 0));
       obj.object3D = createLine3d(material, {
         points: v3d.concat(v3d[0]),
         lineWidth,
@@ -2514,6 +2517,10 @@ interface ChangeTextParameters extends AnimationParameters {
   to?: number;
 }
 
+interface TypeTextParameters extends AnimationParameters {
+  interval?: number;
+}
+
 class TextObject extends GroupObject {
   changeText(
     func: (val: number) => any,
@@ -2543,7 +2550,7 @@ class TextObject extends GroupObject {
     return this;
   }
 
-  typeText({ t, duration, interval = 0.1 }: ChangeTextParameters = {}) {
+  typeText({ t, duration, interval = 0.1 }: TypeTextParameters = {}) {
     commandQueue.push(() => {
       const textObject = this.object3D as any;
 
