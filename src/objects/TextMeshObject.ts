@@ -4,7 +4,7 @@ import {
   FontLoader,
   Mesh,
   MeshBasicMaterial,
-  Object3D,
+  Group,
   ShapeBufferGeometry,
   Font,
   Material,
@@ -43,7 +43,7 @@ async function preloadFont(fontName: string): Promise<Font> {
   return fontMap[fontName];
 }
 
-export default class TextMeshObject extends Object3D {
+export default class TextMeshObject extends Group {
   fontSize: number;
   color: Color;
   letterSpacing: number;
@@ -52,6 +52,8 @@ export default class TextMeshObject extends Object3D {
   fonts: Font[];
   material: Material;
   text3D: boolean;
+  text: string;
+  shouldUpdate = true;
 
   constructor({
     fontSize = 1.0,
@@ -87,92 +89,105 @@ export default class TextMeshObject extends Object3D {
     );
   }
 
-  setText(text: string) {
-    this.children.length = 0;
+  setText(text: string, forceUpdate = false) {
+    this.text = text;
+    this.shouldUpdate = true;
+    if (forceUpdate) {
+      this.update();
+    }
+  }
 
-    let totalWidth = 0;
-    const letterPosX: number[] = [];
-    let minY = Number.MAX_VALUE;
-    let maxY = Number.MIN_VALUE;
-    const geometies: ShapeBufferGeometry[] = [];
-    for (const [i, char] of [...text].entries()) {
-      if (char === " ") {
-        totalWidth += this.fontSize * 0.5;
-      } else {
-        let font: Font;
-        let glyph: any;
-        for (let j = 0; j < this.fonts.length; j++) {
-          font = this.fonts[j];
-          glyph = (font.data as any).glyphs[char];
-          if (glyph) {
-            break;
-          } else if (j == this.fonts.length - 1) {
-            glyph = (font.data as any).glyphs["?"];
+  update() {
+    if (this.shouldUpdate) {
+      // TODO: optimize: text update is slow.
+      this.children.length = 0;
+
+      let totalWidth = 0;
+      const letterPosX: number[] = [];
+      let minY = Number.MAX_VALUE;
+      let maxY = Number.MIN_VALUE;
+      const geometies: ShapeBufferGeometry[] = [];
+      for (const [i, char] of [...this.text].entries()) {
+        if (char === " ") {
+          totalWidth += this.fontSize * 0.5;
+        } else {
+          let font: Font;
+          let glyph: any;
+          for (let j = 0; j < this.fonts.length; j++) {
+            font = this.fonts[j];
+            glyph = (font.data as any).glyphs[char];
+            if (glyph) {
+              break;
+            } else if (j == this.fonts.length - 1) {
+              glyph = (font.data as any).glyphs["?"];
+            }
           }
+
+          const fontData = font.data as any;
+          const resolution = fontData.resolution;
+          const ha = (glyph.ha / resolution) * this.fontSize;
+
+          const shapes = font.generateShapes(char, this.fontSize);
+
+          let geometry;
+          if (this.text3D) {
+            const extrudeSettings = {
+              depth: this.fontSize * 0.2,
+              bevelEnabled: false,
+            };
+            geometry = new ExtrudeGeometry(shapes, extrudeSettings);
+          } else {
+            geometry = new ShapeBufferGeometry(shapes);
+          }
+
+          geometry.computeBoundingBox();
+          let mat: Material;
+          if (this.material === undefined) {
+            mat = new MeshBasicMaterial({
+              color: this.color,
+              side: DoubleSide,
+            });
+          } else {
+            mat = this.material.clone();
+          }
+
+          geometies.push(geometry);
+
+          const mesh = new Mesh(geometry, mat);
+
+          const letterWidth = ha;
+          const xMid = 0.5 * letterWidth;
+          geometry.translate(
+            -0.5 * (geometry.boundingBox.min.x + geometry.boundingBox.max.x),
+            0,
+            0
+          );
+
+          letterPosX.push(totalWidth + xMid);
+          totalWidth +=
+            letterWidth +
+            (i < this.text.length - 1 ? this.letterSpacing * this.fontSize : 0);
+          minY = Math.min(minY, geometry.boundingBox.min.y);
+          maxY = Math.max(maxY, geometry.boundingBox.max.y);
+
+          this.add(mesh);
         }
+      }
 
-        const fontData = font.data as any;
-        const resolution = fontData.resolution;
-        const ha = (glyph.ha / resolution) * this.fontSize;
-
-        const shapes = font.generateShapes(char, this.fontSize);
-
-        let geometry;
-        if (this.text3D) {
-          const extrudeSettings = {
-            depth: this.fontSize * 0.2,
-            bevelEnabled: false,
-          };
-          geometry = new ExtrudeGeometry(shapes, extrudeSettings);
-        } else {
-          geometry = new ShapeBufferGeometry(shapes);
-        }
-
-        geometry.computeBoundingBox();
-        let mat: Material;
-        if (this.material === undefined) {
-          mat = new MeshBasicMaterial({
-            color: this.color,
-            side: DoubleSide,
-          });
-        } else {
-          mat = this.material.clone();
-        }
-
-        geometies.push(geometry);
-
-        const mesh = new Mesh(geometry, mat);
-
-        const letterWidth = ha;
-        const xMid = 0.5 * letterWidth;
+      const deltaY = (maxY + minY) * 0.5;
+      for (const geometry of geometies) {
         geometry.translate(
-          -0.5 * (geometry.boundingBox.min.x + geometry.boundingBox.max.x),
           0,
+          this.centerTextVertically ? -deltaY : -0.5 * this.fontSize,
           0
         );
-
-        letterPosX.push(totalWidth + xMid);
-        totalWidth +=
-          letterWidth +
-          (i < text.length - 1 ? this.letterSpacing * this.fontSize : 0);
-        minY = Math.min(minY, geometry.boundingBox.min.y);
-        maxY = Math.max(maxY, geometry.boundingBox.max.y);
-
-        this.add(mesh);
       }
-    }
 
-    const deltaY = (maxY + minY) * 0.5;
-    for (const geometry of geometies) {
-      geometry.translate(
-        0,
-        this.centerTextVertically ? -deltaY : -0.5 * this.fontSize,
-        0
-      );
-    }
+      this.children.forEach((letter, i) => {
+        letter.position.set(-0.5 * totalWidth + letterPosX[i], 0, 0);
+      });
 
-    this.children.forEach((letter, i) => {
-      letter.position.set(-0.5 * totalWidth + letterPosX[i], 0, 0);
-    });
+      this.shouldUpdate = false;
+    }
   }
 }

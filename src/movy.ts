@@ -279,7 +279,11 @@ function animate() {
     callback(timeElapsed);
   }
 
-  // cameraControls.update();
+  scene.traverse((child: any) => {
+    if (typeof child.update === "function") {
+      child.update(delta);
+    }
+  });
 
   renderer.setRenderTarget(renderTarget);
 
@@ -1695,7 +1699,7 @@ class SceneObject {
         material,
       });
       await textObject.init();
-      await textObject.setText(text);
+      textObject.setText(text, true);
 
       obj.object3D = textObject;
       updateTransform(obj.object3D, params);
@@ -1726,7 +1730,7 @@ class SceneObject {
         text3D: true,
       });
       await textObject.init();
-      await textObject.setText(text);
+      textObject.setText(text, true);
 
       obj.object3D = textObject;
       updateTransform(obj.object3D, params);
