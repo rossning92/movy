@@ -1346,14 +1346,14 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    const { color, ccw, opacity } = params;
+    const { color, ccw } = params;
 
     commandQueue.push(async () => {
       if (file.endsWith(".svg")) {
         obj.object3D = await loadSVG(file, {
           ccw,
           color,
-          opacity,
+          opacity: params.opacity || 1.0,
         });
       } else {
         const texture = await loadTexture(file);
@@ -1364,7 +1364,7 @@ class SceneObject {
           map: texture,
           side: THREE.DoubleSide,
           transparent: true,
-          opacity,
+          opacity: params.opacity || 1.0,
           color: toThreeColor(color),
         });
 

@@ -16,7 +16,7 @@ function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
     const material = new THREE.MeshBasicMaterial({
       color: params.color !== undefined ? params.color : path.color,
       side: THREE.DoubleSide,
-      opacity: params.opacity,
+      opacity: params.opacity || 1.0,
       transparent: params.opacity !== undefined && params.opacity < 1,
     });
 
