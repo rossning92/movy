@@ -50,12 +50,13 @@ function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
     // Set center of the subMesh to (0, 0)
     const center = new THREE.Vector3();
     mesh.geometry.boundingBox.getCenter(center);
-    const d = mesh.geometry.boundingBox.getSize(new THREE.Vector3()).length();
+    const size = mesh.geometry.boundingBox.getSize(new THREE.Vector3());
 
+    // Center geometry and normalize its size
     mesh.geometry.translate(-center.x, -center.y, -center.z);
-    mesh.geometry.scale(1 / d, 1 / d, 1 / d);
+    mesh.geometry.scale(1 / size.x, 1 / size.y, 1);
     mesh.position.add(center);
-    mesh.scale.set(d, d, d);
+    mesh.scale.set(size.x, size.y, 1);
   }
 
   return group;
