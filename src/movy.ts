@@ -1153,13 +1153,10 @@ class SceneObject {
     } = params;
 
     const textScale = 0.25;
+    const stickLabelSpacing = 0.2;
+    const stickLength = 0.2;
 
-    const obj = new SceneObject();
-    if (params.parent) {
-      params.parent.children.push(obj);
-    } else {
-      this.children.push(obj);
-    }
+    const obj = this.addGroup(params);
 
     if (showTicks) {
       // X ticks
@@ -1167,13 +1164,14 @@ class SceneObject {
       for (let i = 0; i <= numTicksX; i++) {
         const x = xRange[0] + i * tickIntervalX;
         if (x !== 0) {
-          this.addLine([x, -0.1], [x, 0.1], {
+          obj.addLine([x, -stickLength * 0.5], [x, stickLength * 0.5], {
             lineWidth: DEFAULT_LINE_WIDTH,
           });
           if (showTickLabels) {
-            this.addText(`${x}`, {
+            obj.addText(`${x}`, {
               x,
-              y: -0.2,
+              y: -stickLabelSpacing,
+              anchor: "top",
               scale: textScale,
               font: "math",
             });
@@ -1186,13 +1184,14 @@ class SceneObject {
       for (let i = 0; i <= numTicksY; i++) {
         const y = yRange[0] + i * tickIntervalY;
         if (y !== 0) {
-          this.addLine([-0.1, y], [0.1, y], {
+          obj.addLine([-stickLength * 0.5, y], [stickLength * 0.5, y], {
             lineWidth: DEFAULT_LINE_WIDTH,
           });
           if (showTickLabels) {
-            this.addText(`${y}`, {
-              x: -0.5,
+            obj.addText(`${y}`, {
+              x: -stickLabelSpacing,
               y,
+              anchor: "right",
               scale: textScale,
               font: "math",
             });
@@ -1201,16 +1200,16 @@ class SceneObject {
       }
     }
 
-    this.addArrow(
-      [xRange[0] - tickIntervalX * 0.25, 0, 0],
-      [xRange[1] + tickIntervalX * 0.25, 0, 0],
+    obj.addArrow(
+      [xRange[0] - tickIntervalX * 0.5, 0, 0],
+      [xRange[1] + tickIntervalX * 0.5, 0, 0],
       {
         lineWidth: DEFAULT_LINE_WIDTH,
       }
     );
-    this.addArrow(
-      [0, yRange[0] - tickIntervalY * 0.25, 0],
-      [0, yRange[1] + tickIntervalY * 0.25, 0],
+    obj.addArrow(
+      [0, yRange[0] - tickIntervalY * 0.5, 0],
+      [0, yRange[1] + tickIntervalY * 0.5, 0],
       {
         lineWidth: DEFAULT_LINE_WIDTH,
       }
