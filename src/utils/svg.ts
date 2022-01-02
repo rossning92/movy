@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { SVGLoader, SVGResult } from "three/examples/jsm/loaders/SVGLoader";
+import { toThreeColor } from "./color";
 import { computeAABB } from "./math";
 
 interface SVGParameters {
@@ -14,7 +15,8 @@ function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
 
   for (const path of paths) {
     const material = new THREE.MeshBasicMaterial({
-      color: params.color !== undefined ? params.color : path.color,
+      color:
+        params.color !== undefined ? toThreeColor(params.color) : path.color,
       side: THREE.DoubleSide,
       opacity: params.opacity || 1.0,
       transparent: params.opacity !== undefined && params.opacity < 1,

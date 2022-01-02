@@ -68,7 +68,7 @@ export async function createTexObject(
   };
   expandSubSVGElements(svg);
 
-  const texObject = parseSVG(svg.outerHTML, { color });
+  const texObject = parseSVG(svg.outerHTML);
   texObject.traverse((x) => {
     if (x.name) {
       // Remove prefix of MathJax "MJX-*-""
