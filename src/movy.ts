@@ -3142,12 +3142,15 @@ export function fadeOutAll(params: AnimationParameters = {}) {
     mainTimeline.add(tl, params.t);
   });
 }
+
+export function hideAll(params: AnimationParameters = {}) {
+  const root = getRoot();
   commandQueue.push(() => {
     const tl = gsap.timeline();
-    for (const object3d of scene.children) {
-      tl.add(createFadeOutAnimation(object3d), "<");
+    for (const object3d of root.object3D.children) {
+      tl.set(object3d, { visible: false }, "<");
     }
-    mainTimeline.add(tl, t);
+    mainTimeline.add(tl, params.t);
   });
 }
 
