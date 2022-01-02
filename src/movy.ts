@@ -347,7 +347,6 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
       ...params,
       tl,
       object3d: camera,
-      preScale: new THREE.Vector3(1, 1, 1),
     });
 
     if (zoom !== undefined) {
@@ -854,7 +853,6 @@ function createTransformAnimation({
   scale,
   tl,
   object3d,
-  preScale = new THREE.Vector3(1, 1, 1),
 }: {
   x?: number | ((t: number) => number);
   y?: number | ((t: number) => number);
@@ -870,7 +868,6 @@ function createTransformAnimation({
 
   tl: gsap.core.Timeline;
   object3d: THREE.Object3D;
-  preScale?: THREE.Vector3;
 }) {
   if (position) {
     const p = toThreeVector3(position);
@@ -889,9 +886,9 @@ function createTransformAnimation({
     tl.to(
       object3d.scale,
       {
-        x: scale * preScale.x,
-        y: scale * preScale.y,
-        z: scale * preScale.z,
+        x: scale,
+        y: scale,
+        z: scale,
       },
       "<"
     );
@@ -925,8 +922,6 @@ function createLine(
 class SceneObject {
   object3D: THREE.Object3D;
   children: SceneObject[] = [];
-
-  private preScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
 
   protected addObjectToScene(obj: SceneObject, transform: Transform) {
     if (transform.parent) {
@@ -1368,18 +1363,13 @@ class SceneObject {
           color: toThreeColor(color),
         });
 
-        const geometry = new THREE.PlaneBufferGeometry(1, 1);
-        const mesh = new THREE.Mesh(geometry, material);
-
         const aspect = texture.image.width / texture.image.height;
-        if (aspect > 1) {
-          mesh.scale.y /= aspect;
-        } else {
-          mesh.scale.x *= aspect;
-        }
-
+        const geometry = new THREE.PlaneBufferGeometry(
+          aspect > 1 ? aspect : 1,
+          aspect > 1 ? 1 : 1 / aspect
+        );
+        const mesh = new THREE.Mesh(geometry, material);
         obj.object3D = mesh;
-        obj.preScale = mesh.scale.clone();
       }
 
       updateTransform(obj.object3D, params);
@@ -1751,7 +1741,6 @@ class SceneObject {
         ...params,
         tl,
         object3d: this.object3D,
-        preScale: this.preScale,
       });
 
       mainTimeline.add(tl, t);
