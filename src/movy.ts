@@ -71,8 +71,6 @@ let timeElapsed = 0;
 
 let recorder: WebmMediaRecorder;
 
-const animationCallbacks: ((t: number) => void)[] = [];
-
 globalTimeline.add(mainTimeline, "0");
 
 let options = {
@@ -273,11 +271,6 @@ function animate() {
   }
 
   gsap.updateRoot(timeElapsed);
-
-  // Call animation callbacks for custom animation.
-  for (const callback of animationCallbacks) {
-    callback(timeElapsed);
-  }
 
   scene.traverse((child: any) => {
     if (typeof child.update === "function") {
@@ -1413,9 +1406,7 @@ class SceneObject {
   verts: number[] = [];
 
   addPolyline(
-    points:
-      | [number, number, number?][]
-      | ((t: number) => [number, number, number][]),
+    points: [number, number, number?][],
     params: AddLineParameters = {}
   ): SceneObject {
     const obj = new SceneObject();
@@ -1428,17 +1419,9 @@ class SceneObject {
     commandQueue.push(async () => {
       let positions: number[];
 
-      if (Array.isArray(points)) {
-        positions = [];
-        for (const pt of points) {
-          positions.push(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]);
-        }
-      } else if (points instanceof Function) {
-        positions = points(0).reduce((acc, val) => acc.concat(val), []);
-        animationCallbacks.push((t) => {
-          const positions = points(t).reduce((acc, val) => acc.concat(val), []);
-          geometry.setPositions(positions);
-        });
+      positions = [];
+      for (const pt of points) {
+        positions.push(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]);
       }
       obj.verts = positions;
 
@@ -2875,9 +2858,9 @@ function toThreeVector3(
 }
 
 interface Transform {
-  x?: number | ((t: number) => number);
-  y?: number | ((t: number) => number);
-  z?: number | ((t: number) => number);
+  x?: number;
+  y?: number;
+  z?: number;
   rx?: number;
   ry?: number;
   rz?: number;
@@ -2961,13 +2944,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
       const T = transform as any;
       const V = obj.position as any;
       if (T[prop] !== undefined) {
-        if (typeof T[prop] === "number") {
-          V[prop] = T[prop];
-        } else {
-          animationCallbacks.push((t) => {
-            V[prop] = T[prop](t);
-          });
-        }
+        V[prop] = T[prop];
       }
     }
   }
