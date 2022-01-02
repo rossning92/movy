@@ -470,7 +470,7 @@ function createFadeOutAnimation(
 
   const materials = getAllMaterials(obj);
   materials.forEach((material) => {
-    material.transparent = true;
+    tl.set(material, { transparent: true }, "<");
     tl.to(
       material,
       {
@@ -3129,7 +3129,19 @@ export function setBackgroundColor(color: number | string) {
   });
 }
 
-export function fadeOutAll({ t }: AnimationParameters = {}) {
+export function fadeOutAll(params: AnimationParameters = {}) {
+  const root = getRoot();
+  commandQueue.push(() => {
+    const tl = gsap.timeline();
+    for (const object3d of root.object3D.children) {
+      tl.add(
+        createFadeOutAnimation(object3d, { duration: params.duration }),
+        "<"
+      );
+    }
+    mainTimeline.add(tl, params.t);
+  });
+}
   commandQueue.push(() => {
     const tl = gsap.timeline();
     for (const object3d of scene.children) {
