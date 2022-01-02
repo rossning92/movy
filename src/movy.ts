@@ -1387,8 +1387,16 @@ class SceneObject {
     // For back compat
     if (!Array.isArray(p1)) {
       params = p1;
-      p1 = (params as any).from;
-      p2 = (params as any).to;
+
+      const from:
+        | [number, number, number?]
+        | { x: number; y: number; z: number } = (params as any).from;
+      const to:
+        | [number, number, number?]
+        | { x: number; y: number; z: number } = (params as any).to;
+
+      p1 = Array.isArray(from) ? from : [from.x, from.y, from.z];
+      p2 = Array.isArray(to) ? to : [to.x, to.y, to.z];
     }
 
     return this.addPolyline([p1, p2], params);
