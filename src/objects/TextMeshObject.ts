@@ -8,6 +8,7 @@ import {
   ShapeBufferGeometry,
   Font,
   Material,
+  ExtrudeGeometry,
 } from "three";
 
 const fontLoader = new FontLoader();
@@ -50,6 +51,7 @@ export default class TextMeshObject extends Object3D {
   centerTextVertically: boolean;
   fonts: Font[];
   material: Material;
+  text3D: boolean;
 
   constructor({
     fontSize = 1.0,
@@ -58,6 +60,7 @@ export default class TextMeshObject extends Object3D {
     font = "en,zh",
     centerTextVertically = false,
     material,
+    text3D = false,
   }: {
     fontSize?: number;
     letterSpacing?: number;
@@ -65,6 +68,7 @@ export default class TextMeshObject extends Object3D {
     font?: string;
     centerTextVertically?: boolean;
     material?: Material;
+    text3D?: boolean;
   } = {}) {
     super();
 
@@ -74,6 +78,7 @@ export default class TextMeshObject extends Object3D {
     this.fontName = font;
     this.centerTextVertically = centerTextVertically;
     this.material = material;
+    this.text3D = text3D;
   }
 
   async init() {
@@ -110,9 +115,19 @@ export default class TextMeshObject extends Object3D {
         const resolution = fontData.resolution;
         const ha = (glyph.ha / resolution) * this.fontSize;
 
-        const geometry = new ShapeBufferGeometry(
-          font.generateShapes(char, this.fontSize)
-        );
+        const shapes = font.generateShapes(char, this.fontSize);
+
+        let geometry;
+        if (this.text3D) {
+          const extrudeSettings = {
+            depth: this.fontSize * 0.2,
+            bevelEnabled: false,
+          };
+          geometry = new ExtrudeGeometry(shapes, extrudeSettings);
+        } else {
+          geometry = new ShapeBufferGeometry(shapes);
+        }
+
         geometry.computeBoundingBox();
         let mat: Material;
         if (this.material === undefined) {

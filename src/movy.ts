@@ -1679,13 +1679,6 @@ class SceneObject {
   }
 
   addText(text: string, params: AddTextParameters = {}): TextObject {
-    const {
-      color,
-      letterSpacing,
-      font,
-      fontSize = 1,
-      centerTextVertically,
-    } = params;
     const obj = new TextObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1694,20 +1687,48 @@ class SceneObject {
     }
 
     commandQueue.push(async () => {
-      const material = createMaterial(params);
+      const material = createMaterial({ ...params });
 
       const textObject = new TextMeshObject({
-        font,
-        color: toThreeColor(color),
-        fontSize: fontSize,
-        letterSpacing,
-        centerTextVertically,
+        ...params,
+        color: toThreeColor(params.color),
         material,
       });
       await textObject.init();
       await textObject.setText(text);
-      obj.object3D = textObject as any;
 
+      obj.object3D = textObject;
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
+  addText3D(text: string, params: AddText3DParameters = {}): TextObject {
+    const obj = new TextObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    commandQueue.push(async () => {
+      const material = createMaterial({
+        ...params,
+        lighting: params.lighting !== undefined ? params.lighting : true,
+      });
+
+      const textObject = new TextMeshObject({
+        ...params,
+        color: toThreeColor(params.color),
+        material,
+        text3D: true,
+      });
+      await textObject.init();
+      await textObject.setText(text);
+
+      obj.object3D = textObject;
       updateTransform(obj.object3D, params);
       this.addObjectToScene(obj, params);
     });
@@ -2753,6 +2774,8 @@ interface AddTextParameters extends Transform, BasicMaterial {
   ccw?: boolean;
 }
 
+interface AddText3DParameters extends AddTextParameters {}
+
 interface AddRectParameters extends Transform, BasicMaterial {
   width?: number;
   height?: number;
@@ -3297,6 +3320,13 @@ export function addText(
   params: AddTextParameters = {}
 ): TextObject {
   return getRoot().addText(text, params);
+}
+
+export function addText3D(
+  text: string,
+  params: AddText3DParameters = {}
+): TextObject {
+  return getRoot().addText3D(text, params);
 }
 
 export function addTex(tex: string, params: AddTextParameters = {}): TexObject {
