@@ -1723,6 +1723,38 @@ class SceneObject {
     return obj;
   }
 
+  addTextOutline(
+    text: string,
+    params: AddTextOutlineParameters = {}
+  ): TextObject {
+    const obj = new TextObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    commandQueue.push(async () => {
+      const material = createMaterial({ ...params });
+
+      const textObject = new TextMeshObject({
+        ...params,
+        color: toThreeColor(params.color),
+        stroke: true,
+        strokeWidth: params.lineWidth || DEFAULT_LINE_WIDTH,
+        material,
+      });
+      await textObject.init();
+      textObject.setText(text, true);
+
+      obj.object3D = textObject;
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
   addTex(tex: string, params: AddTextParameters = {}): TexObject {
     const obj = new TexObject();
     obj._initParams = params;
@@ -2763,6 +2795,10 @@ interface AddTextParameters extends Transform, BasicMaterial {
 
 interface AddText3DParameters extends AddTextParameters {}
 
+interface AddTextOutlineParameters extends AddTextParameters {
+  lineWidth?: number;
+}
+
 interface AddRectParameters extends Transform, BasicMaterial {
   width?: number;
   height?: number;
@@ -3308,6 +3344,13 @@ export function addText3D(
   params: AddText3DParameters = {}
 ): TextObject {
   return getRoot().addText3D(text, params);
+}
+
+export function addTextOutline(
+  text: string,
+  params: AddTextOutlineParameters = {}
+): TextObject {
+  return getRoot().addTextOutline(text, params);
 }
 
 export function addTex(tex: string, params: AddTextParameters = {}): TexObject {
