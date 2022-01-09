@@ -5,5 +5,3 @@ mo.addText("Hello, Movy!", {
   color: "yellow",
   font: "en",
 }).reveal();
-
-mo.run();

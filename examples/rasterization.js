@@ -1,6 +1,6 @@
 import * as mo from "movy";
 
-const GRID_SIZE = 32;
+const GRID_SIZE = 48;
 
 const group = mo.addGroup({ scale: 9 / GRID_SIZE });
 
@@ -8,6 +8,7 @@ const grid = mo.addGrid({
   gridSize: GRID_SIZE,
   parent: group,
   z: 0.01,
+  color: "darkgray",
 });
 grid.wipeIn();
 
@@ -21,8 +22,8 @@ for (let i = GRID_SIZE - 1; i >= 0; i--) {
         color: ((i * GRID_SIZE + j) / (GRID_SIZE * GRID_SIZE)) * 256 + 0x02a9f7,
         parent: group,
       });
-      pixel.fadeIn({ t });
-      t += 0.01;
+      pixel.show({ t });
+      t += 0.005;
     }
   }
 }

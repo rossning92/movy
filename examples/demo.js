@@ -90,8 +90,8 @@ bgRect.changeColor("#000000", { t: 1.8, duration: 0.5 });
 // ----------------------------------------------------------------------------
 // Helper functions
 
-function addIcons({ parent = undefined, opacity = 1.0, z = 0 } = {}) {
-  const group = mo.addGroup({ parent, z });
+function addIcons({ opacity = 1.0, z = 0 } = {}) {
+  const group = mo.addGroup({ z });
   const images = [
     "lang/c.png",
     "lang/cpp.png",
