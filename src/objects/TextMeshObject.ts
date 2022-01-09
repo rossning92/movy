@@ -24,20 +24,20 @@ async function preloadFont(fontName: string): Promise<Font> {
     let font: Font;
     if (fontName == "zh") {
       font = await fontLoader.loadAsync(
-        "fonts/SourceHanSansSC-Regular.subset.json"
+        "fonts/Source-Han-Sans-SC-Regular.subset.json"
       );
     } else if (fontName == "en") {
       font = await fontLoader.loadAsync("fonts/Roboto-Regular.json");
     } else if (fontName == "condensed") {
-      font = await fontLoader.loadAsync("fonts/RobotoCondensed-Regular.json");
+      font = await fontLoader.loadAsync("fonts/Roboto-Condensed-Regular.json");
     } else if (fontName == "math") {
-      font = await fontLoader.loadAsync("fonts/LatinModernMath-Regular.json");
+      font = await fontLoader.loadAsync("fonts/Latin-Modern-Math-Regular.json");
     } else if (fontName == "code") {
-      font = await fontLoader.loadAsync("fonts/SourceCodePro-Regular.json");
+      font = await fontLoader.loadAsync("fonts/Consolas-Regular.json");
     } else if (fontName == "gdh") {
       font = await fontLoader.loadAsync("fonts/zcool-gdh-Regular.subset.json");
     } else if (fontName == "arcade") {
-      font = await fontLoader.loadAsync("fonts/PressStart2P-Regular.json");
+      font = await fontLoader.loadAsync("fonts/Public-Pixel-Regular.json");
     } else {
       throw `Invalid font name: ${fontName}`;
     }

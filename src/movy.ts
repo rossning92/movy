@@ -2786,7 +2786,7 @@ class TexObject extends GroupObject {
 }
 
 interface AddTextParameters extends Transform, BasicMaterial {
-  font?: "zh" | "en" | "math" | "code" | "gdh";
+  font?: "en" | "condensed" | "code" | "math" | "arcade" | "zh" | "gdh";
   fontSize?: number;
   letterSpacing?: number;
   centerTextVertically?: boolean;
