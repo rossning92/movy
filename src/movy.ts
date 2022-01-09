@@ -651,18 +651,20 @@ export function run() {
         console.log(`${key} ${globalTimeline.labels[key]}`);
       });
 
-      const folder = gui.addFolder("Timeline Labels");
-      const labels: any = {};
-      Object.keys(globalTimeline.labels).forEach((key) => {
-        const label = key;
-        const time = globalTimeline.labels[key];
+      if (false) {
+        const folder = gui.addFolder("Timeline Labels");
+        const labels: any = {};
+        Object.keys(globalTimeline.labels).forEach((key) => {
+          const label = key;
+          const time = globalTimeline.labels[key];
 
-        console.log(this);
-        labels[label] = () => {
-          globalTimeline.seek(time, false);
-        };
-        folder.add(labels, label);
-      });
+          console.log(this);
+          labels[label] = () => {
+            globalTimeline.seek(time, false);
+          };
+          folder.add(labels, label);
+        });
+      }
     }
 
     if (0) {
