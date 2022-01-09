@@ -60,7 +60,7 @@ let uiCamera: THREE.Camera;
 let renderTarget: THREE.WebGLMultisampleRenderTarget;
 
 let lightGroup: THREE.Group;
-let cameraControls: OrbitControls;
+let orbitControls: OrbitControls;
 let glitchPass: any;
 let gridHelper: THREE.GridHelper;
 let backgroundAlpha = 1.0;
@@ -203,7 +203,7 @@ function setupScene() {
 
   uiCamera = createOrthographicCamera();
 
-  cameraControls = new OrbitControls(camera, renderer.domElement);
+  orbitControls = new OrbitControls(camera, renderer.domElement);
 
   // Create multi-sample render target in order to reduce aliasing (better
   // quality than FXAA).
@@ -307,6 +307,9 @@ interface MoveCameraParameters extends Transform, AnimationParameters {
 
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
   commandQueue.push(() => {
+    // OrbitControls won't work as expected when camera transform is changed.
+    orbitControls.enabled = false;
+
     const { t, lookAt, duration = 0.5, ease = defaultEase, fov, zoom } = params;
 
     const tl = gsap.timeline({
