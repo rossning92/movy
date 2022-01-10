@@ -10,7 +10,7 @@
   "dependencies": {
     "@types/dat.gui": "^0.7.6",
     "@types/three": "^0.132.1",
-    "ccapture.js": "^1.1.0",
+    "ccapture.js-npmfixed": "^1.1.0",
     "dat.gui": "^0.7.6",
     "gsap": "^3.6.1",
     "mathjax": "3",

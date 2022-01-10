@@ -3,6 +3,7 @@
  * @author Ross Ning
  */
 
+import CCapture from "ccapture.js-npmfixed";
 import * as dat from "dat.gui";
 import gsap from "gsap";
 import * as THREE from "three";
@@ -31,10 +32,6 @@ import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 const DEFAULT_LINE_WIDTH = 0.02;
 const defaultEase = "power2.out";
 const DEG2RAD = Math.PI / 180;
-
-declare class CCapture {
-  constructor(params: any);
-}
 
 gsap.ticker.remove(gsap.updateRoot);
 

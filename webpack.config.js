@@ -77,6 +77,9 @@ module.exports = ({ file, moduleDir, open = true } = {}) => {
     resolve: {
       modules: modules,
       extensions: [".js", ".ts", ".json"],
+      fallback: {
+        fs: false,
+      },
     },
     module: {
       rules: [
