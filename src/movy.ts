@@ -553,50 +553,6 @@ function createExplosionAnimation(
   return tl;
 }
 
-function createGroupFlyInAnimation(
-  objectGroup: THREE.Object3D,
-  { ease = "expo.out", duration = 1, stagger = 0 } = {}
-) {
-  const tl = gsap.timeline({
-    defaults: {
-      duration,
-      ease: ease,
-    },
-  });
-
-  let delay = 0;
-  objectGroup.children.forEach((child) => {
-    const targetScale = child.scale.clone().multiplyScalar(0.01);
-    tl.from(
-      child.scale,
-      { x: targetScale.x, y: targetScale.y, z: targetScale.z },
-      delay
-    );
-
-    delay += stagger;
-  });
-
-  return tl;
-}
-
-// Deprecated
-function getCompoundBoundingBox(object3D: THREE.Object3D) {
-  let box: THREE.Box3;
-  object3D.traverse(function (obj3D: any) {
-    const geometry = obj3D.geometry;
-    if (geometry === undefined) {
-      return;
-    }
-    geometry.computeBoundingBox();
-    if (box === undefined) {
-      box = geometry.boundingBox;
-    } else {
-      box.union(geometry.boundingBox);
-    }
-  });
-  return box;
-}
-
 export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
   glitchPassEnabled = true;
 
