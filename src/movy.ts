@@ -1992,11 +1992,7 @@ class SceneObject {
 
       const tl = gsap.timeline();
       tl.set(this.object3D, { visible: true });
-      tl.from(
-        this.object3D.scale,
-        { x: 0.01, y: 0.01, z: 0.01, ease, duration },
-        "<"
-      );
+      tl.from(this.object3D.scale, { x: 0, y: 0, z: 0, ease, duration }, "<");
       mainTimeline.add(tl, t);
     });
     return this;
@@ -2015,9 +2011,9 @@ class SceneObject {
       tl.from(
         this.object3D.scale,
         {
-          x: 0.01,
-          y: 0.01,
-          z: 0.01,
+          x: 0,
+          y: 0,
+          z: 0,
           ease: "elastic.out(1, 0.75)",
           onStart: () => {
             this.object3D.visible = true;
@@ -2036,9 +2032,9 @@ class SceneObject {
       mainTimeline.from(
         this.object3D.scale,
         {
-          x: 0.01,
-          y: 0.01,
-          z: 0.01,
+          x: 0,
+          y: 0,
+          z: 0,
           ease: "elastic.out(1, 0.2)",
           duration: 1.0,
         },
