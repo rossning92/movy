@@ -2163,11 +2163,19 @@ class SceneObject {
 
   vertexToAnimate = new Map<number, THREE.Vector3>();
 
+  /**
+   * @deprecated Use `setVert()` instead.
+   */
   updateVert(
     i: number,
     position: [number, number, number?],
     params: AnimationParameters = {}
   ) {
+    this.setVert(i, position, params.t);
+    return this;
+  }
+
+  setVert(i: number, position: [number, number, number?], t?: number | string) {
     commandQueue.push(() => {
       if (this.verts.length > 0) {
         const mesh = this.object3D as THREE.Mesh;
@@ -2200,7 +2208,7 @@ class SceneObject {
         this.verts[3 * i + 1] = position[1];
         this.verts[3 * i + 2] = position[2] || 0;
 
-        mainTimeline.add(tl, params.t);
+        mainTimeline.add(tl, t);
       } else {
         const mesh = this.object3D as THREE.Mesh;
         const geometry = mesh.geometry as THREE.BufferGeometry;
@@ -2232,7 +2240,7 @@ class SceneObject {
           },
         });
 
-        mainTimeline.add(tl, params.t);
+        mainTimeline.add(tl, t);
       }
     });
     return this;
@@ -2516,6 +2524,9 @@ interface TypeTextParameters extends AnimationParameters {
 }
 
 class TextObject extends GroupObject {
+  /**
+   * @deprecated Use `setText()` instead.
+   */
   changeText(
     func: (val: number) => any,
     {
@@ -2565,7 +2576,15 @@ class TextObject extends GroupObject {
     return this;
   }
 
+  /**
+   * @deprecated Use `setText()` instead.
+   */
   updateText(text: string, params: AnimationParameters = {}) {
+    this.setText(text, params.t);
+    return this;
+  }
+
+  setText(text: string, t?: number | string) {
     commandQueue.push(async () => {
       mainTimeline.set(
         {},
@@ -2575,7 +2594,7 @@ class TextObject extends GroupObject {
             textMesh.setText(text);
           },
         },
-        params.t
+        t
       );
     });
   }
@@ -2723,7 +2742,15 @@ class TexObject extends GroupObject {
     return copy;
   }
 
+  /**
+   * @deprecated Use `setTex()` instead.
+   */
   updateTex(tex: string, params: AnimationParameters = {}) {
+    this.setTex(tex, params.t);
+    return this;
+  }
+
+  setTex(tex: string, t?: number | string) {
     commandQueue.push(async () => {
       const newTexObject = await createTexObject(tex, {
         color: "#" + toThreeColor(this._initParams.color).getHexString(),
@@ -2734,7 +2761,7 @@ class TexObject extends GroupObject {
       const tl = gsap.timeline();
       tl.set(this.object3D.children, { visible: false }, "<");
       tl.set(newTexObject, { visible: true }, "<");
-      mainTimeline.add(tl, params.t);
+      mainTimeline.add(tl, t);
     });
   }
 }
