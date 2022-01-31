@@ -1757,6 +1757,21 @@ class SceneObject {
     return this;
   }
 
+  setPos(pos: [number, number, number?], params: AnimationParameters = {}) {
+    commandQueue.push(() => {
+      mainTimeline.set(
+        this.object3D.position,
+        {
+          x: pos[0],
+          y: pos[1],
+          z: pos[2] || 0,
+        },
+        params.t
+      );
+    });
+    return this;
+  }
+
   scaleTo(scale: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
 
