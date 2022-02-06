@@ -2615,120 +2615,132 @@ class TextObject extends GroupObject {
   }
 }
 
+function transformTexFromTo(
+  from: THREE.Object3D[],
+  to: THREE.Object3D[],
+  params: AnimationParameters = {}
+) {
+  const { duration = 1, t, ease = defaultEase } = params;
+
+  const _rightToLeft = (params as any)._rightToLeft;
+
+  const tl = gsap.timeline({ defaults: { ease, duration } });
+
+  // From tex objects
+  const fromTexObjects = [];
+  for (const o of from) {
+    tl.set(o, { visible: true }, "<");
+    tl.set(o.children, { visible: true }, "<");
+    o.updateWorldMatrix(true, true);
+    console.assert(o instanceof THREE.Group);
+    for (const c of o.children) {
+      fromTexObjects.push(c);
+    }
+  }
+
+  // Dest tex objects
+  const toTexObjects = [];
+  for (const o of to) {
+    o.updateWorldMatrix(true, true);
+    console.assert(o instanceof THREE.Group);
+    for (const c of o.children) {
+      toTexObjects.push(c);
+    }
+  }
+
+  const matchedDstSymbols = Array(toTexObjects.length).fill(false);
+  const ii = [...Array(fromTexObjects.length).keys()];
+  for (let i of _rightToLeft ? ii.reverse() : ii) {
+    const c1 = fromTexObjects[i];
+    // find match
+
+    let found = false;
+    const jj = [...Array(toTexObjects.length).keys()];
+    for (let j of _rightToLeft ? jj.reverse() : jj) {
+      if (!matchedDstSymbols[j]) {
+        const c2 = toTexObjects[j];
+        if (c1.name === c2.name && c1.scale.distanceTo(c2.scale) < 0.01) {
+          let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
+          posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
+
+          let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
+          scaleInSrcTexObject.divide(
+            c1.parent.getWorldScale(new THREE.Vector3())
+          );
+
+          createTransformAnimation({
+            object3d: c1,
+            x: posInSrcTexObject.x,
+            y: posInSrcTexObject.y,
+            z: posInSrcTexObject.z,
+            sx: scaleInSrcTexObject.x,
+            sy: scaleInSrcTexObject.y,
+            sz: scaleInSrcTexObject.z,
+            tl,
+          });
+
+          found = true;
+          matchedDstSymbols[j] = true;
+
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      tl.add(createFadeOutAnimation(c1, { duration, ease: "power4.out" }), 0);
+    }
+  }
+
+  for (const i in matchedDstSymbols) {
+    const c = toTexObjects[i];
+    if (!matchedDstSymbols[i]) {
+      // Fade in unmatched symbols in toTextObject
+      tl.add(createFadeInAnimation(c, { duration, ease: "power4.in" }), 0);
+    } else {
+      // Hide matched symbols in toTextObject
+      c.visible = false;
+    }
+  }
+
+  // Hide all symbols in srcTexObject
+  tl.set(fromTexObjects, { visible: false }, "+=0");
+
+  // Show all symbols in dstTexObject
+  tl.set(toTexObjects, { visible: true }, "+=0");
+
+  mainTimeline.add(tl, t);
+}
+
 class TexObject extends GroupObject {
   _initParams: AddTextParameters;
 
-  static transformTexFromTo(
-    from: TexObject[],
-    to: TexObject[],
-    params: AnimationParameters = {}
-  ) {
-    const { duration = 1, t, ease = defaultEase } = params;
-
-    const _rightToLeft = (params as any)._rightToLeft;
-
-    commandQueue.push(() => {
-      const tl = gsap.timeline({ defaults: { ease, duration } });
-
-      // From tex objects
-      const fromTexObjects = [];
-      for (const o of from) {
-        tl.set(o.object3D, { visible: true }, "<");
-        tl.set(o.object3D.children, { visible: true }, "<");
-        o.object3D.updateWorldMatrix(true, true);
-        console.assert(o.object3D instanceof THREE.Group);
-        for (const c of o.object3D.children) {
-          fromTexObjects.push(c);
-        }
-      }
-
-      // Dest tex objects
-      const toTexObjects = [];
-      for (const o of to) {
-        o.object3D.updateWorldMatrix(true, true);
-        console.assert(o.object3D instanceof THREE.Group);
-        for (const c of o.object3D.children) {
-          toTexObjects.push(c);
-        }
-      }
-
-      const matchedDstSymbols = Array(toTexObjects.length).fill(false);
-      const ii = [...Array(fromTexObjects.length).keys()];
-      for (let i of _rightToLeft ? ii.reverse() : ii) {
-        const c1 = fromTexObjects[i];
-        // find match
-
-        let found = false;
-        const jj = [...Array(toTexObjects.length).keys()];
-        for (let j of _rightToLeft ? jj.reverse() : jj) {
-          if (!matchedDstSymbols[j]) {
-            const c2 = toTexObjects[j];
-            if (c1.name === c2.name) {
-              let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
-              posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
-
-              let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
-              scaleInSrcTexObject.divide(
-                c1.parent.getWorldScale(new THREE.Vector3())
-              );
-
-              createTransformAnimation({
-                object3d: c1,
-                x: posInSrcTexObject.x,
-                y: posInSrcTexObject.y,
-                z: posInSrcTexObject.z,
-                sx: scaleInSrcTexObject.x,
-                sy: scaleInSrcTexObject.y,
-                sz: scaleInSrcTexObject.z,
-                tl,
-              });
-
-              found = true;
-              matchedDstSymbols[j] = true;
-
-              break;
-            }
-          }
-        }
-
-        if (!found) {
-          tl.add(
-            createFadeOutAnimation(c1, { duration, ease: "power4.out" }),
-            0
-          );
-        }
-      }
-
-      for (const i in matchedDstSymbols) {
-        const c = toTexObjects[i];
-        if (!matchedDstSymbols[i]) {
-          // Fade in unmatched symbols in toTextObject
-          tl.add(createFadeInAnimation(c, { duration, ease: "power4.in" }), 0);
-        } else {
-          // Hide matched symbols in toTextObject
-          c.visible = false;
-        }
-      }
-
-      // Hide all symbols in srcTexObject
-      tl.set(fromTexObjects, { visible: false }, "+=0");
-
-      // Show all symbols in dstTexObject
-      tl.set(toTexObjects, { visible: true }, "+=0");
-
-      mainTimeline.add(tl, t);
-    });
-  }
-
   transformTexTo(
-    to: TexObject | TexObject[],
+    to: string | TexObject | TexObject[],
     params: AnimationParameters = {}
   ) {
-    if (to instanceof TexObject) {
-      to = [to];
-    }
+    commandQueue.push(async () => {
+      if (typeof to === "string") {
+        const texObject = await createTexObject(to, {
+          color: "#" + toThreeColor(this._initParams.color).getHexString(),
+        });
+        updateTransform(texObject, this._initParams);
+        this.object3D.parent.add(texObject);
 
-    TexObject.transformTexFromTo([this], to, params);
+        transformTexFromTo([this.object3D], [texObject], params);
+
+        this.object3D = texObject;
+      } else if (to instanceof TexObject) {
+        transformTexFromTo([this.object3D], [to.object3D], params);
+      } else {
+        transformTexFromTo(
+          [this.object3D],
+          to.map((x) => x.object3D),
+          params
+        );
+      }
+    });
+
     return this;
   }
 
@@ -2736,11 +2748,18 @@ class TexObject extends GroupObject {
     from: TexObject | TexObject[],
     params: AnimationParameters = {}
   ) {
-    if (from instanceof TexObject) {
-      from = [from];
-    }
+    commandQueue.push(async () => {
+      if (from instanceof TexObject) {
+        from = [from];
+      }
 
-    TexObject.transformTexFromTo(from, [this], params);
+      transformTexFromTo(
+        from.map((x) => x.object3D),
+        [this.object3D],
+        params
+      );
+    });
+
     return this;
   }
 
