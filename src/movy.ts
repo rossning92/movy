@@ -35,8 +35,6 @@ const DEG2RAD = Math.PI / 180;
 
 gsap.ticker.remove(gsap.updateRoot);
 
-let isRunning = false;
-
 let glitchPassEnabled = false;
 let renderTargetWidth = 1920;
 let renderTargetHeight = 1080;
@@ -82,7 +80,7 @@ let options = {
 const seedrandom = require("seedrandom");
 let rng = seedrandom("hello.");
 
-const commandQueue: Function[] = [];
+// const commandQueue: Function[] = [];
 
 function startRender({ resetTiming = true, name = document.title } = {}) {
   if (gridHelper !== undefined) {
@@ -303,7 +301,7 @@ interface MoveCameraParameters extends Transform, AnimationParameters {
 }
 
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     // OrbitControls won't work as expected when camera transform is changed.
     orbitControls.enabled = false;
 
@@ -556,7 +554,7 @@ function createExplosionAnimation(
 export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
   glitchPassEnabled = true;
 
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     const tl = gsap.timeline();
     tl.set(glitchPass, { factor: 1 });
     tl.set(glitchPass, { factor: 0 }, `<${duration}`);
@@ -564,82 +562,71 @@ export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
   });
 }
 
-export function run() {
-  if (isRunning) return;
-  isRunning = true;
-  (async () => {
-    setupScene();
+/**
+ * @deprecated No need to manually call run().
+ */
+export function run() {}
 
-    for (const cmd of commandQueue) {
-      if (typeof cmd === "function") {
-        const ret = cmd();
-        if (ret instanceof Promise) {
-          await ret;
-        }
-      } else {
-        throw `invalid command`;
-      }
-    }
+const startEngine = () => {
+  // Always Add 0.5s to the end of animation to avoid zero-length video.
+  if (mainTimeline.duration() < Number.EPSILON) {
+    mainTimeline.set({}, {}, "+=0.5");
+  }
 
-    // Always Add 0.5s to the end of animation to avoid zero-length video.
-    if (mainTimeline.duration() < Number.EPSILON) {
-      mainTimeline.set({}, {}, "+=0.5");
-    }
+  createUIs();
 
-    {
-      // Create UI controls
-      const gui = new dat.GUI();
-      gui.add(options, "format", ["webm", "webm-fast", "png"]);
-      gui.add(options, "framerate", [10, 25, 30, 60, 120]);
-      gui.add(options, "render");
+  if (0) {
+    // Grid helper
+    const size = 20;
+    const divisions = 20;
+    const colorCenterLine = "#008800";
+    const colorGrid = "#888888";
 
-      options.timeline = 0;
-      gui
-        .add(options, "timeline", 0, globalTimeline.totalDuration())
-        .onChange((val) => {
-          globalTimeline.seek(val, false);
-        });
+    gridHelper = new THREE.GridHelper(
+      size,
+      divisions,
+      new THREE.Color(colorCenterLine),
+      new THREE.Color(colorGrid)
+    );
+    gridHelper.rotation.x = Math.PI / 2;
+    scene.add(gridHelper);
+  }
 
-      Object.keys(globalTimeline.labels).forEach((key) => {
-        console.log(`${key} ${globalTimeline.labels[key]}`);
-      });
+  // Start animation
+  requestAnimationFrame(animate);
+};
 
-      if (false) {
-        const folder = gui.addFolder("Timeline Labels");
-        const labels: any = {};
-        Object.keys(globalTimeline.labels).forEach((key) => {
-          const label = key;
-          const time = globalTimeline.labels[key];
+function createUIs() {
+  const gui = new dat.GUI();
+  gui.add(options, "format", ["webm", "webm-fast", "png"]);
+  gui.add(options, "framerate", [10, 25, 30, 60, 120]);
+  gui.add(options, "render");
 
-          console.log(this);
-          labels[label] = () => {
-            globalTimeline.seek(time, false);
-          };
-          folder.add(labels, label);
-        });
-      }
-    }
+  options.timeline = 0;
+  gui
+    .add(options, "timeline", 0, globalTimeline.totalDuration())
+    .onChange((val) => {
+      globalTimeline.seek(val, false);
+    });
 
-    if (0) {
-      // Grid helper
-      const size = 20;
-      const divisions = 20;
-      const colorCenterLine = "#008800";
-      const colorGrid = "#888888";
+  Object.keys(globalTimeline.labels).forEach((key) => {
+    console.log(`${key} ${globalTimeline.labels[key]}`);
+  });
 
-      gridHelper = new THREE.GridHelper(
-        size,
-        divisions,
-        new THREE.Color(colorCenterLine),
-        new THREE.Color(colorGrid)
-      );
-      gridHelper.rotation.x = Math.PI / 2;
-      scene.add(gridHelper);
-    }
+  if (false) {
+    const folder = gui.addFolder("Timeline Labels");
+    const labels: any = {};
+    Object.keys(globalTimeline.labels).forEach((key) => {
+      const label = key;
+      const time = globalTimeline.labels[key];
 
-    // Start animation
-    requestAnimationFrame(animate);
-  })();
+      console.log(this);
+      labels[label] = () => {
+        globalTimeline.seek(time, false);
+      };
+      folder.add(labels, label);
+    });
+  }
 }
 
 function createArrow2DGeometry(arrowLength: number) {
@@ -898,7 +885,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = true;
       const material = createMaterial(params);
 
@@ -921,7 +908,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       addDefaultLights();
 
       obj.object3D = mesh;
@@ -936,7 +923,7 @@ class SceneObject {
 
   clone() {
     const obj = new SceneObject();
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       obj.object3D = this.object3D.clone();
       obj.object3D.traverse((node) => {
         const mesh = node as THREE.Mesh;
@@ -959,7 +946,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       obj.object3D = new THREE.Group();
 
       updateTransform(obj.object3D, params);
@@ -978,7 +965,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       addDefaultLights();
 
       const object = await loadObj(url);
@@ -1021,7 +1008,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
@@ -1063,7 +1050,7 @@ class SceneObject {
       arrowEnd = true,
     } = params;
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       addDefaultLights();
 
       if (params.lighting === undefined) params.lighting = false;
@@ -1181,7 +1168,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       obj.object3D = new THREE.Group();
 
       const arrowParams = {
@@ -1234,7 +1221,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       addDefaultLights();
 
       if (params.lighting === undefined) params.lighting = false;
@@ -1275,7 +1262,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       obj.object3D = new THREE.GridHelper(
         gridSize,
         gridSize,
@@ -1301,7 +1288,7 @@ class SceneObject {
 
     const { color, ccw } = params;
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (file.endsWith(".svg")) {
         obj.object3D = await loadSVG(file, {
           ccw,
@@ -1374,7 +1361,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       let positions: number[];
 
       positions = [];
@@ -1453,7 +1440,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
@@ -1491,7 +1478,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
@@ -1525,7 +1512,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
@@ -1554,7 +1541,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
@@ -1603,7 +1590,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial(params);
 
@@ -1631,7 +1618,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       const material = createMaterial({ ...params });
 
       const textObject = new TextMeshObject({
@@ -1658,7 +1645,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       const material = createMaterial({
         ...params,
         lighting: params.lighting !== undefined ? params.lighting : true,
@@ -1692,7 +1679,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       const material = createMaterial({ ...params });
 
       const textObject = new TextMeshObject({
@@ -1723,7 +1710,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       const texObject = await createTexObject(tex, {
         color: "#" + toThreeColor(params.color).getHexString(),
       });
@@ -1738,7 +1725,7 @@ class SceneObject {
   moveTo(params: MoveObjectParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
 
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       let tl = gsap.timeline({
         defaults: {
           duration,
@@ -1758,7 +1745,7 @@ class SceneObject {
   }
 
   setPos(pos: [number, number, number?], params: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       mainTimeline.set(
         this.object3D.position,
         {
@@ -1775,7 +1762,7 @@ class SceneObject {
   scaleTo(scale: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
 
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       let tl = gsap.timeline({
         defaults: {
           duration,
@@ -1800,7 +1787,7 @@ class SceneObject {
 
   scaleXTo(sx: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       let tl = gsap.timeline({
         defaults: {
           duration,
@@ -1816,7 +1803,7 @@ class SceneObject {
 
   scaleYTo(sy: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       let tl = gsap.timeline({
         defaults: {
           duration,
@@ -1832,7 +1819,7 @@ class SceneObject {
 
   scaleZTo(sz: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       let tl = gsap.timeline({
         defaults: {
           duration,
@@ -1847,7 +1834,7 @@ class SceneObject {
   }
 
   fadeIn({ duration = 0.25, ease = "linear", t }: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = createFadeInAnimation(this.object3D, { duration, ease });
       mainTimeline.add(tl, t);
     });
@@ -1865,7 +1852,7 @@ class SceneObject {
     opacity: number,
     { duration = 0.25, ease = "linear", t }: FadeObjectParameters = {}
   ) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const materials = getAllMaterials(this.object3D);
@@ -1893,7 +1880,7 @@ class SceneObject {
     color: string | number,
     { duration = 0.25, ease = "power1.inOut", t }: AnimationParameters = {}
   ) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const materials = getAllMaterials(this.object3D);
@@ -1923,7 +1910,7 @@ class SceneObject {
     rz?: number,
     { t, duration = 0.5, ease = defaultEase }: AnimationParameters = {}
   ) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       if (rx !== undefined) {
@@ -1964,7 +1951,7 @@ class SceneObject {
     x = Math.PI * 2,
     y = -Math.PI * 2,
   }: RotateParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({
         defaults: { duration, ease, repeat },
       });
@@ -1981,7 +1968,7 @@ class SceneObject {
     duration = 0.5,
     ease = defaultEase,
   }: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       tl.from(this.object3D.rotation, { z: Math.PI * 4, duration }, "<");
@@ -2002,7 +1989,7 @@ class SceneObject {
   }
 
   grow({ t, ease = defaultEase, duration = 0.5 }: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       this.object3D.visible = false;
 
       const tl = gsap.timeline();
@@ -2014,7 +2001,7 @@ class SceneObject {
   }
 
   grow2({ t }: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline();
 
       tl.fromTo(
@@ -2043,7 +2030,7 @@ class SceneObject {
   }
 
   grow3({ t }: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       mainTimeline.from(
         this.object3D.scale,
         {
@@ -2063,7 +2050,7 @@ class SceneObject {
     const WIDTH = 30;
     const HEIGHT = 15;
 
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline();
 
       this.object3D.children.forEach((x) => {
@@ -2094,7 +2081,7 @@ class SceneObject {
     duration = 0.5,
     ease = defaultEase,
   }: RevealParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const object3d = this.object3D;
       const clippingPlanes: THREE.Plane[] = [];
       const box = computeAABB(object3d);
@@ -2191,7 +2178,7 @@ class SceneObject {
   }
 
   setVert(i: number, position: [number, number, number?], t?: number | string) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       if (this.verts.length > 0) {
         const mesh = this.object3D as THREE.Mesh;
         // TODO: add support for all object types instead of just LineGeometry.
@@ -2267,7 +2254,7 @@ class SceneObject {
     duration = 0.5,
     ease = "power.out",
   }: WipeInParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       this.object3D.visible = false;
 
       const boundingBox = computeAABB(this.object3D);
@@ -2349,7 +2336,7 @@ class SceneObject {
       return rng() * (max - min) + min;
     }
 
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const object3d = this.object3D;
 
       const tl = gsap.timeline({ defaults: { ease: "none" } });
@@ -2386,7 +2373,7 @@ class SceneObject {
   }
 
   show({ duration = 0.001, t }: Shake2DParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { ease: "none", duration } });
       tl.fromTo(this.object3D, { visible: false }, { visible: true });
 
@@ -2421,7 +2408,7 @@ class GroupObject extends SceneObject {
     stagger = 0,
     speed,
   }: ExplodeParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       let tl: gsap.core.Timeline;
 
       tl = createExplosionAnimation(this.object3D, {
@@ -2442,7 +2429,7 @@ class GroupObject extends SceneObject {
   }
 
   implode2D({ t = undefined, duration = 0.5 }: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({
         defaults: {
           duration,
@@ -2481,7 +2468,7 @@ class GroupObject extends SceneObject {
   }
 
   flyIn({ t, duration = 0.5, ease = "power.in" }: AnimationParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const tl = gsap.timeline({
         defaults: {
           duration,
@@ -2503,8 +2490,6 @@ class GroupObject extends SceneObject {
       });
 
       mainTimeline.add(tl, t);
-
-      return tl;
     });
     return this;
   }
@@ -2552,7 +2537,7 @@ class TextObject extends GroupObject {
       t,
     }: ChangeTextParameters = {}
   ) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const textObject = this.object3D as any;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
@@ -2571,7 +2556,7 @@ class TextObject extends GroupObject {
   }
 
   typeText({ t, duration, interval = 0.1 }: TypeTextParameters = {}) {
-    commandQueue.push(() => {
+    promise = promise.then(() => {
       const textObject = this.object3D as any;
 
       if (duration !== undefined) {
@@ -2600,7 +2585,7 @@ class TextObject extends GroupObject {
   }
 
   setText(text: string, t?: number | string) {
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       mainTimeline.set(
         {},
         {
@@ -2719,7 +2704,7 @@ class TexObject extends GroupObject {
     to: string | TexObject | TexObject[],
     params: AnimationParameters = {}
   ) {
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (typeof to === "string") {
         const texObject = await createTexObject(to, {
           color: "#" + toThreeColor(this._initParams.color).getHexString(),
@@ -2748,7 +2733,7 @@ class TexObject extends GroupObject {
     from: TexObject | TexObject[],
     params: AnimationParameters = {}
   ) {
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       if (from instanceof TexObject) {
         from = [from];
       }
@@ -2766,7 +2751,7 @@ class TexObject extends GroupObject {
   clone() {
     const superClone = super.clone();
     const copy = Object.assign(new TexObject(), superClone);
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       for (var attr in superClone) {
         if (superClone.hasOwnProperty(attr)) {
           copy[attr] = superClone[attr];
@@ -2785,7 +2770,7 @@ class TexObject extends GroupObject {
   }
 
   setTex(tex: string, t?: number | string) {
-    commandQueue.push(async () => {
+    promise = promise.then(async () => {
       const newTexObject = await createTexObject(tex, {
         color: "#" + toThreeColor(this._initParams.color).getHexString(),
       });
@@ -2843,7 +2828,7 @@ function defaultSeg({ wireframe }: AddObjectParameters) {
 export function _addPanoramicSkybox(file: string) {
   const obj = new SceneObject();
 
-  commandQueue.push(async () => {
+  promise = promise.then(async () => {
     const geometry = new THREE.SphereGeometry(500, 60, 40);
     // invert the geometry on the x-axis so that all of the faces point inward
     geometry.scale(-1, 1, 1);
@@ -3182,14 +3167,14 @@ export function setResolution(w: number, h: number) {
 }
 
 export function setBackgroundColor(color: number | string) {
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     scene.background = toThreeColor(color);
   });
 }
 
 export function fadeOutAll(params: AnimationParameters = {}) {
   const root = getRoot();
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     const tl = gsap.timeline();
     for (const object3d of root.object3D.children) {
       tl.add(
@@ -3203,7 +3188,7 @@ export function fadeOutAll(params: AnimationParameters = {}) {
 
 export function hideAll(params: AnimationParameters = {}) {
   const root = getRoot();
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     const tl = gsap.timeline();
     for (const object3d of root.object3D.children) {
       tl.set(object3d, { visible: false }, "<");
@@ -3213,7 +3198,7 @@ export function hideAll(params: AnimationParameters = {}) {
 }
 
 export function pause(duration: number | string) {
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     mainTimeline.set(
       {},
       {},
@@ -3258,7 +3243,7 @@ export function _animateTo(
   vars: gsap.TweenVars,
   t?: gsap.Position
 ) {
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     mainTimeline.to(targets, vars, t);
   });
 }
@@ -3453,14 +3438,23 @@ export function useOrthographicCamera() {
 }
 
 export function addFog() {
-  commandQueue.push(() => {
+  promise = promise.then(() => {
     scene.fog = new THREE.FogExp2(0x0, 0.03);
   });
 }
 
-document.body.onload = function () {
-  run();
-};
+let promise: Promise<void> = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    setupScene();
+
+    // Chain to the end of the previous promise
+    promise.then(() => {
+      startEngine();
+    });
+
+    resolve();
+  });
+});
 
 ////////////////////////////////////////////////////////////////////////////////
 // Raycast z plane at mouse click, then copy the intersection to clipboard.
