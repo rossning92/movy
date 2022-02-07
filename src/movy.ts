@@ -2600,101 +2600,123 @@ class TextObject extends GroupObject {
   }
 }
 
+interface TransformTexParameters extends AnimationParameters {
+  type?: "transform" | "fade";
+}
+
 function transformTexFromTo(
   from: THREE.Object3D[],
   to: THREE.Object3D[],
-  params: AnimationParameters = {}
+  params: TransformTexParameters = {}
 ) {
-  const { duration = 1, t, ease = defaultEase } = params;
+  const { duration = 1, t, ease = defaultEase, type = "transform" } = params;
 
-  const _rightToLeft = (params as any)._rightToLeft;
+  if (type === "transform") {
+    const _rightToLeft = (params as any)._rightToLeft;
 
-  const tl = gsap.timeline({ defaults: { ease, duration } });
+    const tl = gsap.timeline({ defaults: { ease, duration } });
 
-  // From tex objects
-  const fromTexObjects = [];
-  for (const o of from) {
-    tl.set(o, { visible: true }, "<");
-    tl.set(o.children, { visible: true }, "<");
-    o.updateWorldMatrix(true, true);
-    console.assert(o instanceof THREE.Group);
-    for (const c of o.children) {
-      fromTexObjects.push(c);
-    }
-  }
-
-  // Dest tex objects
-  const toTexObjects = [];
-  for (const o of to) {
-    o.updateWorldMatrix(true, true);
-    console.assert(o instanceof THREE.Group);
-    for (const c of o.children) {
-      toTexObjects.push(c);
-    }
-  }
-
-  const matchedDstSymbols = Array(toTexObjects.length).fill(false);
-  const ii = [...Array(fromTexObjects.length).keys()];
-  for (let i of _rightToLeft ? ii.reverse() : ii) {
-    const c1 = fromTexObjects[i];
-    // find match
-
-    let found = false;
-    const jj = [...Array(toTexObjects.length).keys()];
-    for (let j of _rightToLeft ? jj.reverse() : jj) {
-      if (!matchedDstSymbols[j]) {
-        const c2 = toTexObjects[j];
-        if (c1.name === c2.name && c1.scale.distanceTo(c2.scale) < 0.01) {
-          let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
-          posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
-
-          let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
-          scaleInSrcTexObject.divide(
-            c1.parent.getWorldScale(new THREE.Vector3())
-          );
-
-          createTransformAnimation({
-            object3d: c1,
-            x: posInSrcTexObject.x,
-            y: posInSrcTexObject.y,
-            z: posInSrcTexObject.z,
-            sx: scaleInSrcTexObject.x,
-            sy: scaleInSrcTexObject.y,
-            sz: scaleInSrcTexObject.z,
-            tl,
-          });
-
-          found = true;
-          matchedDstSymbols[j] = true;
-
-          break;
-        }
+    // From tex objects
+    const fromTexObjects = [];
+    for (const o of from) {
+      tl.set(o, { visible: true }, "<");
+      tl.set(o.children, { visible: true }, "<");
+      o.updateWorldMatrix(true, true);
+      console.assert(o instanceof THREE.Group);
+      for (const c of o.children) {
+        fromTexObjects.push(c);
       }
     }
 
-    if (!found) {
-      tl.add(createFadeOutAnimation(c1, { duration, ease: "power4.out" }), 0);
+    // Dest tex objects
+    const toTexObjects = [];
+    for (const o of to) {
+      o.updateWorldMatrix(true, true);
+      console.assert(o instanceof THREE.Group);
+      for (const c of o.children) {
+        toTexObjects.push(c);
+      }
     }
-  }
 
-  for (const i in matchedDstSymbols) {
-    const c = toTexObjects[i];
-    if (!matchedDstSymbols[i]) {
-      // Fade in unmatched symbols in toTextObject
-      tl.add(createFadeInAnimation(c, { duration, ease: "power4.in" }), 0);
-    } else {
-      // Hide matched symbols in toTextObject
-      c.visible = false;
+    const matchedDstSymbols = Array(toTexObjects.length).fill(false);
+    const ii = [...Array(fromTexObjects.length).keys()];
+    for (let i of _rightToLeft ? ii.reverse() : ii) {
+      const c1 = fromTexObjects[i];
+      // find match
+
+      let found = false;
+      const jj = [...Array(toTexObjects.length).keys()];
+      for (let j of _rightToLeft ? jj.reverse() : jj) {
+        if (!matchedDstSymbols[j]) {
+          const c2 = toTexObjects[j];
+          if (c1.name === c2.name && c1.scale.distanceTo(c2.scale) < 0.01) {
+            let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
+            posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
+
+            let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
+            scaleInSrcTexObject.divide(
+              c1.parent.getWorldScale(new THREE.Vector3())
+            );
+
+            createTransformAnimation({
+              object3d: c1,
+              x: posInSrcTexObject.x,
+              y: posInSrcTexObject.y,
+              z: posInSrcTexObject.z,
+              sx: scaleInSrcTexObject.x,
+              sy: scaleInSrcTexObject.y,
+              sz: scaleInSrcTexObject.z,
+              tl,
+            });
+
+            found = true;
+            matchedDstSymbols[j] = true;
+
+            break;
+          }
+        }
+      }
+
+      if (!found) {
+        tl.add(createFadeOutAnimation(c1, { duration, ease: "power4.out" }), 0);
+      }
     }
+
+    for (const i in matchedDstSymbols) {
+      const c = toTexObjects[i];
+      if (!matchedDstSymbols[i]) {
+        // Fade in unmatched symbols in toTextObject
+        tl.add(createFadeInAnimation(c, { duration, ease: "power4.in" }), 0);
+      } else {
+        // Hide matched symbols in toTextObject
+        c.visible = false;
+      }
+    }
+
+    // Hide all symbols in srcTexObject
+    tl.set(fromTexObjects, { visible: false }, "+=0");
+
+    // Show all symbols in dstTexObject
+    tl.set(toTexObjects, { visible: true }, "+=0");
+
+    mainTimeline.add(tl, t);
+  } else if (type === "fade") {
+    const tl = gsap.timeline({ defaults: { ease, duration } });
+
+    // From tex objects
+    for (const o of from) {
+      tl.add(createFadeOutAnimation(o, { duration, ease: "linear" }), 0);
+    }
+
+    // Dest tex objects
+    for (const o of to) {
+      tl.add(createFadeInAnimation(o, { duration, ease: "linear" }), 0);
+    }
+
+    mainTimeline.add(tl, t);
+  } else {
+    throw new Error("Unknown type: " + type);
   }
-
-  // Hide all symbols in srcTexObject
-  tl.set(fromTexObjects, { visible: false }, "+=0");
-
-  // Show all symbols in dstTexObject
-  tl.set(toTexObjects, { visible: true }, "+=0");
-
-  mainTimeline.add(tl, t);
 }
 
 class TexObject extends GroupObject {
@@ -2702,7 +2724,7 @@ class TexObject extends GroupObject {
 
   transformTexTo(
     to: string | TexObject | TexObject[],
-    params: AnimationParameters = {}
+    params: TransformTexParameters = {}
   ) {
     promise = promise.then(async () => {
       if (typeof to === "string") {
