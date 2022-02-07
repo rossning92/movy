@@ -12,6 +12,7 @@
     "@types/three": "^0.132.1",
     "ccapture.js-npmfixed": "^1.1.0",
     "dat.gui": "^0.7.6",
+    "diff": "^5.0.0",
     "gsap": "^3.6.1",
     "mathjax": "3",
     "minimist": "^1.2.5",
@@ -28,6 +29,7 @@
     "url": "https://github.com/rossning92/movy.git"
   },
   "devDependencies": {
+    "@types/diff": "^5.0.2",
     "css-loader": "^6.5.1",
     "html-webpack-plugin": "^5.5.0",
     "style-loader": "^3.3.1",

@@ -5,6 +5,7 @@
 
 import CCapture from "ccapture.js-npmfixed";
 import * as dat from "dat.gui";
+import * as Diff from "diff";
 import gsap from "gsap";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -2602,6 +2603,7 @@ class TextObject extends GroupObject {
 
 interface TransformTexParameters extends AnimationParameters {
   type?: "transform" | "fade";
+  reverse?: boolean;
 }
 
 function transformTexFromTo(
@@ -2631,6 +2633,10 @@ function transformTexFromTo(
     // Dest tex objects
     const toTexObjects = [];
     for (const o of to) {
+      tl.set(o, { visible: true }, "<");
+      for (const c of o.children) {
+        c.visible = false;
+      }
       o.updateWorldMatrix(true, true);
       console.assert(o instanceof THREE.Group);
       for (const c of o.children) {
@@ -2638,58 +2644,63 @@ function transformTexFromTo(
       }
     }
 
-    const matchedDstSymbols = Array(toTexObjects.length).fill(false);
-    const ii = [...Array(fromTexObjects.length).keys()];
-    for (let i of _rightToLeft ? ii.reverse() : ii) {
-      const c1 = fromTexObjects[i];
-      // find match
+    if (params.reverse) {
+      toTexObjects.reverse();
+      fromTexObjects.reverse();
+    }
 
-      let found = false;
-      const jj = [...Array(toTexObjects.length).keys()];
-      for (let j of _rightToLeft ? jj.reverse() : jj) {
-        if (!matchedDstSymbols[j]) {
-          const c2 = toTexObjects[j];
-          if (c1.name === c2.name && c1.scale.distanceTo(c2.scale) < 0.01) {
-            let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
-            posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
-
-            let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
-            scaleInSrcTexObject.divide(
-              c1.parent.getWorldScale(new THREE.Vector3())
-            );
-
-            createTransformAnimation({
-              object3d: c1,
-              x: posInSrcTexObject.x,
-              y: posInSrcTexObject.y,
-              z: posInSrcTexObject.z,
-              sx: scaleInSrcTexObject.x,
-              sy: scaleInSrcTexObject.y,
-              sz: scaleInSrcTexObject.z,
-              tl,
-            });
-
-            found = true;
-            matchedDstSymbols[j] = true;
-
-            break;
+    const diff: ["+" | "-" | "=", number, number?][] = [];
+    {
+      const a = fromTexObjects.map((x) => `${x.name}`);
+      const b = toTexObjects.map((x) => `${x.name}`);
+      let j = 0;
+      let k = 0;
+      for (const d of Diff.diffArrays(a, b)) {
+        for (let i = 0; i < d.count; i++) {
+          if (d.added) {
+            diff.push(["+", k]);
+            k++;
+          } else if (d.removed) {
+            diff.push(["-", j]);
+            j++;
+          } else {
+            diff.push(["=", j, k]);
+            j++;
+            k++;
           }
         }
       }
-
-      if (!found) {
-        tl.add(createFadeOutAnimation(c1, { duration, ease: "power4.out" }), 0);
-      }
     }
 
-    for (const i in matchedDstSymbols) {
-      const c = toTexObjects[i];
-      if (!matchedDstSymbols[i]) {
-        // Fade in unmatched symbols in toTextObject
+    for (const [op, i, j] of diff) {
+      if (op === "=") {
+        const c1 = fromTexObjects[i];
+        const c2 = toTexObjects[j];
+
+        let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
+        posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
+
+        let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
+        scaleInSrcTexObject.divide(
+          c1.parent.getWorldScale(new THREE.Vector3())
+        );
+
+        createTransformAnimation({
+          object3d: c1,
+          x: posInSrcTexObject.x,
+          y: posInSrcTexObject.y,
+          z: posInSrcTexObject.z,
+          sx: scaleInSrcTexObject.x,
+          sy: scaleInSrcTexObject.y,
+          sz: scaleInSrcTexObject.z,
+          tl,
+        });
+      } else if (op === "-") {
+        const c1 = fromTexObjects[i];
+        tl.add(createFadeOutAnimation(c1, { duration, ease: "power4.out" }), 0);
+      } else if (op === "+") {
+        const c = toTexObjects[i];
         tl.add(createFadeInAnimation(c, { duration, ease: "power4.in" }), 0);
-      } else {
-        // Hide matched symbols in toTextObject
-        c.visible = false;
       }
     }
 
