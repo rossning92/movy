@@ -9,17 +9,24 @@
   "license": "MIT",
   "dependencies": {
     "@types/dat.gui": "^0.7.6",
+    "@types/diff": "^5.0.2",
     "@types/three": "^0.132.1",
     "ccapture.js-npmfixed": "^1.1.0",
+    "css-loader": "^6.5.1",
     "dat.gui": "^0.7.6",
     "diff": "^5.0.0",
     "gsap": "^3.6.1",
+    "html-webpack-plugin": "^5.5.0",
     "mathjax": "3",
     "minimist": "^1.2.5",
     "seedrandom": "^3.0.5",
+    "style-loader": "^3.3.1",
     "three": "^0.132.2",
     "ts-loader": "^8.2.0",
-    "typescript": "^4.2.4"
+    "typescript": "^4.2.4",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.5.0",
+    "webpack": "^5.64.2"
   },
   "bin": {
     "movy": "bin/movy.js"
@@ -27,14 +34,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/rossning92/movy.git"
-  },
-  "devDependencies": {
-    "@types/diff": "^5.0.2",
-    "css-loader": "^6.5.1",
-    "html-webpack-plugin": "^5.5.0",
-    "style-loader": "^3.3.1",
-    "webpack": "^5.64.2",
-    "webpack-cli": "^4.9.1",
-    "webpack-dev-server": "^4.5.0"
   }
 }

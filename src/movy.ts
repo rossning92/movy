@@ -1,8 +1,3 @@
-/**
- * @file The main file that implements all movy.js APIs.
- * @author Ross Ning
- */
-
 import CCapture from "ccapture.js-npmfixed";
 import * as dat from "dat.gui";
 import * as Diff from "diff";
