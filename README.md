@@ -1,6 +1,6 @@
 ![logo](img/logo.png)
 
-**movy.js** is an easy-to-use animation engine based on three.js and gsap, supporting rendering to a video file.
+**movy.js** is an intuitive animation engine for creating explanatory videos.
 
 ![gallery](img/gallery.png)
 
@@ -8,7 +8,7 @@
 
 > Make sure you have [node.js (version >= 12)](https://nodejs.org/en/download/) installed on your computer.
 
-1. Install **movy.js** by: `npm i -g movy`
+1. Install **movy.js** by: `npm i movy@latest -g`
 2. Run `movy` to open a list of examples (example animations are located in the `movy/examples` folder):
 
 ![examples](img/examples.png)
