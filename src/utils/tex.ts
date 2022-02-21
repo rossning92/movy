@@ -23,10 +23,19 @@ export async function tex2svg(
   });
 }
 
+function replaceColorMacro(tex: string): string {
+  for (const color of ["red", "green", "blue", "yellow", "cyan", "magenta"]) {
+    tex = tex.replace(new RegExp(`\\\\${color}`, "g"), `\\textcolor{${color}}`);
+  }
+  return tex;
+}
+
 export async function createTexObject(
   tex: string,
   { color = "white" } = {}
 ): Promise<THREE.Object3D> {
+  tex = replaceColorMacro(tex);
+
   const svg = await tex2svg(tex, { color });
 
   // SVGLoader will throw exception if path element has empty d attribute
