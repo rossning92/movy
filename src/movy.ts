@@ -1,10 +1,8 @@
 import CCapture from "ccapture.js-npmfixed";
-import * as dat from "dat.gui";
 import * as Diff from "diff";
 import gsap from "gsap";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import Stats from "three/examples/jsm/libs/stats.module.js";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
@@ -24,6 +22,7 @@ import TextMeshObject from "./objects/TextMeshObject";
 import "./style/player.css";
 import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
+import { createEditor } from "./editor.jsx";
 
 const DEFAULT_LINE_WIDTH = 0.02;
 const defaultEase = "power2.out";
@@ -31,31 +30,31 @@ const DEG2RAD = Math.PI / 180;
 
 gsap.ticker.remove(gsap.updateRoot);
 
-let glitchPassEnabled = false;
 let renderTargetWidth = 1920;
 let renderTargetHeight = 1080;
 let motionBlurSamples = 1;
-let bloomEnabled = false;
-let globalTimeline = gsap.timeline({ onComplete: stopRender });
+const globalTimeline = gsap.timeline({ onComplete: stopRender });
 const mainTimeline = gsap.timeline();
-let stats: Stats;
+
 let capturer: CCapture;
 let renderer: THREE.WebGLRenderer;
 let composer: EffectComposer;
-
 let currentLayer = "default";
-let scene = new THREE.Scene();
+let scene: THREE.Scene;
 let camera: THREE.Camera;
-let uiScene = new THREE.Scene();
+let uiScene: THREE.Scene;
 let uiCamera: THREE.Camera;
 let renderTarget: THREE.WebGLMultisampleRenderTarget;
 
 let lightGroup: THREE.Group;
 let orbitControls: OrbitControls;
-let glitchPass: any;
+
+let glitchPass: GlitchPass;
+let bloomPass: UnrealBloomPass;
+let fxaaPass: ShaderPass;
+
 let gridHelper: THREE.GridHelper;
-let backgroundAlpha = 1.0;
-let fxaaEnabled: boolean = false;
+const backgroundAlpha = 1.0;
 
 let lastTimestamp: number;
 let timeElapsed = 0;
@@ -64,21 +63,28 @@ let recorder: WebmMediaRecorder;
 
 globalTimeline.add(mainTimeline, "0");
 
-let options = {
+const options = {
   format: "webm",
   framerate: 30,
-  render: function () {
-    startRender();
-  },
   timeline: 0,
 };
 
 const seedrandom = require("seedrandom");
-let rng = seedrandom("hello.");
+let rng: any;
 
-// const commandQueue: Function[] = [];
+let onRenderComplete: () => void;
 
-function startRender({ resetTiming = true, name = document.title } = {}) {
+function render({
+  resetTiming = true,
+  name = document.title,
+  onComplete,
+}: {
+  resetTiming?: boolean;
+  name?: string;
+  onComplete?: () => void;
+} = {}) {
+  onRenderComplete = onComplete;
+
   if (gridHelper !== undefined) {
     gridHelper.visible = false;
   }
@@ -86,7 +92,6 @@ function startRender({ resetTiming = true, name = document.title } = {}) {
   if (resetTiming) {
     // Reset gsap
     gsap.ticker.remove(gsap.updateRoot);
-
     lastTimestamp = undefined;
   }
 
@@ -111,29 +116,26 @@ function startRender({ resetTiming = true, name = document.title } = {}) {
     });
     (capturer as any).start();
   }
-
-  (window as any).movy.isRendering = true;
 }
 
-(window as any).movy = {
-  startRender,
-  isRendering: false,
-};
-
 function stopRender() {
+  console.log("stopped");
   if (options.format == "webm-fast") {
     if (recorder) {
       recorder.stop();
     }
-  } else {
-    if (capturer) {
-      (capturer as any).stop();
-      (capturer as any).save();
-      capturer = undefined;
-    }
+  } else if (capturer) {
+    (capturer as any).stop();
+    (capturer as any).save();
+    capturer = undefined;
+
+    // XXX: workaround for requestAnimationFrame() is not running.
+    requestAnimationFrame(animate);
   }
 
-  (window as any).movy.isRendering = false;
+  if (onRenderComplete) {
+    onRenderComplete();
+  }
 }
 
 function createOrthographicCamera() {
@@ -165,36 +167,53 @@ function createPerspectiveCamera(): THREE.Camera {
   return camera;
 }
 
-function setupScene() {
-  if (WEBGL.isWebGL2Available() === false) {
-    document.body.appendChild(WEBGL.getWebGL2ErrorMessage());
-    return;
-  }
+function initEngine(container?: HTMLElement) {
+  glitchPass = undefined;
+
+  rng = seedrandom("hello.");
+
+  mainTimeline.clear();
+
+  // if (WEBGL.isWebGL2Available() === false) {
+  //   document.body.appendChild(WEBGL.getWebGL2ErrorMessage());
+  //   return;
+  // }
 
   // Create renderer
-  renderer = new THREE.WebGLRenderer({
-    alpha: true,
-  });
-  renderer.localClippingEnabled = true;
-  renderer.setSize(renderTargetWidth, renderTargetHeight);
-  renderer.setClearColor(0x000000, backgroundAlpha);
-  document.body.appendChild(renderer.domElement);
+  if (renderer === undefined) {
+    console.log("new webgl renderer");
+    renderer = new THREE.WebGLRenderer({
+      alpha: true,
+    });
+    renderer.localClippingEnabled = true;
+    renderer.setSize(renderTargetWidth, renderTargetHeight);
+    renderer.setClearColor(0x000000, backgroundAlpha);
 
-  {
-    stats = Stats();
-    // stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
-    document.body.appendChild(stats.dom);
+    if (container !== undefined) {
+      container.replaceChildren(renderer.domElement);
+    } else {
+      document.body.appendChild(renderer.domElement);
+    }
   }
+
+  lightGroup = undefined;
+
+  scene = new THREE.Scene();
+  root = new GroupObject();
+  root.object3D = new THREE.Group();
+  scene.add(root.object3D);
+
+  uiScene = new THREE.Scene();
+  uiRoot = new GroupObject();
+  uiRoot.object3D = new THREE.Group();
+  uiScene.add(uiRoot.object3D);
 
   scene.background = new THREE.Color(0);
 
-  if (!camera) {
-    camera = createOrthographicCamera();
-  }
-
+  camera = createOrthographicCamera();
   uiCamera = createOrthographicCamera();
 
-  orbitControls = new OrbitControls(camera, renderer.domElement);
+  // orbitControls = new OrbitControls(camera, renderer.domElement);
 
   // Create multi-sample render target in order to reduce aliasing (better
   // quality than FXAA).
@@ -207,37 +226,13 @@ function setupScene() {
   composer = new EffectComposer(renderer, renderTarget);
   composer.setSize(renderTargetWidth, renderTargetHeight);
 
-  // Glitch pass
-  if (glitchPassEnabled) {
-    glitchPass = new GlitchPass();
-    composer.addPass(glitchPass);
-  }
-
   // Always use a render pass for gamma correction. This avoid adding an extra
   // copy pass to resolve MSAA samples.
   composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
 
-  // Bloom pass
-  if (bloomEnabled) {
-    let bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(renderTargetWidth, renderTargetHeight),
-      0.5, // Strength
-      0.4, // radius
-      0.85 // threshold
-    );
-    composer.addPass(bloomPass);
-
-    // TODO: find a better way to remove the aliasing introduced in BloomPass.
-    fxaaEnabled = true;
-  }
-
-  if (fxaaEnabled) {
-    const fxaaPass = new ShaderPass(FXAAShader);
-    const ratio = renderer.getPixelRatio();
-    fxaaPass.uniforms["resolution"].value.x = 1 / (renderTargetWidth * ratio);
-    fxaaPass.uniforms["resolution"].value.y = 1 / (renderTargetHeight * ratio);
-    composer.addPass(fxaaPass);
-  }
+  promise = new Promise((resolve, reject) => {
+    resolve();
+  });
 }
 
 function animate() {
@@ -250,6 +245,7 @@ function animate() {
   {
     // Compute `timeElapsed`. This works for both animation preview and capture.
     if (lastTimestamp === undefined) {
+      console.log("time reset");
       delta = 0.000001;
       lastTimestamp = nowInSecs;
       globalTimeline.seek(0, false);
@@ -263,29 +259,29 @@ function animate() {
 
   gsap.updateRoot(timeElapsed);
 
-  scene.traverse((child: any) => {
-    if (typeof child.update === "function") {
-      child.update(delta);
-    }
-  });
+  if (scene) {
+    scene.traverse((child: any) => {
+      if (typeof child.update === "function") {
+        child.update(delta);
+      }
+    });
 
-  renderer.setRenderTarget(renderTarget);
+    renderer.setRenderTarget(renderTarget);
 
-  // Render scene
-  renderer.render(scene, camera);
+    // Render scene
+    renderer.render(scene, camera);
 
-  // Render UI on top of the scene
-  renderer.autoClearColor = false;
-  renderer.render(uiScene, uiCamera);
-  renderer.autoClearColor = true;
+    // Render UI on top of the scene
+    renderer.autoClearColor = false;
+    renderer.render(uiScene, uiCamera);
+    renderer.autoClearColor = true;
 
-  renderer.setRenderTarget(null);
+    renderer.setRenderTarget(null);
 
-  // Post processing
-  composer.readBuffer = renderTarget;
-  composer.render();
-
-  stats.update();
+    // Post processing
+    composer.readBuffer = renderTarget;
+    composer.render();
+  }
 
   if (capturer) (capturer as any).capture(renderer.domElement);
 }
@@ -298,8 +294,10 @@ interface MoveCameraParameters extends Transform, AnimationParameters {
 
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
   promise = promise.then(() => {
-    // OrbitControls won't work as expected when camera transform is changed.
-    orbitControls.enabled = false;
+    if (orbitControls) {
+      // OrbitControls won't work as expected when camera transform is changed.
+      orbitControls.enabled = false;
+    }
 
     const { t, lookAt, duration = 0.5, ease = defaultEase, fov, zoom } = params;
 
@@ -389,8 +387,8 @@ function createLine3d(
     points.push(points[0]);
   }
 
-  let lineColor = new THREE.Color(0xffffff);
-  let style = SVGLoader.getStrokeStyle(
+  const lineColor = new THREE.Color(0xffffff);
+  const style = SVGLoader.getStrokeStyle(
     lineWidth,
     lineColor.getStyle(),
     "miter",
@@ -398,9 +396,9 @@ function createLine3d(
     4
   );
   // style.strokeLineJoin = "round";
-  let geometry = SVGLoader.pointsToStroke(points, style, 12, 0.001);
+  const geometry = SVGLoader.pointsToStroke(points, style, 12, 0.001);
 
-  let mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, material);
   return mesh;
 }
 
@@ -514,7 +512,7 @@ function createExplosionAnimation(
   const tl = gsap.timeline({
     defaults: {
       duration,
-      ease: ease,
+      ease,
     },
   });
 
@@ -548,9 +546,16 @@ function createExplosionAnimation(
 }
 
 export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
-  glitchPassEnabled = true;
-
   promise = promise.then(() => {
+    if (glitchPass === undefined) {
+      glitchPass = new GlitchPass();
+    }
+
+    if (composer.passes.indexOf(glitchPass) === -1) {
+      composer.insertPass(glitchPass, 0);
+      console.log("add glitch pass");
+    }
+
     const tl = gsap.timeline();
     tl.set(glitchPass, { factor: 1 });
     tl.set(glitchPass, { factor: 0 }, `<${duration}`);
@@ -563,13 +568,17 @@ export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
  */
 export function run() {}
 
-const startEngine = () => {
+// Start animation
+requestAnimationFrame(animate);
+
+const startAnimation = () => {
+  console.log("start animation");
   // Always Add 0.5s to the end of animation to avoid zero-length video.
   if (mainTimeline.duration() < Number.EPSILON) {
     mainTimeline.set({}, {}, "+=0.5");
   }
 
-  createUIs();
+  console.log(`Animation started: duration: ${globalTimeline.duration()}`);
 
   if (0) {
     // Grid helper
@@ -588,42 +597,8 @@ const startEngine = () => {
     scene.add(gridHelper);
   }
 
-  // Start animation
-  requestAnimationFrame(animate);
+  globalTimeline.seek(0, false);
 };
-
-function createUIs() {
-  const gui = new dat.GUI();
-  gui.add(options, "format", ["webm", "webm-fast", "png"]);
-  gui.add(options, "framerate", [10, 25, 30, 60, 120]);
-  gui.add(options, "render");
-
-  options.timeline = 0;
-  gui
-    .add(options, "timeline", 0, globalTimeline.totalDuration())
-    .onChange((val) => {
-      globalTimeline.seek(val, false);
-    });
-
-  Object.keys(globalTimeline.labels).forEach((key) => {
-    console.log(`${key} ${globalTimeline.labels[key]}`);
-  });
-
-  if (false) {
-    const folder = gui.addFolder("Timeline Labels");
-    const labels: any = {};
-    Object.keys(globalTimeline.labels).forEach((key) => {
-      const label = key;
-      const time = globalTimeline.labels[key];
-
-      console.log(this);
-      labels[label] = () => {
-        globalTimeline.seek(time, false);
-      };
-      folder.add(labels, label);
-    });
-  }
-}
 
 function createArrow2DGeometry(arrowLength: number) {
   const geometry = new THREE.BufferGeometry();
@@ -633,7 +608,7 @@ function createArrow2DGeometry(arrowLength: number) {
     new THREE.BufferAttribute(new Float32Array([
       -0.5 * arrowLength, -0.5 * arrowLength, 0,
       0.5 * arrowLength, -0.5 * arrowLength, 0,
-      0, 0.5 * arrowLength, 0
+      0, 0.5 * arrowLength, 0,
     ]), 3)
   );
   geometry.computeVertexNormals();
@@ -723,9 +698,16 @@ function createArrowLine(
 
 async function loadTexture(url: string): Promise<THREE.Texture> {
   return new Promise((resolve, reject) => {
-    new THREE.TextureLoader().load(url, (texture) => {
-      resolve(texture);
-    });
+    new THREE.TextureLoader().load(
+      url,
+      (texture) => {
+        resolve(texture);
+      },
+      undefined,
+      (err) => {
+        reject(err);
+      }
+    );
   });
 }
 
@@ -859,6 +841,7 @@ function createLine(
 
 class SceneObject {
   object3D: THREE.Object3D;
+
   children: SceneObject[] = [];
 
   protected addObjectToScene(obj: SceneObject, transform: Transform) {
@@ -1329,12 +1312,8 @@ class SceneObject {
     if (!Array.isArray(p1)) {
       params = p1;
 
-      const from:
-        | [number, number, number?]
-        | { x: number; y: number; z: number } = (params as any).from;
-      const to:
-        | [number, number, number?]
-        | { x: number; y: number; z: number } = (params as any).to;
+      const { from } = params as any;
+      const { to } = params as any;
 
       p1 = Array.isArray(from) ? from : [from.x, from.y, from.z];
       p2 = Array.isArray(to) ? to : [to.x, to.y, to.z];
@@ -1708,7 +1687,7 @@ class SceneObject {
 
     promise = promise.then(async () => {
       const texObject = await createTexObject(tex, {
-        color: "#" + toThreeColor(params.color).getHexString(),
+        color: `#${toThreeColor(params.color).getHexString()}`,
       });
       updateTransform(texObject, params);
       obj.object3D = texObject;
@@ -1722,7 +1701,7 @@ class SceneObject {
     const { t, duration = 0.5, ease = defaultEase } = params;
 
     promise = promise.then(() => {
-      let tl = gsap.timeline({
+      const tl = gsap.timeline({
         defaults: {
           duration,
           ease,
@@ -1759,7 +1738,7 @@ class SceneObject {
     const { t, duration = 0.5, ease = defaultEase } = params;
 
     promise = promise.then(() => {
-      let tl = gsap.timeline({
+      const tl = gsap.timeline({
         defaults: {
           duration,
           ease,
@@ -1784,7 +1763,7 @@ class SceneObject {
   scaleXTo(sx: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
     promise = promise.then(() => {
-      let tl = gsap.timeline({
+      const tl = gsap.timeline({
         defaults: {
           duration,
           ease,
@@ -1800,7 +1779,7 @@ class SceneObject {
   scaleYTo(sy: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
     promise = promise.then(() => {
-      let tl = gsap.timeline({
+      const tl = gsap.timeline({
         defaults: {
           duration,
           ease,
@@ -1816,7 +1795,7 @@ class SceneObject {
   scaleZTo(sz: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
     promise = promise.then(() => {
-      let tl = gsap.timeline({
+      const tl = gsap.timeline({
         defaults: {
           duration,
           ease,
@@ -1990,7 +1969,17 @@ class SceneObject {
 
       const tl = gsap.timeline();
       tl.set(this.object3D, { visible: true });
-      tl.from(this.object3D.scale, { x: 0, y: 0, z: 0, ease, duration }, "<");
+      tl.from(
+        this.object3D.scale,
+        {
+          x: 0,
+          y: 0,
+          z: 0,
+          ease,
+          duration,
+        },
+        "<"
+      );
       mainTimeline.add(tl, t);
     });
     return this;
@@ -2338,15 +2327,15 @@ class SceneObject {
       const tl = gsap.timeline({ defaults: { ease: "none" } });
       tl.set(object3d, { x: "+=0" }); // this creates a full _gsTransform on object3d
 
-      //store the transform values that exist before the shake so we can return to them later
+      // store the transform values that exist before the shake so we can return to them later
       const initProps = {
         x: object3d.position.x,
         y: object3d.position.y,
         rotation: object3d.position.z,
       };
 
-      //shake a bunch of times
-      for (var i = 0; i < duration / interval; i++) {
+      // shake a bunch of times
+      for (let i = 0; i < duration / interval; i++) {
         const offset = R(-strength, strength);
         tl.to(object3d.position, {
           x: initProps.x + offset,
@@ -2355,7 +2344,7 @@ class SceneObject {
           duration: interval,
         });
       }
-      //return to pre-shake values
+      // return to pre-shake values
       tl.to(object3d.position, interval, {
         x: initProps.x,
         y: initProps.y,
@@ -2609,7 +2598,7 @@ function transformTexFromTo(
   const { duration = 1, t, ease = defaultEase, type = "transform" } = params;
 
   if (type === "transform") {
-    const _rightToLeft = (params as any)._rightToLeft;
+    const { _rightToLeft } = params as any;
 
     const tl = gsap.timeline({ defaults: { ease, duration } });
 
@@ -2675,7 +2664,7 @@ function transformTexFromTo(
         let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
         posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
 
-        let scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
+        const scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
         scaleInSrcTexObject.divide(
           c1.parent.getWorldScale(new THREE.Vector3())
         );
@@ -2721,7 +2710,7 @@ function transformTexFromTo(
 
     mainTimeline.add(tl, t);
   } else {
-    throw new Error("Unknown type: " + type);
+    throw new Error(`Unknown type: ${type}`);
   }
 }
 
@@ -2735,7 +2724,7 @@ class TexObject extends GroupObject {
     promise = promise.then(async () => {
       if (typeof to === "string") {
         const texObject = await createTexObject(to, {
-          color: "#" + toThreeColor(this._initParams.color).getHexString(),
+          color: `#${toThreeColor(this._initParams.color).getHexString()}`,
         });
         updateTransform(texObject, this._initParams);
         this.object3D.parent.add(texObject);
@@ -2780,7 +2769,7 @@ class TexObject extends GroupObject {
     const superClone = super.clone();
     const copy = Object.assign(new TexObject(), superClone);
     promise = promise.then(async () => {
-      for (var attr in superClone) {
+      for (const attr in superClone) {
         if (superClone.hasOwnProperty(attr)) {
           copy[attr] = superClone[attr];
         }
@@ -2800,7 +2789,7 @@ class TexObject extends GroupObject {
   setTex(tex: string, t?: number | string) {
     promise = promise.then(async () => {
       const newTexObject = await createTexObject(tex, {
-        color: "#" + toThreeColor(this._initParams.color).getHexString(),
+        color: `#${toThreeColor(this._initParams.color).getHexString()}`,
       });
       newTexObject.visible = false;
       this.object3D.add(newTexObject);
@@ -2853,7 +2842,7 @@ function defaultSeg({ wireframe }: AddObjectParameters) {
   return wireframe ? 16 : 64;
 }
 
-export function _addPanoramicSkybox(file: string) {
+function _addPanoramicSkybox(file: string) {
   const obj = new SceneObject();
 
   promise = promise.then(async () => {
@@ -2906,10 +2895,12 @@ function toThreeVector3(
 ) {
   if (v === undefined) {
     return new THREE.Vector3(0, 0, 0);
-  } else if (Array.isArray(v)) {
+  }
+  if (Array.isArray(v)) {
     if (v.length == 2) {
       return new THREE.Vector3(v[0], v[1]);
-    } else if (v.length == 3) {
+    }
+    if (v.length == 3) {
       return new THREE.Vector3(v[0], v[1], v[2]);
     }
   } else {
@@ -2980,7 +2971,8 @@ function createMaterial(params: BasicMaterial = {}) {
       color: toThreeColor(params.color),
       wireframe: true,
     });
-  } else if (params.lighting) {
+  }
+  if (params.lighting) {
     addDefaultLights();
 
     return new THREE.MeshStandardMaterial({
@@ -2989,14 +2981,13 @@ function createMaterial(params: BasicMaterial = {}) {
       transparent: params.opacity !== undefined && params.opacity < 1.0,
       opacity: params.opacity || 1.0,
     });
-  } else {
-    return new THREE.MeshBasicMaterial({
-      side: THREE.DoubleSide,
-      color: toThreeColor(params.color),
-      transparent: params.opacity !== undefined && params.opacity < 1.0,
-      opacity: params.opacity || 1.0,
-    });
   }
+  return new THREE.MeshBasicMaterial({
+    side: THREE.DoubleSide,
+    color: toThreeColor(params.color),
+    transparent: params.opacity !== undefined && params.opacity < 1.0,
+    opacity: params.opacity || 1.0,
+  });
 }
 
 function updateTransform(obj: THREE.Object3D, transform: Transform) {
@@ -3088,7 +3079,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   }
 }
 
-export function _setUILayer() {
+function _setUILayer() {
   currentLayer = "ui";
 }
 
@@ -3096,10 +3087,10 @@ interface AddGroupParameters extends Transform {}
 
 export function getQueryString(url: string = undefined) {
   // get query string from url (optional) or window
-  var queryString = url ? url.split("?")[1] : window.location.search.slice(1);
+  let queryString = url ? url.split("?")[1] : window.location.search.slice(1);
 
   // we'll store the parameters here
-  var obj: any = {};
+  const obj: any = {};
 
   // if query string exists
   if (queryString) {
@@ -3107,15 +3098,15 @@ export function getQueryString(url: string = undefined) {
     queryString = queryString.split("#")[0];
 
     // split our query string into its component parts
-    var arr = queryString.split("&");
+    const arr = queryString.split("&");
 
-    for (var i = 0; i < arr.length; i++) {
+    for (let i = 0; i < arr.length; i++) {
       // separate the keys and the values
-      var a = arr[i].split("=");
+      const a = arr[i].split("=");
 
       // set parameter name and value (use 'true' if empty)
-      var paramName = a[0];
-      var paramValue = typeof a[1] === "undefined" ? true : a[1];
+      let paramName = a[0];
+      let paramValue = typeof a[1] === "undefined" ? true : a[1];
 
       // (optional) keep case consistent
       paramName = paramName.toLowerCase();
@@ -3127,13 +3118,13 @@ export function getQueryString(url: string = undefined) {
       // if the paramName ends with square brackets, e.g. colors[] or colors[2]
       if (paramName.match(/\[(\d+)?\]$/)) {
         // create key if it doesn't exist
-        var key = paramName.replace(/\[(\d+)?\]/, "");
+        const key = paramName.replace(/\[(\d+)?\]/, "");
         if (!obj[key]) obj[key] = [];
 
         // if it's an indexed array e.g. colors[2]
         if (paramName.match(/\[\d+\]$/)) {
           // get the index value and add the entry at the appropriate position
-          var index = /\[(\d+)\]/.exec(paramName)[1];
+          const index = /\[(\d+)\]/.exec(paramName)[1];
           obj[key][index] = paramValue;
         } else {
           // otherwise add the value to the end of the array
@@ -3230,21 +3221,34 @@ export function pause(duration: number | string) {
     mainTimeline.set(
       {},
       {},
-      typeof duration === "number" ? "+=" + duration.toString() : duration
+      typeof duration === "number" ? `+=${duration.toString()}` : duration
     );
   });
 }
 
 export function enableBloom() {
-  bloomEnabled = true;
+  promise = promise.then(() => {
+    if (!composer.passes.includes(bloomPass)) {
+      bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(renderTargetWidth, renderTargetHeight),
+        0.5, // Strength
+        0.4, // radius
+        0.85 // threshold
+      );
+      composer.addPass(bloomPass);
+
+      // TODO: find a better way to remove the aliasing introduced in BloomPass.
+      fxaaPass = new ShaderPass(FXAAShader);
+      const ratio = renderer.getPixelRatio();
+      fxaaPass.uniforms.resolution.value.x = 1 / (renderTargetWidth * ratio);
+      fxaaPass.uniforms.resolution.value.y = 1 / (renderTargetHeight * ratio);
+      composer.addPass(fxaaPass);
+    }
+  });
 }
 
-export function _setCamera(cam: THREE.Camera) {
+function _setCamera(cam: THREE.Camera) {
   camera = cam;
-}
-
-export function _enableFXAA() {
-  fxaaEnabled = true;
 }
 
 async function loadObj(url: string): Promise<THREE.Group> {
@@ -3253,20 +3257,20 @@ async function loadObj(url: string): Promise<THREE.Group> {
 
     loader.load(
       url,
-      function (object) {
+      (object) => {
         resolve(object);
       },
-      function (xhr) {
-        console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+      (xhr) => {
+        console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
       },
-      function (error) {
+      (error) => {
         reject(error);
       }
     );
   });
 }
 
-export function _animateTo(
+function _animateTo(
   targets: gsap.TweenTarget,
   vars: gsap.TweenVars,
   t?: gsap.Position
@@ -3276,20 +3280,15 @@ export function _animateTo(
   });
 }
 
-const root = new GroupObject();
-root.object3D = new THREE.Group();
-scene.add(root.object3D);
+let root: GroupObject;
 
-const uiRoot = new GroupObject();
-uiRoot.object3D = new THREE.Group();
-uiScene.add(uiRoot.object3D);
+let uiRoot: GroupObject;
 
 function getRoot(): GroupObject {
   if (currentLayer === "ui") {
     return uiRoot;
-  } else {
-    return root;
   }
+  return root;
 }
 
 export function addCircle(params: AddCircleParameters = {}): SceneObject {
@@ -3406,7 +3405,7 @@ export function addTriangleOutline(
   return getRoot().addTriangleOutline(params);
 }
 
-export function _addMesh(
+function _addMesh(
   mesh: THREE.Mesh,
   params: AddObjectParameters = {}
 ): SceneObject {
@@ -3471,29 +3470,89 @@ export function addFog() {
   });
 }
 
+const api = {
+  cameraMoveTo,
+  generateRandomString,
+  randomInt,
+  addGlitch,
+  run,
+  getPolygonVertices,
+  getTriangleVertices,
+  getQueryString,
+  setSeed,
+  random,
+  enableMotionBlur,
+  setResolution,
+  setBackgroundColor,
+  fadeOutAll,
+  hideAll,
+  pause,
+  enableBloom,
+  addCircle,
+  addCircleOutline,
+  addCone,
+  addCube,
+  addCylinder,
+  addGrid,
+  addGroup,
+  addImage,
+  addLine,
+  addPolyline,
+  addPyramid,
+  addRect,
+  addRectOutline,
+  addSphere,
+  addText,
+  addText3D,
+  addTextOutline,
+  addTex,
+  addTorus,
+  addTriangle,
+  addPolygon,
+  addTriangleOutline,
+  add3DModel,
+  addArrow,
+  addDoubleArrow,
+  addAxes2D,
+  addAxes3D,
+  addArc,
+  moveTo,
+  usePerspectiveCamera,
+  useOrthographicCamera,
+  addFog,
+};
+
+function runCode(s: string): Promise<void> {
+  initEngine();
+
+  return promise.then(() => {
+    // eslint-disable-next-line no-eval
+    ((str: string) => eval(`var mo=this;${str}`)).call(api, s);
+
+    return promise.then(startAnimation);
+  });
+}
+
 let promise: Promise<void> = new Promise((resolve, reject) => {
   setTimeout(() => {
-    setupScene();
-
-    // Chain to the end of the previous promise
-    promise.then(() => {
-      startEngine();
+    createEditor({
+      ...api,
+      render,
+      initEngine,
+      runCode,
     });
-
     resolve();
   });
 });
 
-////////////////////////////////////////////////////////////////////////////////
 // Raycast z plane at mouse click, then copy the intersection to clipboard.
-////////////////////////////////////////////////////////////////////////////////
 const raycaster = new THREE.Raycaster();
 const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
 function onMouseMove(event: MouseEvent) {
   if (renderer === undefined) return;
 
-  let bounds = renderer.domElement.getBoundingClientRect();
+  const bounds = renderer.domElement.getBoundingClientRect();
 
   const mouse = new THREE.Vector2(
     ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1,
@@ -3509,4 +3568,4 @@ function onMouseMove(event: MouseEvent) {
     `[${target.x.toFixed(3)}, ${target.y.toFixed(3)}, ${target.z.toFixed(3)}]`
   );
 }
-window.addEventListener("click", onMouseMove, false);
+// window.addEventListener("click", onMouseMove, false);

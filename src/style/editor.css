@@ -1,0 +1,25 @@
+body {
+  background-color: #000;
+  color: #fff;
+}
+
+.cm-theme-dark {
+  height: 100%;
+}
+
+.cm-editor {
+  background-color: black !important;
+}
+
+.pure-g .pure-g--gutter > div > * {
+  margin: 0 1px;
+}
+
+.pure-button {
+  border-radius: 0;
+  padding: 0.25em 1em;
+}
+
+.pure-menu-link {
+  padding: 0.25em 1em;
+}

@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
     "outDir": "./dist/",
+    "rootDir": "./src/",
     "target": "es6",
     "noImplicitAny": true,
     "allowJs": true,
     "moduleResolution": "node",
     "baseUrl": "src",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "declaration": true
   }
 }
