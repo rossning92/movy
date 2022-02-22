@@ -16,10 +16,10 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { WEBGL } from "three/examples/jsm/WebGL.js";
-import { toThreeColor } from "utils/color";
-import { computeAABB } from "utils/math";
-import { loadSVG } from "utils/svg";
-import { createTexObject } from "utils/tex";
+import { toThreeColor } from "./utils/color";
+import { computeAABB } from "./utils/math";
+import { loadSVG } from "./utils/svg";
+import { createTexObject } from "./utils/tex";
 import TextMeshObject from "./objects/TextMeshObject";
 import "./style/player.css";
 import { GlitchPass } from "./utils/GlitchPass";
