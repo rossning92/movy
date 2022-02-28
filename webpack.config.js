@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const process = require('process');
 
 module.exports = {
   mode: 'development',
@@ -56,9 +57,12 @@ module.exports = {
   },
   devServer: {
     compress: true,
-    static: [path.resolve(__dirname, 'dist')],
+    static: [path.resolve(__dirname, 'dist')].concat(
+      process.env.FILE ? [path.dirname(path.resolve(process.env.FILE))] : [],
+    ),
     devMiddleware: {
       stats: 'minimal',
     },
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : undefined,
   },
 };

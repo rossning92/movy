@@ -367,14 +367,13 @@ export function randomInt(min: number, max: number) {
   return Math.floor(random() * (max - min + 1)) + min;
 }
 
-function createLine3d(
-  material: THREE.Material,
+function createLine3D(
+  points: THREE.Vector3[],
   {
-    points = [],
+    color,
     lineWidth = 0.1,
   }: {
-    color: THREE.Color;
-    points: THREE.Vector3[];
+    color?: string | number;
     lineWidth: number;
   }
 ) {
@@ -396,6 +395,7 @@ function createLine3d(
   // style.strokeLineJoin = "round";
   const geometry = SVGLoader.pointsToStroke(points, style, 12, 0.001);
 
+  const material = createMaterial({ color });
   const mesh = new THREE.Mesh(geometry, material);
   return mesh;
 }
@@ -1419,17 +1419,14 @@ class SceneObject {
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
-
       const verts = getPolygonVertices({
         sides: 128,
         radius: params.radius || 0.5,
       });
       const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], 0));
-      obj.object3D = createLine3d(material, {
-        points: v3d.concat(v3d[0]),
+      obj.object3D = createLine3D(v3d.concat(v3d[0]), {
         lineWidth,
-        color: toThreeColor(color),
+        color,
       });
 
       updateTransform(obj.object3D, params);
@@ -1457,21 +1454,22 @@ class SceneObject {
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
 
       const halfWidth = width * 0.5;
       const halfHeight = height * 0.5;
-      obj.object3D = createLine3d(material, {
-        points: [
+      obj.object3D = createLine3D(
+        [
           new THREE.Vector3(-halfWidth, -halfHeight, 0),
           new THREE.Vector3(-halfWidth, halfHeight, 0),
           new THREE.Vector3(halfWidth, halfHeight, 0),
           new THREE.Vector3(halfWidth, -halfHeight, 0),
           new THREE.Vector3(-halfWidth, -halfHeight, 0),
         ],
-        lineWidth,
-        color: toThreeColor(color),
-      });
+        {
+          lineWidth,
+          color,
+        }
+      );
 
       updateTransform(obj.object3D, params);
 
@@ -1569,14 +1567,12 @@ class SceneObject {
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
 
       const verts = getPolygonVertices();
       const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], 0));
-      obj.object3D = createLine3d(material, {
-        points: v3d.concat(v3d[0]),
+      obj.object3D = createLine3D(v3d.concat(v3d[0]), {
         lineWidth,
-        color: toThreeColor(color),
+        color,
       });
 
       updateTransform(obj.object3D, params);
@@ -3539,7 +3535,9 @@ function seek(t: number) {
   globalTimeline.seek(t, false);
 }
 
-function addPositionChangedCallback(callback: (pos: number, duration: number) => void): void {
+function addPositionChangedCallback(
+  callback: (pos: number, duration: number) => void
+): void {
   globalTimeline.eventCallback("onUpdate", () => {
     callback(globalTimeline.time(), globalTimeline.duration());
   });
