@@ -3535,6 +3535,16 @@ function runCode(s: string): Promise<void> {
   });
 }
 
+function seek(t: number) {
+  globalTimeline.seek(t, false);
+}
+
+function addPositionChangedCallback(callback: (pos: number, duration: number) => void): void {
+  globalTimeline.eventCallback("onUpdate", () => {
+    callback(globalTimeline.time(), globalTimeline.duration());
+  });
+}
+
 let promise: Promise<void> = new Promise((resolve, reject) => {
   setTimeout(() => {
     createEditor({
@@ -3542,6 +3552,8 @@ let promise: Promise<void> = new Promise((resolve, reject) => {
       render,
       initEngine,
       runCode,
+      seek,
+      addPositionChangedCallback,
     });
     resolve();
   });

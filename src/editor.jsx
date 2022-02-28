@@ -2,7 +2,9 @@ import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import 'purecss/build/pure.css';
 import 'purecss/build/grids-responsive.css';
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, {
+  useEffect, useRef, useCallback, useState,
+} from 'react';
 import ReactDOM from 'react-dom';
 import './style/editor.css';
 import './style/scrollbar.css';
@@ -205,13 +207,46 @@ function getFileNameWithoutExtension(path) {
   return path.split('/').pop().split('.').shift();
 }
 
+function Slider({ mo }) {
+  const [slider, setSlider] = useState({ position: 0, duration: 0 });
+
+  useEffect(() => {
+    mo.addPositionChangedCallback((position, duration) => {
+      setSlider({ position, duration });
+    });
+  }, []);
+
+  return (
+    <div
+      style={{ height: '24px' }}
+      onClick={(e) => {
+        e.preventDefault();
+        const x = e.nativeEvent.offsetX;
+        const width = e.currentTarget.offsetWidth;
+        const p = (x / width) * slider.duration;
+        mo.seek(p);
+      }}
+    >
+      <div
+        style={{
+          background: 'blue',
+          height: '100%',
+          width: `${(slider.position / slider.duration) * 100}%`,
+        }}
+      />
+    </div>
+  );
+}
+
 function App({ mo }) {
   const rendererRef = useRef(null);
-  const [isExporting, setIsExporting] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [code, setCode] = React.useState('');
-  const [liveCode, setLiveCode] = React.useState('');
-  const [filePath, setFilePath] = React.useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [code, setCode] = useState('');
+  const [liveCode, setLiveCode] = useState('');
+  const [filePath, setFilePath] = useState(null);
+  // const [duration, setDuration] = useState(0);
+  // const [position, setPosition] = useState(0);
 
   const uiDisabled = isLoading || isExporting;
 
@@ -406,6 +441,7 @@ function App({ mo }) {
               }}
               ref={rendererRef}
             />
+            <Slider mo={mo} />
             {isLoading && (
               <div
                 style={{
