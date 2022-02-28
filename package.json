@@ -15,7 +15,7 @@
     "movy": "bin/movy.js"
   },
   "scripts": {
-    "start": "webpack serve --mode development --devtool inline-source-map --hot",
+    "start": "webpack serve",
     "build": "webpack",
     "lint": "eslint --ext .js bin/ src/editor.jsx --fix"
   },

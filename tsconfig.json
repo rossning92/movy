@@ -1,4 +1,5 @@
 {
+  "include": ["src/**/*"],
   "compilerOptions": {
     "outDir": "./dist/",
     "rootDir": "./src/",
@@ -9,6 +10,7 @@
     "baseUrl": "src",
     "resolveJsonModule": true,
     "sourceMap": true,
-    "declaration": true
+    "declaration": true,
+    "jsx": "react"
   }
 }

@@ -228,7 +228,6 @@ function App({ mo }) {
 
   const onKeyDown = useCallback((e) => {
     if (e.ctrlKey) {
-      console.log(e.key);
       if (e.key === 'Enter') {
         e.preventDefault();
         if (!uiDisabled) {

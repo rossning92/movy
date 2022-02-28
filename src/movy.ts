@@ -1,4 +1,4 @@
-import CCapture from "ccapture.js-npmfixed";
+const CCapture = require("ccapture.js-npmfixed");
 import * as Diff from "diff";
 import gsap from "gsap";
 import * as THREE from "three";
@@ -36,7 +36,7 @@ let motionBlurSamples = 1;
 const globalTimeline = gsap.timeline({ onComplete: stopRender });
 const mainTimeline = gsap.timeline();
 
-let capturer: CCapture;
+let capturer: any;
 let renderer: THREE.WebGLRenderer;
 let composer: EffectComposer;
 let currentLayer = "default";
@@ -49,7 +49,7 @@ let renderTarget: THREE.WebGLMultisampleRenderTarget;
 let lightGroup: THREE.Group;
 let orbitControls: OrbitControls;
 
-let glitchPass: GlitchPass;
+let glitchPass: any;
 let bloomPass: UnrealBloomPass;
 let fxaaPass: ShaderPass;
 
@@ -190,9 +190,7 @@ function initEngine(container?: HTMLElement) {
     renderer.setClearColor(0x000000, backgroundAlpha);
 
     if (container !== undefined) {
-      container.replaceChildren(renderer.domElement);
-    } else {
-      document.body.appendChild(renderer.domElement);
+      container.appendChild(renderer.domElement);
     }
   }
 
@@ -1315,8 +1313,12 @@ class SceneObject {
       const { from } = params as any;
       const { to } = params as any;
 
-      p1 = Array.isArray(from) ? from : [from.x, from.y, from.z];
-      p2 = Array.isArray(to) ? to : [to.x, to.y, to.z];
+      p1 = Array.isArray(from)
+        ? (from as [number, number, number?])
+        : [from.x, from.y, from.z];
+      p2 = Array.isArray(to)
+        ? (to as [number, number, number?])
+        : [to.x, to.y, to.z];
     }
 
     return this.addPolyline([p1, p2], params);
@@ -2771,7 +2773,7 @@ class TexObject extends GroupObject {
     promise = promise.then(async () => {
       for (const attr in superClone) {
         if (superClone.hasOwnProperty(attr)) {
-          copy[attr] = superClone[attr];
+          (copy as any)[attr] = (superClone as any)[attr];
         }
       }
     });
