@@ -1935,23 +1935,21 @@ class SceneObject {
     return this;
   }
 
-  rotateTo(
-    rx?: number,
-    ry?: number,
-    rz?: number,
+  rotate(
+    r: [number?, number?, number?],
     { t, duration = 0.5, ease = defaultEase }: AnimationParameters = {}
   ) {
     promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      if (rx !== undefined) {
-        tl.to(this.object3D.rotation, { x: rx * DEG2RAD }, "<");
+      if (r[0] !== undefined) {
+        tl.to(this.object3D.rotation, { x: r[0] * DEG2RAD }, "<");
       }
-      if (ry !== undefined) {
-        tl.to(this.object3D.rotation, { y: ry * DEG2RAD }, "<");
+      if (r[1] !== undefined) {
+        tl.to(this.object3D.rotation, { y: r[1] * DEG2RAD }, "<");
       }
-      if (rz !== undefined) {
-        tl.to(this.object3D.rotation, { z: rz * DEG2RAD }, "<");
+      if (r[2] !== undefined) {
+        tl.to(this.object3D.rotation, { z: r[2] * DEG2RAD }, "<");
       }
 
       mainTimeline.add(tl, t);
@@ -1959,19 +1957,40 @@ class SceneObject {
     return this;
   }
 
+  rotateX(degrees: number, params: AnimationParameters = {}) {
+    this.rotate([degrees, undefined, undefined], params);
+    return this;
+  }
+
+  rotateY(degrees: number, params: AnimationParameters = {}) {
+    this.rotate([undefined, undefined, degrees], params);
+    return this;
+  }
+
+  /**
+   * @deprecated Use `rotate()` instead.
+   */
+  rotateTo(
+    rx?: number,
+    ry?: number,
+    rz?: number,
+    params: AnimationParameters = {}
+  ) {
+    return this.rotate([rx, ry, rz], params);
+  }
+
+  /**
+   * @deprecated Use `rotateX()` instead.
+   */
   rotateXTo(degrees: number, params: AnimationParameters = {}) {
-    this.rotateTo(degrees, undefined, undefined, params);
-    return this;
+    return this.rotateX(degrees, params);
   }
 
-  rotateZTo(degrees: number, params: AnimationParameters = {}) {
-    this.rotateTo(undefined, undefined, degrees, params);
-    return this;
-  }
-
+  /**
+   * @deprecated Use `rotateY()` instead.
+   */
   rotateYTo(degrees: number, params: AnimationParameters = {}) {
-    this.rotateTo(undefined, degrees, undefined, params);
-    return this;
+    return this.rotateY(degrees, params);
   }
 
   spinning({
