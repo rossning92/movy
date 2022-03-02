@@ -1330,7 +1330,7 @@ class SceneObject {
   }
 
   // TODO: extract this into a separate class: LineObject
-  verts: number[] = [];
+  verts: THREE.Vector3[] = [];
 
   addPolyline(
     points: [number, number, number?][],
@@ -1348,9 +1348,12 @@ class SceneObject {
 
       positions = [];
       for (const pt of points) {
-        positions.push(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]);
+        const x = pt[0];
+        const y = pt[1];
+        const z = pt.length <= 2 ? 0 : pt[2];
+        positions.push(x, y, z);
+        obj.verts.push(new THREE.Vector3(x, y, z));
       }
-      obj.verts = positions;
 
       const { geometry, line } = createLine(positions, params);
       obj.object3D = line;
@@ -2165,75 +2168,62 @@ class SceneObject {
     return this;
   }
 
-  setVert(i: number, position: [number, number, number?], t?: number | string) {
+  moveVert(
+    i: number,
+    position: [number, number, number?],
+    params: AnimationParameters = {}
+  ) {
+    const { duration = 0.5, ease = defaultEase, t } = params;
+
     promise = promise.then(() => {
-      if (this.verts.length > 0) {
+      if (this.object3D.type == "Line2") {
+        console.assert(this.verts.length > 0);
         const mesh = this.object3D as THREE.Mesh;
         // TODO: add support for all object types instead of just LineGeometry.
         const geometry = mesh.geometry as LineGeometry;
 
-        const tl = gsap.timeline({
-          defaults: { duration: 0.5, ease: defaultEase },
-        });
-
-        const x = this.verts[3 * i];
-        const y = this.verts[3 * i + 1];
-        const z = this.verts[3 * i + 2];
-
-        const data = { x, y, z };
-        tl.to(data, {
-          x: position[0],
-          y: position[1],
-          z: position[2] || 0,
-          onUpdate: () => {
-            this.verts[3 * i] = data.x;
-            this.verts[3 * i + 1] = data.y;
-            this.verts[3 * i + 2] = data.z;
-            // TODO: perf optimization: multiple vertice update.
-            geometry.setPositions(this.verts);
-          },
-        });
-
-        this.verts[3 * i] = position[0];
-        this.verts[3 * i + 1] = position[1];
-        this.verts[3 * i + 2] = position[2] || 0;
-
-        mainTimeline.add(tl, t);
-      } else {
-        const mesh = this.object3D as THREE.Mesh;
-        const geometry = mesh.geometry as THREE.BufferGeometry;
-        const positions = geometry.attributes.position;
-
-        const tl = gsap.timeline({
-          defaults: { duration: 0.5, ease: defaultEase },
-        });
-
-        let vertex: THREE.Vector3;
-        if (!this.vertexToAnimate.has(i)) {
-          vertex = new THREE.Vector3(
-            positions.getX(i),
-            positions.getY(i),
-            positions.getZ(i)
-          );
-          this.vertexToAnimate.set(i, vertex);
-        } else {
-          vertex = this.vertexToAnimate.get(i);
+        const vertexBuffer: number[] = [];
+        for (const v of this.verts) {
+          vertexBuffer.push(v.x, v.y, v.z);
         }
 
-        tl.to(vertex, {
-          x: position[0],
-          y: position[1],
-          z: position[2] || 0,
-          onUpdate: () => {
-            positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
-            geometry.attributes.position.needsUpdate = true;
-          },
-        });
+        const vert = this.verts[i];
 
-        mainTimeline.add(tl, t);
+        function onUpdate() {
+          vertexBuffer[3 * i] = vert.x;
+          vertexBuffer[3 * i + 1] = vert.y;
+          vertexBuffer[3 * i + 2] = vert.z;
+          // TODO: perf optimization: multiple vertice update.
+          geometry.setPositions(vertexBuffer);
+        }
+
+        if (duration) {
+          mainTimeline.to(
+            vert,
+            {
+              ease,
+              duration,
+              x: position[0],
+              y: position[1],
+              z: position[2] || 0,
+              onUpdate,
+            },
+            t
+          );
+        } else {
+          mainTimeline.set(
+            vert,
+            { x: position[0], y: position[1], z: position[2] || 0, onUpdate },
+            t
+          );
+        }
       }
     });
     return this;
+  }
+
+  setVert(i: number, position: [number, number, number?], t?: number | string) {
+    return this.moveVert(i, position, { t, duration: 0 });
   }
 
   wipeIn({
