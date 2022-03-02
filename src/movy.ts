@@ -27,6 +27,7 @@ import WebmMediaRecorder from "./utils/WebmMediaRecorder";
 const DEFAULT_LINE_WIDTH = 0.02;
 const defaultEase = "power2.out";
 const DEG2RAD = Math.PI / 180;
+const defaultAxesLabelScale = 0.25;
 
 gsap.ticker.remove(gsap.updateRoot);
 
@@ -1078,7 +1079,6 @@ class SceneObject {
       showTickLabels = true,
     } = params;
 
-    const textScale = 0.25;
     const stickLabelSpacing = 0.2;
     const stickLength = 0.2;
 
@@ -1098,7 +1098,7 @@ class SceneObject {
               x,
               y: -stickLabelSpacing,
               anchor: "top",
-              scale: textScale,
+              scale: defaultAxesLabelScale,
               font: "math",
             });
           }
@@ -1118,7 +1118,7 @@ class SceneObject {
               x: -stickLabelSpacing,
               y,
               anchor: "right",
-              scale: textScale,
+              scale: defaultAxesLabelScale,
               font: "math",
             });
           }
@@ -1145,17 +1145,34 @@ class SceneObject {
   }
 
   addAxes3D(params: AddAxes3DParameters = {}): SceneObject {
-    const { xRange = [-4, 4], yRange = [-4, 4], zRange = [-4, 4] } = params;
+    const {
+      showLabels = true,
+      xRange = [-4, 4],
+      yRange = [-4, 4],
+      zRange = [-4, 4],
+    } = params;
 
-    const obj = new SceneObject();
-    if (params.parent) {
-      params.parent.children.push(obj);
-    } else {
-      this.children.push(obj);
+    const obj = this.addGroup(params);
+
+    if (showLabels) {
+      const labelColors = ["red", "green", "blue"];
+      const labelNames = ["x", "y", "z"];
+      for (let i = 0; i < 3; i++) {
+        obj.addTex(labelNames[i], {
+          color: labelColors[i],
+          x: i === 0 ? xRange[1] + 0.4 : 0,
+          y: i === 1 ? yRange[1] + 0.4 : 0,
+          z: i === 2 ? zRange[1] + 0.4 : 0,
+          font: "math",
+          centerTextVertically: true,
+          scale: 0.4,
+          billboarding: true,
+        });
+      }
     }
 
     promise = promise.then(async () => {
-      obj.object3D = new THREE.Group();
+      // obj.object3D = new THREE.Group();
 
       const arrowParams = {
         arrowStart: false,
@@ -1172,6 +1189,7 @@ class SceneObject {
           { ...arrowParams, color: "red" }
         )
       );
+
       obj.object3D.add(
         createArrowLine(
           new THREE.Vector3(0, yRange[0], 0),
@@ -2881,6 +2899,7 @@ interface AddAxes3DParameters extends Transform, BasicMaterial {
   xRange?: [number, number, number?];
   yRange?: [number, number, number?];
   zRange?: [number, number, number?];
+  showLabels?: boolean;
 }
 
 interface AddGridParameters extends Transform, BasicMaterial {
