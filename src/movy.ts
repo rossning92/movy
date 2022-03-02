@@ -422,7 +422,7 @@ function getAllMaterials(object3d: THREE.Object3D): THREE.Material[] {
 
 function createFadeInAnimation(
   object3d: THREE.Object3D,
-  { duration = 0.25, ease = "linear" }: AnimationParameters = {}
+  { duration = 0.5, ease = defaultEase }: AnimationParameters = {}
 ) {
   const tl = gsap.timeline();
 
@@ -450,7 +450,7 @@ function createFadeInAnimation(
 
 function createFadeOutAnimation(
   obj: THREE.Object3D,
-  { duration = 0.25, ease = "linear" }: AnimationParameters = {}
+  { duration = 0.5, ease = defaultEase }: AnimationParameters = {}
 ): gsap.core.Timeline {
   const tl = gsap.timeline({ defaults: { duration, ease } });
 
