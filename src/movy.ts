@@ -262,6 +262,10 @@ function animate() {
       if (typeof child.update === "function") {
         child.update(delta);
       }
+
+      if (child.billboarding) {
+        child.lookAt(camera.position);
+      }
     });
 
     renderer.setRenderTarget(renderTarget);
@@ -2927,6 +2931,7 @@ interface Transform {
     | "topRight"
     | "bottomLeft"
     | "bottomRight";
+  billboarding?: boolean;
 }
 
 interface AddObjectParameters extends Transform, BasicMaterial {
@@ -3069,6 +3074,11 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   if (transform.rz !== undefined) {
     obj.rotation.z =
       Math.abs(transform.rz) > 10 ? transform.rz * DEG2RAD : transform.rz;
+  }
+
+  if (transform.billboarding) {
+    // TODO: avoid monkey patching
+    (obj as any).billboarding = true;
   }
 }
 
