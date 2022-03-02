@@ -6,6 +6,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -13,16 +14,15 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
-import { WEBGL } from "three/examples/jsm/WebGL.js";
+import { createEditor } from "./editor.jsx";
+import TextMeshObject from "./objects/TextMeshObject";
+import "./style/player.css";
 import { toThreeColor } from "./utils/color";
+import { GlitchPass } from "./utils/GlitchPass";
 import { computeAABB } from "./utils/math";
 import { loadSVG } from "./utils/svg";
 import { createTexObject } from "./utils/tex";
-import TextMeshObject from "./objects/TextMeshObject";
-import "./style/player.css";
-import { GlitchPass } from "./utils/GlitchPass";
 import WebmMediaRecorder from "./utils/WebmMediaRecorder";
-import { createEditor } from "./editor.jsx";
 
 const DEFAULT_LINE_WIDTH = 0.02;
 const defaultEase = "power2.out";
@@ -945,7 +945,12 @@ class SceneObject {
     promise = promise.then(async () => {
       addDefaultLights();
 
-      const object = await loadObj(url);
+      let object: THREE.Object3D;
+      if (url.endsWith(".obj")) {
+        object = await loadObj(url);
+      } else if (url.endsWith(".gltf")) {
+        object = await loadGLTF(url);
+      }
       const aabb = computeAABB(object);
 
       const size = new THREE.Vector3();
@@ -3465,6 +3470,24 @@ export function useOrthographicCamera() {
 export function addFog() {
   promise = promise.then(() => {
     scene.fog = new THREE.FogExp2(0x0, 0.03);
+  });
+}
+
+const gltfLoader = new GLTFLoader();
+
+function loadGLTF(url: string): Promise<THREE.Object3D> {
+  return new Promise((resolve, reject) => {
+    gltfLoader.load(
+      url,
+      function (gltf) {
+        const group = gltf.scene;
+        resolve(group);
+      },
+      function (xhr) {},
+      function (error) {
+        reject(error);
+      }
+    );
   });
 }
 
