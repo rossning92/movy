@@ -1762,7 +1762,7 @@ class SceneObject {
     return this;
   }
 
-  scaleTo(scale: number, params: AnimationParameters = {}) {
+  scale(scale: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
 
     promise = promise.then(() => {
@@ -1788,7 +1788,14 @@ class SceneObject {
     return this;
   }
 
-  scaleXTo(sx: number, params: AnimationParameters = {}) {
+  /**
+   * @deprecated Use `scale()` instead.
+   */
+  scaleTo(scale: number, params: AnimationParameters = {}) {
+    return this.scale(scale, params);
+  }
+
+  scaleX(sx: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
     promise = promise.then(() => {
       const tl = gsap.timeline({
@@ -1804,7 +1811,7 @@ class SceneObject {
     return this;
   }
 
-  scaleYTo(sy: number, params: AnimationParameters = {}) {
+  scaleY(sy: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
     promise = promise.then(() => {
       const tl = gsap.timeline({
@@ -1820,7 +1827,7 @@ class SceneObject {
     return this;
   }
 
-  scaleZTo(sz: number, params: AnimationParameters = {}) {
+  scaleZ(sz: number, params: AnimationParameters = {}) {
     const { t, duration = 0.5, ease = defaultEase } = params;
     promise = promise.then(() => {
       const tl = gsap.timeline({
@@ -1834,6 +1841,27 @@ class SceneObject {
       mainTimeline.add(tl, t);
     });
     return this;
+  }
+
+  /**
+   * @deprecated Use `scaleX()` instead.
+   */
+  scaleXTo(sx: number, params: AnimationParameters = {}) {
+    return this.scaleX(sx, params);
+  }
+
+  /**
+   * @deprecated Use `scaleY()` instead.
+   */
+  scaleYTo(sy: number, params: AnimationParameters = {}) {
+    return this.scaleY(sy, params);
+  }
+
+  /**
+   * @deprecated Use `scaleZ()` instead.
+   */
+  scaleZTo(sz: number, params: AnimationParameters = {}) {
+    return this.scaleZ(sz, params);
   }
 
   fadeIn({ duration = 0.25, ease = "linear", t }: AnimationParameters = {}) {
