@@ -207,6 +207,24 @@ function getFileNameWithoutExtension(path) {
   return path.split('/').pop().split('.').shift();
 }
 
+function toHHMMSS(seconds) {
+  function pad(num, size) {
+    num = num.toString();
+    while (num.length < size) {
+      num = `0${num}`;
+    }
+    return num;
+  }
+
+  const secs = parseInt(seconds, 10);
+  const hh = pad(Math.floor(secs / 3600), 2);
+  const mm = pad(Math.floor(secs / 60) % 60, 2);
+  const ss = pad(secs % 60, 2);
+  const ms = pad(Math.floor((seconds - secs) * 1000), 3);
+
+  return `${hh}:${mm}:${ss}.${ms}`;
+}
+
 function Slider({ mo }) {
   const [slider, setSlider] = useState({ position: 0, duration: 0 });
 
@@ -218,7 +236,7 @@ function Slider({ mo }) {
 
   return (
     <div
-      style={{ height: '24px' }}
+      style={{ height: '24px', position: 'relative' }}
       onClick={(e) => {
         e.preventDefault();
         const x = e.nativeEvent.offsetX;
@@ -234,6 +252,20 @@ function Slider({ mo }) {
           width: `${(slider.position / slider.duration) * 100}%`,
         }}
       />
+      <div
+        style={{
+          position: 'absolute',
+          zIndex: 1,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          textAlign: 'center',
+          lineHeight: '24px',
+        }}
+      >
+        {toHHMMSS(slider.position)}
+      </div>
     </div>
   );
 }

@@ -67,7 +67,7 @@ declare class SceneObject {
     addGrid(params?: AddGridParameters): SceneObject;
     addImage(file: string, params?: AddTextParameters): SceneObject;
     addLine(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): SceneObject;
-    verts: number[];
+    verts: THREE.Vector3[];
     addPolyline(points: [number, number, number?][], params?: AddLineParameters): SceneObject;
     addPyramid(params?: AddObjectParameters): SceneObject;
     addCube(params?: AddObjectParameters): SceneObject;
@@ -87,17 +87,44 @@ declare class SceneObject {
     addTex(tex: string, params?: AddTextParameters): TexObject;
     moveTo(params?: MoveObjectParameters): this;
     setPos(pos: [number, number, number?], params?: AnimationParameters): this;
+    scale(scale: number, params?: AnimationParameters): this;
+    /**
+     * @deprecated Use `scale()` instead.
+     */
     scaleTo(scale: number, params?: AnimationParameters): this;
+    scaleX(sx: number, params?: AnimationParameters): this;
+    scaleY(sy: number, params?: AnimationParameters): this;
+    scaleZ(sz: number, params?: AnimationParameters): this;
+    /**
+     * @deprecated Use `scaleX()` instead.
+     */
     scaleXTo(sx: number, params?: AnimationParameters): this;
+    /**
+     * @deprecated Use `scaleY()` instead.
+     */
     scaleYTo(sy: number, params?: AnimationParameters): this;
+    /**
+     * @deprecated Use `scaleZ()` instead.
+     */
     scaleZTo(sz: number, params?: AnimationParameters): this;
     fadeIn({ duration, ease, t }?: AnimationParameters): this;
     fadeOut(params?: FadeObjectParameters): this;
     changeOpacity(opacity: number, { duration, ease, t }?: FadeObjectParameters): this;
     changeColor(color: string | number, { duration, ease, t }?: AnimationParameters): this;
-    rotateTo(rx?: number, ry?: number, rz?: number, { t, duration, ease }?: AnimationParameters): this;
+    rotate(r: [number?, number?, number?], { t, duration, ease }?: AnimationParameters): this;
+    rotateX(degrees: number, params?: AnimationParameters): this;
+    rotateY(degrees: number, params?: AnimationParameters): this;
+    /**
+     * @deprecated Use `rotate()` instead.
+     */
+    rotateTo(rx?: number, ry?: number, rz?: number, params?: AnimationParameters): this;
+    /**
+     * @deprecated Use `rotateX()` instead.
+     */
     rotateXTo(degrees: number, params?: AnimationParameters): this;
-    rotateZTo(degrees: number, params?: AnimationParameters): this;
+    /**
+     * @deprecated Use `rotateY()` instead.
+     */
     rotateYTo(degrees: number, params?: AnimationParameters): this;
     spinning({ t, duration, repeat, ease, x, y, }?: RotateParameters): this;
     rotateIn({ t, duration, ease, }?: AnimationParameters): this;
@@ -111,6 +138,7 @@ declare class SceneObject {
      * @deprecated Use `setVert()` instead.
      */
     updateVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
+    moveVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
     setVert(i: number, position: [number, number, number?], t?: number | string): this;
     wipeIn({ direction, t, duration, ease, }?: WipeInParameters): this;
     shake2D({ interval, duration, strength, t, }?: Shake2DParameters): this;
@@ -214,6 +242,7 @@ interface AddAxes3DParameters extends Transform, BasicMaterial {
     xRange?: [number, number, number?];
     yRange?: [number, number, number?];
     zRange?: [number, number, number?];
+    showLabels?: boolean;
 }
 interface AddGridParameters extends Transform, BasicMaterial {
     gridSize?: number;
@@ -232,6 +261,7 @@ interface Transform {
     scale?: number;
     parent?: SceneObject;
     anchor?: "left" | "right" | "top" | "bottom" | "topLeft" | "topRight" | "bottomLeft" | "bottomRight";
+    billboarding?: boolean;
 }
 interface AddObjectParameters extends Transform, BasicMaterial {
     vertices?: any;
