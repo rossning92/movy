@@ -1882,6 +1882,11 @@ class SceneObject {
   }
 
   rotateY(degrees: number, params: AnimationParameters = {}) {
+    this.rotate([undefined, degrees, undefined], params);
+    return this;
+  }
+
+  rotateZ(degrees: number, params: AnimationParameters = {}) {
     this.rotate([undefined, undefined, degrees], params);
     return this;
   }
