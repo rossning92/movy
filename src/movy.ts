@@ -2501,7 +2501,7 @@ class TextObject extends GroupObject {
 }
 
 interface TransformTexParameters extends AnimationParameters {
-  type?: 'transform' | 'fade';
+  type?: 'transform' | 'crossfade';
   reverse?: boolean;
 }
 
@@ -2608,7 +2608,7 @@ function transformTexFromTo(
     tl.set(toTexObjects, { visible: true }, '+=0');
 
     mainTimeline.add(tl, t);
-  } else if (type === 'fade') {
+  } else if (type === 'crossfade') {
     const tl = gsap.timeline({ defaults: { ease, duration } });
 
     // From tex objects
