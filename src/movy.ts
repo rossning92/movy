@@ -2140,20 +2140,19 @@ class SceneObject {
         // TODO: add support for all object types instead of just LineGeometry.
         const geometry = mesh.geometry as LineGeometry;
 
-        const vertexBuffer: number[] = [];
-        for (const v of this.verts) {
-          vertexBuffer.push(v.x, v.y, v.z);
-        }
-
         const vert = this.verts[i];
 
-        function onUpdate() {
+        const onUpdate = () => {
+          const vertexBuffer: number[] = [];
+          for (const v of this.verts) {
+            vertexBuffer.push(v.x, v.y, v.z);
+          }
           vertexBuffer[3 * i] = vert.x;
           vertexBuffer[3 * i + 1] = vert.y;
           vertexBuffer[3 * i + 2] = vert.z;
           // TODO: perf optimization: multiple vertice update.
           geometry.setPositions(vertexBuffer);
-        }
+        };
 
         if (duration) {
           mainTimeline.to(
