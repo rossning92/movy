@@ -3,11 +3,7 @@ module.exports = {
     browser: true,
     es2021: true,
   },
-  extends: [
-    'prettier',
-    'plugin:react/recommended',
-    'airbnb',
-  ],
+  extends: ['airbnb', 'prettier'],
   // parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: {
@@ -18,12 +14,17 @@ module.exports = {
   },
   plugins: [
     'react',
+    'prettier',
     // '@typescript-eslint',
   ],
   rules: {
     'import/no-extraneous-dependencies': [
       'error',
-      { devDependencies: true, optionalDependencies: false, peerDependencies: false },
+      {
+        devDependencies: true,
+        optionalDependencies: false,
+        peerDependencies: false,
+      },
     ],
   },
 };

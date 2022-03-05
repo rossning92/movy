@@ -2,9 +2,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import 'purecss/build/pure.css';
 import 'purecss/build/grids-responsive.css';
-import React, {
-  useEffect, useRef, useCallback, useState,
-} from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import ReactDOM from 'react-dom';
 import './style/editor.css';
 import './style/scrollbar.css';
@@ -65,10 +63,10 @@ function PureDropdown(dropdownParent) {
   const MENU_ACTIVE_SELECTOR = '.pure-menu-active';
   const MENU_LINK_SELECTOR = '.pure-menu-link';
   const MENU_SELECTOR = '.pure-menu-children';
-  const DISMISS_EVENT = window.hasOwnProperty
-    && Object.prototype.hasOwnProperty.call(window, 'ontouchstart')
-    ? 'touchstart'
-    : 'mousedown';
+  const DISMISS_EVENT =
+    window.hasOwnProperty && Object.prototype.hasOwnProperty.call(window, 'ontouchstart')
+      ? 'touchstart'
+      : 'mousedown';
   const ARROW_KEYS_ENABLED = true;
   const ddm = this; // drop down menu
 
@@ -158,9 +156,7 @@ function PureDropdown(dropdownParent) {
       while (nextSibling && nextSibling.nodeType !== 1) {
         nextSibling = nextSibling.nextSibling;
       }
-      nextLink = nextSibling
-        ? nextSibling.querySelector('.pure-menu-link')
-        : null;
+      nextLink = nextSibling ? nextSibling.querySelector('.pure-menu-link') : null;
       // if there is no currently focused link, focus the first one
       if (!currentLink) {
         ddm.menu.querySelector('.pure-menu-link').focus();
@@ -172,20 +168,14 @@ function PureDropdown(dropdownParent) {
       /* Up arrow */
       ddm.halt(e);
       // get the currently focused link
-      previousSibling = currentLink
-        ? currentLink.parentNode.previousSibling
-        : null;
+      previousSibling = currentLink ? currentLink.parentNode.previousSibling : null;
       while (previousSibling && previousSibling.nodeType !== 1) {
         previousSibling = previousSibling.previousSibling;
       }
-      previousLink = previousSibling
-        ? previousSibling.querySelector('.pure-menu-link')
-        : null;
+      previousLink = previousSibling ? previousSibling.querySelector('.pure-menu-link') : null;
       // if there is no currently focused link, focus the last link
       if (!currentLink) {
-        ddm.menu
-          .querySelector('.pure-menu-item:last-child .pure-menu-link')
-          .focus();
+        ddm.menu.querySelector('.pure-menu-item:last-child .pure-menu-link').focus();
       } else if (previousLink) {
         // else if there is a previous item, go to the previous item
         previousLink.focus();
@@ -320,10 +310,7 @@ function App({ mo }) {
 
     return loadFile(file)
       .then((s) => {
-        const importStripped = s.replace(
-          /import \* as mo from ['"]movy['"];?\s+/,
-          '',
-        );
+        const importStripped = s.replace(/import \* as mo from ['"]movy['"];?\s+/, '');
         setFilePath(file);
         setCode(importStripped);
         return mo.runCode(importStripped);
@@ -334,9 +321,7 @@ function App({ mo }) {
   }
 
   useEffect(() => {
-    const dropdownParents = document.querySelectorAll(
-      '.pure-menu-has-children',
-    );
+    const dropdownParents = document.querySelectorAll('.pure-menu-has-children');
     for (let i = 0; i < dropdownParents.length; i += 1) {
       // eslint-disable-next-line no-unused-vars
       const ddm = new PureDropdown(dropdownParents[i]);
@@ -432,9 +417,7 @@ function App({ mo }) {
           <li className="pure-menu-item">
             <button
               type="button"
-              className={`pure-button${
-                uiDisabled ? ' pure-button-disabled' : ''
-              }`}
+              className={`pure-button${uiDisabled ? ' pure-button-disabled' : ''}`}
               onClick={(e) => {
                 e.preventDefault();
                 exportVideo();
@@ -517,9 +500,7 @@ function App({ mo }) {
 
           <button
             type="button"
-            className={`pure-button${
-              uiDisabled ? ' pure-button-disabled' : ''
-            }`}
+            className={`pure-button${uiDisabled ? ' pure-button-disabled' : ''}`}
             href="#"
             onClick={(e) => {
               e.preventDefault();
