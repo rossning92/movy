@@ -2613,12 +2613,12 @@ function transformTexFromTo(
 
     // From tex objects
     for (const o of from) {
-      tl.add(createFadeOutAnimation(o, { duration, ease: 'linear' }), 0);
+      tl.add(createFadeOutAnimation(o, { duration, ease: 'expo.out' }), 0);
     }
 
     // Dest tex objects
     for (const o of to) {
-      tl.add(createFadeInAnimation(o, { duration, ease: 'linear' }), 0);
+      tl.add(createFadeInAnimation(o, { duration, ease: 'expo.out' }), 0);
     }
 
     mainTimeline.add(tl, t);
