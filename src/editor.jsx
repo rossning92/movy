@@ -243,6 +243,7 @@ function Slider({ mo }) {
         }}
       />
       <div
+        className="unselectable"
         style={{
           position: 'absolute',
           zIndex: 1,
