@@ -42,7 +42,7 @@ const mainTimeline = gsap.timeline();
 let capturer: any;
 let renderer: THREE.WebGLRenderer;
 let composer: EffectComposer;
-let currentLayer = 'default';
+let activeLayer = 'main';
 let scene: THREE.Scene;
 let mainCamera: THREE.Camera;
 let uiScene: THREE.Scene;
@@ -166,6 +166,7 @@ function createPerspectiveCamera(): THREE.Camera {
 
 function initEngine(container?: HTMLElement) {
   glitchPass = undefined;
+  activeLayer = 'main';
 
   rng = seedrandom('hello.');
 
@@ -2994,8 +2995,8 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   }
 }
 
-function _setUILayer() {
-  currentLayer = 'ui';
+function setActiveLayer(layer: 'ui' | 'main') {
+  activeLayer = layer;
 }
 
 interface AddGroupParameters extends Transform {}
@@ -3187,10 +3188,13 @@ let root: GroupObject;
 let uiRoot: GroupObject;
 
 function getRoot(): GroupObject {
-  if (currentLayer === 'ui') {
+  if (activeLayer === 'ui') {
     return uiRoot;
+  } else if (activeLayer === 'main') {
+    return root;
+  } else {
+    throw new Error('Invalid active layer');
   }
-  return root;
 }
 
 export function addCircle(params: AddCircleParameters = {}): SceneObject {
@@ -3408,57 +3412,58 @@ class CameraObject {
 export const camera = new CameraObject();
 
 const api = {
-  cameraMoveTo,
-  generateRandomString,
-  randomInt,
-  addGlitch,
-  run,
-  getPolygonVertices,
-  getTriangleVertices,
-  getQueryString,
-  setSeed,
-  random,
-  enableMotionBlur,
-  setResolution,
-  setBackgroundColor,
-  fadeOutAll,
-  hideAll,
-  pause,
-  enableBloom,
+  add3DModel,
+  addArc,
+  addArrow,
+  addAxes2D,
+  addAxes3D,
   addCircle,
   addCircleOutline,
   addCone,
   addCube,
   addCylinder,
+  addDoubleArrow,
+  addFog,
+  addGlitch,
   addGrid,
   addGroup,
   addImage,
   addLine,
-  addPolyline,
+  addPolygon,
   addPolygonOutline,
+  addPolyline,
   addPyramid,
   addRect,
   addRectOutline,
   addSphere,
+  addTex,
   addText,
   addText3D,
   addTextOutline,
-  addTex,
   addTorus,
   addTriangle,
-  addPolygon,
   addTriangleOutline,
-  add3DModel,
-  addArrow,
-  addDoubleArrow,
-  addAxes2D,
-  addAxes3D,
-  addArc,
-  moveTo,
-  usePerspectiveCamera,
-  useOrthographicCamera,
-  addFog,
   camera,
+  cameraMoveTo,
+  enableBloom,
+  enableMotionBlur,
+  fadeOutAll,
+  generateRandomString,
+  getPolygonVertices,
+  getQueryString,
+  getTriangleVertices,
+  hideAll,
+  moveTo,
+  pause,
+  random,
+  randomInt,
+  run,
+  setActiveLayer,
+  setBackgroundColor,
+  setResolution,
+  setSeed,
+  useOrthographicCamera,
+  usePerspectiveCamera,
 };
 
 function runCode(s: string): Promise<void> {
