@@ -3444,6 +3444,12 @@ function addPositionChangedCallback(callback: (pos: number, duration: number) =>
   });
 }
 
+function getMarkers() {
+  return mainTimeline.getChildren().map((child) => {
+    return { t: child.startTime() };
+  });
+}
+
 let promise: Promise<void> = new Promise((resolve, reject) => {
   setTimeout(() => {
     createEditor({
@@ -3453,6 +3459,7 @@ let promise: Promise<void> = new Promise((resolve, reject) => {
       runCode,
       seek,
       addPositionChangedCallback,
+      getMarkers,
     });
     resolve();
   });

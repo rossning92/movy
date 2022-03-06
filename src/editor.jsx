@@ -218,9 +218,13 @@ function toHHMMSS(seconds) {
 function Slider({ mo }) {
   const [slider, setSlider] = useState({ position: 0, duration: 0 });
 
+  // eslint-disable-next-line no-unused-vars
+  const [markers, setMarkers] = useState([]);
+
   useEffect(() => {
     mo.addPositionChangedCallback((position, duration) => {
       setSlider({ position, duration });
+      // setMarkers(mo.getMarkers());
     });
   }, []);
 
@@ -246,17 +250,35 @@ function Slider({ mo }) {
         className="unselectable"
         style={{
           position: 'absolute',
-          zIndex: 1,
+          zIndex: 2,
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
+          fontSize: '0.8em',
           textAlign: 'center',
           lineHeight: '24px',
         }}
       >
         {toHHMMSS(slider.position)}
       </div>
+      {markers.map((marker) => (
+        <div
+          className="unselectable clickthrough"
+          style={{
+            position: 'absolute',
+            zIndex: 1,
+            top: 0,
+            left: `${(marker.t / slider.duration) * 100}%`,
+            bottom: 0,
+            textAlign: 'center',
+            lineHeight: '24px',
+            transform: 'translate(-50%, 0%)',
+          }}
+        >
+          ⬥
+        </div>
+      ))}
     </div>
   );
 }
