@@ -41,19 +41,25 @@ const mainTimeline = gsap.timeline();
 
 let capturer: any;
 let renderer: THREE.WebGLRenderer;
-let composer: EffectComposer;
-let activeLayer = 'main';
-let scene: THREE.Scene;
-let mainCamera: THREE.Camera;
-let uiScene: THREE.Scene;
-let uiCamera: THREE.Camera;
-let renderTarget: THREE.WebGLMultisampleRenderTarget;
 
-let lightGroup: THREE.Group;
+interface Engine {
+  activeLayer?: string;
+  bloomPass?: UnrealBloomPass;
+  composer?: EffectComposer;
+  fxaaPass?: ShaderPass;
+  glitchPass?: any;
+  lightGroup?: THREE.Group;
+  mainCamera?: THREE.Camera;
+  renderTarget?: THREE.WebGLMultisampleRenderTarget;
+  rng?: any;
+  root?: GroupObject;
+  scene?: THREE.Scene;
+  uiCamera?: THREE.Camera;
+  uiRoot?: GroupObject;
+  uiScene?: THREE.Scene;
+}
 
-let glitchPass: any;
-let bloomPass: UnrealBloomPass;
-let fxaaPass: ShaderPass;
+let engine: Engine = {};
 
 let gridHelper: THREE.GridHelper;
 const backgroundAlpha = 1.0;
@@ -72,7 +78,6 @@ const options = {
 };
 
 const seedrandom = require('seedrandom');
-let rng: any;
 
 let onRenderComplete: () => void;
 
@@ -164,17 +169,7 @@ function createPerspectiveCamera(): THREE.Camera {
 }
 
 function initEngine(container?: HTMLElement) {
-  glitchPass = undefined;
-  activeLayer = 'main';
-
-  rng = seedrandom('hello.');
-
   mainTimeline.clear();
-
-  // if (WEBGL.isWebGL2Available() === false) {
-  //   document.body.appendChild(WEBGL.getWebGL2ErrorMessage());
-  //   return;
-  // }
 
   // Create renderer
   if (renderer === undefined) {
@@ -191,34 +186,49 @@ function initEngine(container?: HTMLElement) {
     }
   }
 
-  lightGroup = undefined;
-
-  scene = new THREE.Scene();
-  root = new GroupObject();
+  const scene = new THREE.Scene();
+  const root = new GroupObject();
   root.object3D = new THREE.Group();
   scene.add(root.object3D);
 
-  uiScene = new THREE.Scene();
-  uiRoot = new GroupObject();
+  const uiScene = new THREE.Scene();
+  const uiRoot = new GroupObject();
   uiRoot.object3D = new THREE.Group();
   uiScene.add(uiRoot.object3D);
 
   scene.background = new THREE.Color(0);
 
-  mainCamera = createOrthographicCamera();
-  uiCamera = createOrthographicCamera();
+  const mainCamera = createOrthographicCamera();
+  const uiCamera = createOrthographicCamera();
 
   // Create multi-sample render target in order to reduce aliasing (better
   // quality than FXAA).
-  renderTarget = new THREE.WebGLMultisampleRenderTarget(renderTargetWidth, renderTargetHeight);
+  const renderTarget = new THREE.WebGLMultisampleRenderTarget(
+    renderTargetWidth,
+    renderTargetHeight
+  );
   renderTarget.samples = 8; // TODO: don't hardcode
 
-  composer = new EffectComposer(renderer, renderTarget);
+  const composer = new EffectComposer(renderer, renderTarget);
   composer.setSize(renderTargetWidth, renderTargetHeight);
 
   // Always use a render pass for gamma correction. This avoid adding an extra
   // copy pass to resolve MSAA samples.
   composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
+
+  engine = {
+    activeLayer: 'main',
+    composer,
+    glitchPass: undefined,
+    mainCamera,
+    renderTarget,
+    rng: seedrandom('hello.'),
+    root,
+    scene,
+    uiCamera,
+    uiRoot,
+    uiScene,
+  };
 
   promise = new Promise((resolve, reject) => {
     resolve();
@@ -249,32 +259,32 @@ function animate() {
 
   gsap.updateRoot(timeElapsed);
 
-  if (scene) {
-    scene.traverse((child: any) => {
+  if (engine.scene) {
+    engine.scene.traverse((child: any) => {
       if (typeof child.update === 'function') {
         child.update(delta);
       }
 
       if (child.billboarding) {
-        child.lookAt(mainCamera.position);
+        child.lookAt(engine.mainCamera.position);
       }
     });
 
-    renderer.setRenderTarget(renderTarget);
+    renderer.setRenderTarget(engine.renderTarget);
 
     // Render scene
-    renderer.render(scene, mainCamera);
+    renderer.render(engine.scene, engine.mainCamera);
 
     // Render UI on top of the scene
     renderer.autoClearColor = false;
-    renderer.render(uiScene, uiCamera);
+    renderer.render(engine.uiScene, engine.uiCamera);
     renderer.autoClearColor = true;
 
     renderer.setRenderTarget(null);
 
     // Post processing
-    composer.readBuffer = renderTarget;
-    composer.render();
+    engine.composer.readBuffer = engine.renderTarget;
+    engine.composer.render();
   }
 
   if (capturer) (capturer as any).capture(renderer.domElement);
@@ -297,14 +307,14 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
         onUpdate: () => {
           // Keep looking at the target while camera is moving.
           if (lookAt) {
-            mainCamera.lookAt(toThreeVector3(lookAt));
+            engine.mainCamera.lookAt(toThreeVector3(lookAt));
           }
         },
       },
     });
 
-    if (mainCamera instanceof THREE.PerspectiveCamera) {
-      const perspectiveCamera = mainCamera as THREE.PerspectiveCamera;
+    if (engine.mainCamera instanceof THREE.PerspectiveCamera) {
+      const perspectiveCamera = engine.mainCamera as THREE.PerspectiveCamera;
 
       // Animate FoV
       if (fov !== undefined) {
@@ -324,16 +334,16 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
     createTransformAnimation({
       ...params,
       tl,
-      object3d: mainCamera,
+      object3d: engine.mainCamera,
     });
 
     if (zoom !== undefined) {
       tl.to(
-        mainCamera,
+        engine.mainCamera,
         {
           zoom,
           onUpdate: () => {
-            (mainCamera as any).updateProjectionMatrix();
+            (engine.mainCamera as any).updateProjectionMatrix();
           },
         },
         '<'
@@ -454,26 +464,20 @@ function createFadeOutAnimation(
 }
 
 function addDefaultLights() {
-  if (lightGroup === undefined) {
-    lightGroup = new THREE.Group();
-    scene.add(lightGroup);
+  if (engine.lightGroup === undefined) {
+    const lightGroup = new THREE.Group();
 
-    if (0) {
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-      directionalLight.position.set(0.3, 1, 0.5);
-      lightGroup.add(directionalLight);
+    // Create directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    directionalLight.position.set(0.3, 1, 0.5);
+    lightGroup.add(directionalLight);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.1); // soft white light
-      lightGroup.add(ambientLight);
-    } else {
-      // Experiment with HemisphereLight
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
-      directionalLight.position.set(0.3, 1, 0.5);
-      lightGroup.add(directionalLight);
+    // Create ambient light
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f3f3f, 0.3);
+    lightGroup.add(hemiLight);
 
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f3f3f, 0.3);
-      lightGroup.add(hemiLight);
-    }
+    engine.lightGroup = lightGroup;
+    engine.scene.add(lightGroup);
   }
 }
 
@@ -500,18 +504,18 @@ function createExplosionAnimation(
 
   let delay = 0;
   objectGroup.children.forEach((child, i) => {
-    const r = minRadius + (maxRadius - minRadius) * rng();
-    const theta = rng() * 2 * Math.PI;
+    const r = minRadius + (maxRadius - minRadius) * engine.rng();
+    const theta = engine.rng() * 2 * Math.PI;
     const x = r * Math.cos(theta);
     const y = r * Math.sin(theta);
     child.position.z += 0.01 * i; // z-fighting
 
     tl.fromTo(child.position, { x: 0, y: 0 }, { x, y }, delay);
 
-    const rotation = minRotation + rng() * (maxRotation - minRotation);
+    const rotation = minRotation + engine.rng() * (maxRotation - minRotation);
     tl.fromTo(child.rotation, { z: 0 }, { z: rotation }, delay);
 
-    const targetScale = child.scale.setScalar(minScale + (maxScale - minScale) * rng());
+    const targetScale = child.scale.setScalar(minScale + (maxScale - minScale) * engine.rng());
     tl.fromTo(
       child.scale,
       { x: 0.001, y: 0.001, z: 0.001 },
@@ -527,18 +531,18 @@ function createExplosionAnimation(
 
 export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
   promise = promise.then(() => {
-    if (glitchPass === undefined) {
-      glitchPass = new GlitchPass();
+    if (engine.glitchPass === undefined) {
+      engine.glitchPass = new GlitchPass();
     }
 
-    if (composer.passes.indexOf(glitchPass) === -1) {
-      composer.insertPass(glitchPass, 0);
+    if (engine.composer.passes.indexOf(engine.glitchPass) === -1) {
+      engine.composer.insertPass(engine.glitchPass, 0);
       console.log('add glitch pass');
     }
 
     const tl = gsap.timeline();
-    tl.set(glitchPass, { factor: 1 });
-    tl.set(glitchPass, { factor: 0 }, `<${duration}`);
+    tl.set(engine.glitchPass, { factor: 1 });
+    tl.set(engine.glitchPass, { factor: 0 }, `<${duration}`);
     mainTimeline.add(tl, t);
   });
 }
@@ -574,7 +578,7 @@ const startAnimation = () => {
       new THREE.Color(colorGrid)
     );
     gridHelper.rotation.x = Math.PI / 2;
-    scene.add(gridHelper);
+    engine.scene.add(gridHelper);
   }
 
   globalTimeline.seek(0, false);
@@ -2026,12 +2030,12 @@ class SceneObject {
         tl.fromTo(
           x.position,
           {
-            x: rng() * WIDTH - WIDTH / 2,
-            y: rng() * HEIGHT - HEIGHT / 2,
+            x: engine.rng() * WIDTH - WIDTH / 2,
+            y: engine.rng() * HEIGHT - HEIGHT / 2,
           },
           {
-            x: rng() * WIDTH - WIDTH / 2,
-            y: rng() * HEIGHT - HEIGHT / 2,
+            x: engine.rng() * WIDTH - WIDTH / 2,
+            y: engine.rng() * HEIGHT - HEIGHT / 2,
             duration,
             ease: 'none',
           },
@@ -2251,7 +2255,7 @@ class SceneObject {
 
   shake2D({ interval = 0.01, duration = 0.2, strength = 0.2, t }: Shake2DParameters = {}) {
     function R(max: number, min: number) {
-      return rng() * (max - min) + min;
+      return engine.rng() * (max - min) + min;
     }
 
     promise = promise.then(() => {
@@ -2770,7 +2774,7 @@ function _addPanoramicSkybox(file: string) {
     texture.encoding = THREE.sRGBEncoding;
     const material = new THREE.MeshBasicMaterial({ map: texture });
     const skySphere = new THREE.Mesh(geometry, material);
-    scene.add(skySphere);
+    engine.scene.add(skySphere);
 
     obj.object3D = skySphere;
   });
@@ -2998,7 +3002,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
 }
 
 function setActiveLayer(layer: 'ui' | 'main') {
-  activeLayer = layer;
+  engine.activeLayer = layer;
 }
 
 interface AddGroupParameters extends Transform {}
@@ -3069,11 +3073,11 @@ export function getQueryString(url: string = undefined) {
 }
 
 export function setSeed(val: any) {
-  rng = seedrandom(val);
+  engine.rng = seedrandom(val);
 }
 
 export function random(min = 0, max = 1) {
-  return min + rng() * (max - min);
+  return min + engine.rng() * (max - min);
 }
 
 function getGridPosition({ rows = 1, cols = 1, width = 25, height = 14 } = {}) {
@@ -3103,7 +3107,7 @@ export function setResolution(w: number, h: number) {
 
 export function setBackgroundColor(color: number | string) {
   promise = promise.then(() => {
-    scene.background = toThreeColor(color);
+    engine.scene.background = toThreeColor(color);
   });
 }
 
@@ -3137,27 +3141,27 @@ export function pause(duration: number | string) {
 
 export function enableBloom() {
   promise = promise.then(() => {
-    if (!composer.passes.includes(bloomPass)) {
-      bloomPass = new UnrealBloomPass(
+    if (!engine.composer.passes.includes(engine.bloomPass)) {
+      engine.bloomPass = new UnrealBloomPass(
         new THREE.Vector2(renderTargetWidth, renderTargetHeight),
         0.5, // Strength
         0.4, // radius
         0.85 // threshold
       );
-      composer.addPass(bloomPass);
+      engine.composer.addPass(engine.bloomPass);
 
       // TODO: find a better way to remove the aliasing introduced in BloomPass.
-      fxaaPass = new ShaderPass(FXAAShader);
+      engine.fxaaPass = new ShaderPass(FXAAShader);
       const ratio = renderer.getPixelRatio();
-      fxaaPass.uniforms.resolution.value.x = 1 / (renderTargetWidth * ratio);
-      fxaaPass.uniforms.resolution.value.y = 1 / (renderTargetHeight * ratio);
-      composer.addPass(fxaaPass);
+      engine.fxaaPass.uniforms.resolution.value.x = 1 / (renderTargetWidth * ratio);
+      engine.fxaaPass.uniforms.resolution.value.y = 1 / (renderTargetHeight * ratio);
+      engine.composer.addPass(engine.fxaaPass);
     }
   });
 }
 
 function _setCamera(cam: THREE.Camera) {
-  mainCamera = cam;
+  engine.mainCamera = cam;
 }
 
 async function loadObj(url: string): Promise<THREE.Group> {
@@ -3185,15 +3189,11 @@ function _animateTo(targets: gsap.TweenTarget, vars: gsap.TweenVars, t?: gsap.Po
   });
 }
 
-let root: GroupObject;
-
-let uiRoot: GroupObject;
-
 function getRoot(): GroupObject {
-  if (activeLayer === 'ui') {
-    return uiRoot;
-  } else if (activeLayer === 'main') {
-    return root;
+  if (engine.activeLayer === 'ui') {
+    return engine.uiRoot;
+  } else if (engine.activeLayer === 'main') {
+    return engine.root;
   } else {
     throw new Error('Invalid active layer');
   }
@@ -3350,16 +3350,16 @@ export function moveTo(params: MoveObjectParameters = {}) {
 }
 
 export function usePerspectiveCamera() {
-  mainCamera = createPerspectiveCamera();
+  engine.mainCamera = createPerspectiveCamera();
 }
 
 export function useOrthographicCamera() {
-  mainCamera = createOrthographicCamera();
+  engine.mainCamera = createOrthographicCamera();
 }
 
 export function addFog() {
   promise = promise.then(() => {
-    scene.fog = new THREE.FogExp2(0x0, 0.03);
+    engine.scene.fog = new THREE.FogExp2(0x0, 0.03);
   });
 }
 
@@ -3390,7 +3390,7 @@ class CameraObject {
     const { duration = 1, ease = defaultEase, fov = 60 } = params;
 
     promise = promise.then(() => {
-      const cam = mainCamera as PerspectiveCamera;
+      const cam = engine.mainCamera as PerspectiveCamera;
       const halfViewportHeight = viewportHeight * 0.5;
 
       mainTimeline.to(cam, {
@@ -3524,7 +3524,7 @@ function onMouseMove(event: MouseEvent) {
     -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1
   );
 
-  raycaster.setFromCamera(mouse, mainCamera);
+  raycaster.setFromCamera(mouse, engine.mainCamera);
   const target = new THREE.Vector3();
   raycaster.ray.intersectPlane(planeZ, target);
 
