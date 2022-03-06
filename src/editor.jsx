@@ -216,7 +216,7 @@ function toHHMMSS(seconds) {
   return `${hh}:${mm}:${ss}.${ms}`;
 }
 
-function Slider({ mo }) {
+function Slider({ mo, disabled }) {
   const [slider, setSlider] = useState({ position: 0, duration: 0 });
 
   // eslint-disable-next-line no-unused-vars
@@ -233,16 +233,18 @@ function Slider({ mo }) {
     <div
       style={{ height: '24px', position: 'relative' }}
       onClick={(e) => {
-        e.preventDefault();
-        const x = e.nativeEvent.offsetX;
-        const width = e.currentTarget.offsetWidth;
-        const p = (x / width) * slider.duration;
-        mo.seek(p);
+        if (!disabled) {
+          e.preventDefault();
+          const x = e.nativeEvent.offsetX;
+          const width = e.currentTarget.offsetWidth;
+          const p = (x / width) * slider.duration;
+          mo.seek(p);
+        }
       }}
     >
       <div
         style={{
-          background: 'blue',
+          background: disabled ? 'gray' : 'blue',
           height: '100%',
           width: `${(slider.position / slider.duration) * 100}%`,
         }}
@@ -480,7 +482,7 @@ function App({ mo }) {
               }}
               ref={rendererRef}
             />
-            <Slider mo={mo} />
+            <Slider mo={mo} disabled={uiDisabled} />
             {isLoading && (
               <div
                 style={{
