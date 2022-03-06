@@ -1,31 +1,31 @@
-const CCapture = require("ccapture.js-npmfixed");
-import * as Diff from "diff";
-import gsap from "gsap";
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Line2 } from "three/examples/jsm/lines/Line2.js";
-import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
-import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader.js";
-import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
-import { createEditor } from "./editor.jsx";
-import TextMeshObject from "./objects/TextMeshObject";
-import "./style/player.css";
-import { toThreeColor } from "./utils/color";
-import { GlitchPass } from "./utils/GlitchPass";
-import { computeAABB } from "./utils/math";
-import { loadSVG } from "./utils/svg";
-import { createTexObject } from "./utils/tex";
-import WebmMediaRecorder from "./utils/WebmMediaRecorder";
+const CCapture = require('ccapture.js-npmfixed');
+import * as Diff from 'diff';
+import gsap from 'gsap';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
+import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
+import { createEditor } from './editor.jsx';
+import TextMeshObject from './objects/TextMeshObject';
+import './style/player.css';
+import { toThreeColor } from './utils/color';
+import { GlitchPass } from './utils/GlitchPass';
+import { computeAABB } from './utils/math';
+import { loadSVG } from './utils/svg';
+import { createTexObject } from './utils/tex';
+import WebmMediaRecorder from './utils/WebmMediaRecorder';
 
 const DEFAULT_LINE_WIDTH = 0.02;
-const defaultEase = "power2.out";
+const defaultEase = 'power2.out';
 const DEG2RAD = Math.PI / 180;
 const defaultAxesLabelScale = 0.25;
 
@@ -40,7 +40,7 @@ const mainTimeline = gsap.timeline();
 let capturer: any;
 let renderer: THREE.WebGLRenderer;
 let composer: EffectComposer;
-let currentLayer = "default";
+let currentLayer = 'default';
 let scene: THREE.Scene;
 let camera: THREE.Camera;
 let uiScene: THREE.Scene;
@@ -62,15 +62,15 @@ let timeElapsed = 0;
 
 let recorder: WebmMediaRecorder;
 
-globalTimeline.add(mainTimeline, "0");
+globalTimeline.add(mainTimeline, '0');
 
 const options = {
-  format: "webm",
+  format: 'webm',
   framerate: 30,
   timeline: 0,
 };
 
-const seedrandom = require("seedrandom");
+const seedrandom = require('seedrandom');
 let rng: any;
 
 let onRenderComplete: () => void;
@@ -96,7 +96,7 @@ function render({
     lastTimestamp = undefined;
   }
 
-  if (options.format == "webm-fast") {
+  if (options.format == 'webm-fast') {
     if (!recorder) {
       recorder = new WebmMediaRecorder({ name, framerate: options.framerate });
     }
@@ -109,7 +109,7 @@ function render({
       motionBlurFrames: motionBlurSamples,
       quality: 100,
       format: options.format,
-      workersPath: "dist/src/",
+      workersPath: 'dist/src/',
       timeLimit: 0,
       frameLimit: 0,
       autoSaveTime: 0,
@@ -120,8 +120,8 @@ function render({
 }
 
 function stopRender() {
-  console.log("stopped");
-  if (options.format == "webm-fast") {
+  console.log('stopped');
+  if (options.format == 'webm-fast') {
     if (recorder) {
       recorder.stop();
     }
@@ -157,12 +157,7 @@ function createOrthographicCamera() {
 
 function createPerspectiveCamera(): THREE.Camera {
   // This will ensure the size of 10 in the vertical direction.
-  const camera = new THREE.PerspectiveCamera(
-    60,
-    renderTargetWidth / renderTargetHeight,
-    0.1,
-    5000
-  );
+  const camera = new THREE.PerspectiveCamera(60, renderTargetWidth / renderTargetHeight, 0.1, 5000);
   camera.position.set(0, 0, 8.66);
   camera.lookAt(new THREE.Vector3(0, 0, 0));
   return camera;
@@ -171,7 +166,7 @@ function createPerspectiveCamera(): THREE.Camera {
 function initEngine(container?: HTMLElement) {
   glitchPass = undefined;
 
-  rng = seedrandom("hello.");
+  rng = seedrandom('hello.');
 
   mainTimeline.clear();
 
@@ -182,7 +177,7 @@ function initEngine(container?: HTMLElement) {
 
   // Create renderer
   if (renderer === undefined) {
-    console.log("new webgl renderer");
+    console.log('new webgl renderer');
     renderer = new THREE.WebGLRenderer({
       alpha: true,
     });
@@ -216,10 +211,7 @@ function initEngine(container?: HTMLElement) {
 
   // Create multi-sample render target in order to reduce aliasing (better
   // quality than FXAA).
-  renderTarget = new THREE.WebGLMultisampleRenderTarget(
-    renderTargetWidth,
-    renderTargetHeight
-  );
+  renderTarget = new THREE.WebGLMultisampleRenderTarget(renderTargetWidth, renderTargetHeight);
   renderTarget.samples = 8; // TODO: don't hardcode
 
   composer = new EffectComposer(renderer, renderTarget);
@@ -244,7 +236,7 @@ function animate() {
   {
     // Compute `timeElapsed`. This works for both animation preview and capture.
     if (lastTimestamp === undefined) {
-      console.log("time reset");
+      console.log('time reset');
       delta = 0.000001;
       lastTimestamp = nowInSecs;
       globalTimeline.seek(0, false);
@@ -260,7 +252,7 @@ function animate() {
 
   if (scene) {
     scene.traverse((child: any) => {
-      if (typeof child.update === "function") {
+      if (typeof child.update === 'function') {
         child.update(delta);
       }
 
@@ -330,7 +322,7 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
               perspectiveCamera.updateProjectionMatrix();
             },
           },
-          "<"
+          '<'
         );
       }
     }
@@ -350,7 +342,7 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
             (camera as any).updateProjectionMatrix();
           },
         },
-        "<"
+        '<'
       );
     }
 
@@ -359,9 +351,8 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
 }
 
 export function generateRandomString(length: number) {
-  let result = "";
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
@@ -390,13 +381,7 @@ function createLine3D(
   }
 
   const lineColor = new THREE.Color(0xffffff);
-  const style = SVGLoader.getStrokeStyle(
-    lineWidth,
-    lineColor.getStyle(),
-    "miter",
-    "butt",
-    4
-  );
+  const style = SVGLoader.getStrokeStyle(lineWidth, lineColor.getStyle(), 'miter', 'butt', 4);
   // style.strokeLineJoin = "round";
   const geometry = SVGLoader.pointsToStroke(points, style, 12, 0.001);
 
@@ -434,11 +419,11 @@ function createFadeInAnimation(
   // Set initial visibility to false.
   object3d.visible = false;
 
-  tl.set(object3d, { visible: true }, "<");
+  tl.set(object3d, { visible: true }, '<');
 
   const materials = getAllMaterials(object3d);
   for (const material of materials) {
-    tl.set(material, { transparent: true }, "<");
+    tl.set(material, { transparent: true }, '<');
     tl.from(
       material,
       {
@@ -446,7 +431,7 @@ function createFadeInAnimation(
         duration,
         ease,
       },
-      "<"
+      '<'
     );
   }
 
@@ -461,13 +446,13 @@ function createFadeOutAnimation(
 
   const materials = getAllMaterials(obj);
   materials.forEach((material) => {
-    tl.set(material, { transparent: true }, "<");
+    tl.set(material, { transparent: true }, '<');
     tl.to(
       material,
       {
         opacity: 0,
       },
-      "<"
+      '<'
     );
   });
 
@@ -501,7 +486,7 @@ function addDefaultLights() {
 function createExplosionAnimation(
   objectGroup: THREE.Object3D,
   {
-    ease = "expo.out",
+    ease = 'expo.out',
     duration = 2,
     minRotation = -4 * Math.PI,
     maxRotation = 4 * Math.PI,
@@ -532,9 +517,7 @@ function createExplosionAnimation(
     const rotation = minRotation + rng() * (maxRotation - minRotation);
     tl.fromTo(child.rotation, { z: 0 }, { z: rotation }, delay);
 
-    const targetScale = child.scale.setScalar(
-      minScale + (maxScale - minScale) * rng()
-    );
+    const targetScale = child.scale.setScalar(minScale + (maxScale - minScale) * rng());
     tl.fromTo(
       child.scale,
       { x: 0.001, y: 0.001, z: 0.001 },
@@ -556,7 +539,7 @@ export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
 
     if (composer.passes.indexOf(glitchPass) === -1) {
       composer.insertPass(glitchPass, 0);
-      console.log("add glitch pass");
+      console.log('add glitch pass');
     }
 
     const tl = gsap.timeline();
@@ -575,10 +558,10 @@ export function run() {}
 requestAnimationFrame(animate);
 
 const startAnimation = () => {
-  console.log("start animation");
+  console.log('start animation');
   // Always Add 0.5s to the end of animation to avoid zero-length video.
   if (mainTimeline.duration() < Number.EPSILON) {
-    mainTimeline.set({}, {}, "+=0.5");
+    mainTimeline.set({}, {}, '+=0.5');
   }
 
   console.log(`Animation started: duration: ${globalTimeline.duration()}`);
@@ -587,8 +570,8 @@ const startAnimation = () => {
     // Grid helper
     const size = 20;
     const divisions = 20;
-    const colorCenterLine = "#008800";
-    const colorGrid = "#888888";
+    const colorCenterLine = '#008800';
+    const colorGrid = '#888888';
 
     gridHelper = new THREE.GridHelper(
       size,
@@ -606,7 +589,7 @@ const startAnimation = () => {
 function createArrow2DGeometry(arrowLength: number) {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
-    "position",
+    'position',
     // prettier-ignore
     new THREE.BufferAttribute(new Float32Array([
       -0.5 * arrowLength, -0.5 * arrowLength, 0,
@@ -725,9 +708,7 @@ export function getPolygonVertices({ sides = 3, radius = 0.5 } = {}) {
   return verts;
 }
 
-export function getTriangleVertices({
-  radius = 0.5,
-}: { radius?: number } = {}) {
+export function getTriangleVertices({ radius = 0.5 }: { radius?: number } = {}) {
   return getPolygonVertices({ sides: 3, radius });
 }
 
@@ -749,11 +730,11 @@ interface FadeObjectParameters extends AnimationParameters {
 }
 
 interface WipeInParameters extends AnimationParameters {
-  direction?: "up" | "down" | "left" | "right";
+  direction?: 'up' | 'down' | 'left' | 'right';
 }
 
 interface RevealParameters extends AnimationParameters {
-  direction?: "up" | "down" | "left" | "right";
+  direction?: 'up' | 'down' | 'left' | 'right';
 }
 
 interface RotateParameters extends AnimationParameters {
@@ -794,16 +775,16 @@ function createTransformAnimation({
 }) {
   if (position) {
     const p = toThreeVector3(position);
-    tl.to(object3d.position, { x: p.x, y: p.y, z: p.z }, "<");
+    tl.to(object3d.position, { x: p.x, y: p.y, z: p.z }, '<');
   } else {
-    if (x !== undefined) tl.to(object3d.position, { x }, "<");
-    if (y !== undefined) tl.to(object3d.position, { y }, "<");
-    if (z !== undefined) tl.to(object3d.position, { z }, "<");
+    if (x !== undefined) tl.to(object3d.position, { x }, '<');
+    if (y !== undefined) tl.to(object3d.position, { y }, '<');
+    if (z !== undefined) tl.to(object3d.position, { z }, '<');
   }
 
-  if (rx !== undefined) tl.to(object3d.rotation, { x: rx }, "<");
-  if (ry !== undefined) tl.to(object3d.rotation, { y: ry }, "<");
-  if (rz !== undefined) tl.to(object3d.rotation, { z: rz }, "<");
+  if (rx !== undefined) tl.to(object3d.rotation, { x: rx }, '<');
+  if (ry !== undefined) tl.to(object3d.rotation, { y: ry }, '<');
+  if (rz !== undefined) tl.to(object3d.rotation, { z: rz }, '<');
 
   if (scale !== undefined) {
     tl.to(
@@ -813,21 +794,18 @@ function createTransformAnimation({
         y: scale,
         z: scale,
       },
-      "<"
+      '<'
     );
   } else {
-    if (sx !== undefined) tl.to(object3d.scale, { x: sx }, "<");
-    if (sy !== undefined) tl.to(object3d.scale, { y: sy }, "<");
-    if (sz !== undefined) tl.to(object3d.scale, { z: sz }, "<");
+    if (sx !== undefined) tl.to(object3d.scale, { x: sx }, '<');
+    if (sy !== undefined) tl.to(object3d.scale, { y: sy }, '<');
+    if (sz !== undefined) tl.to(object3d.scale, { z: sz }, '<');
   }
 }
 
 function createLine(
   positions: number[],
-  {
-    lineWidth,
-    color,
-  }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
+  { lineWidth, color }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
 ) {
   const geometry = new LineGeometry();
   geometry.setPositions(positions);
@@ -856,10 +834,7 @@ class SceneObject {
     }
   }
 
-  private add3DGeometry(
-    params: AddObjectParameters = {},
-    geometry: THREE.BufferGeometry
-  ) {
+  private add3DGeometry(params: AddObjectParameters = {}, geometry: THREE.BufferGeometry) {
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -951,9 +926,9 @@ class SceneObject {
       addDefaultLights();
 
       let object: THREE.Object3D;
-      if (url.endsWith(".obj")) {
+      if (url.endsWith('.obj')) {
         object = await loadObj(url);
-      } else if (url.endsWith(".gltf")) {
+      } else if (url.endsWith('.gltf')) {
         object = await loadGLTF(url);
       }
       const aabb = computeAABB(object);
@@ -1031,11 +1006,7 @@ class SceneObject {
       this.children.push(obj);
     }
 
-    const {
-      lineWidth = DEFAULT_LINE_WIDTH,
-      arrowStart = false,
-      arrowEnd = true,
-    } = params;
+    const { lineWidth = DEFAULT_LINE_WIDTH, arrowStart = false, arrowEnd = true } = params;
 
     promise = promise.then(async () => {
       addDefaultLights();
@@ -1097,9 +1068,9 @@ class SceneObject {
             obj.addText(`${x}`, {
               x,
               y: -stickLabelSpacing,
-              anchor: "top",
+              anchor: 'top',
               scale: defaultAxesLabelScale,
-              font: "math",
+              font: 'math',
             });
           }
         }
@@ -1117,53 +1088,40 @@ class SceneObject {
             obj.addText(`${y}`, {
               x: -stickLabelSpacing,
               y,
-              anchor: "right",
+              anchor: 'right',
               scale: defaultAxesLabelScale,
-              font: "math",
+              font: 'math',
             });
           }
         }
       }
     }
 
-    obj.addArrow(
-      [xRange[0] - tickIntervalX * 0.5, 0, 0],
-      [xRange[1] + tickIntervalX * 0.5, 0, 0],
-      {
-        lineWidth: DEFAULT_LINE_WIDTH,
-      }
-    );
-    obj.addArrow(
-      [0, yRange[0] - tickIntervalY * 0.5, 0],
-      [0, yRange[1] + tickIntervalY * 0.5, 0],
-      {
-        lineWidth: DEFAULT_LINE_WIDTH,
-      }
-    );
+    obj.addArrow([xRange[0] - tickIntervalX * 0.5, 0, 0], [xRange[1] + tickIntervalX * 0.5, 0, 0], {
+      lineWidth: DEFAULT_LINE_WIDTH,
+    });
+    obj.addArrow([0, yRange[0] - tickIntervalY * 0.5, 0], [0, yRange[1] + tickIntervalY * 0.5, 0], {
+      lineWidth: DEFAULT_LINE_WIDTH,
+    });
 
     return obj;
   }
 
   addAxes3D(params: AddAxes3DParameters = {}): SceneObject {
-    const {
-      showLabels = true,
-      xRange = [-4, 4],
-      yRange = [-4, 4],
-      zRange = [-4, 4],
-    } = params;
+    const { showLabels = true, xRange = [-4, 4], yRange = [-4, 4], zRange = [-4, 4] } = params;
 
     const obj = this.addGroup(params);
 
     if (showLabels) {
-      const labelColors = ["red", "green", "blue"];
-      const labelNames = ["x", "y", "z"];
+      const labelColors = ['red', 'green', 'blue'];
+      const labelNames = ['x', 'y', 'z'];
       for (let i = 0; i < 3; i++) {
         obj.addTex(labelNames[i], {
           color: labelColors[i],
           x: i === 0 ? xRange[1] + 0.4 : 0,
           y: i === 1 ? yRange[1] + 0.4 : 0,
           z: i === 2 ? zRange[1] + 0.4 : 0,
-          font: "math",
+          font: 'math',
           centerTextVertically: true,
           scale: 0.4,
           billboarding: true,
@@ -1183,26 +1141,23 @@ class SceneObject {
       };
 
       obj.object3D.add(
-        createArrowLine(
-          new THREE.Vector3(xRange[0], 0, 0),
-          new THREE.Vector3(xRange[1], 0, 0),
-          { ...arrowParams, color: "red" }
-        )
+        createArrowLine(new THREE.Vector3(xRange[0], 0, 0), new THREE.Vector3(xRange[1], 0, 0), {
+          ...arrowParams,
+          color: 'red',
+        })
       );
 
       obj.object3D.add(
-        createArrowLine(
-          new THREE.Vector3(0, yRange[0], 0),
-          new THREE.Vector3(0, yRange[1], 0),
-          { ...arrowParams, color: "green" }
-        )
+        createArrowLine(new THREE.Vector3(0, yRange[0], 0), new THREE.Vector3(0, yRange[1], 0), {
+          ...arrowParams,
+          color: 'green',
+        })
       );
       obj.object3D.add(
-        createArrowLine(
-          new THREE.Vector3(0, 0, zRange[0]),
-          new THREE.Vector3(0, 0, zRange[1]),
-          { ...arrowParams, color: "blue" }
-        )
+        createArrowLine(new THREE.Vector3(0, 0, zRange[0]), new THREE.Vector3(0, 0, zRange[1]), {
+          ...arrowParams,
+          color: 'blue',
+        })
       );
 
       updateTransform(obj.object3D, params);
@@ -1293,7 +1248,7 @@ class SceneObject {
     const { color, ccw } = params;
 
     promise = promise.then(async () => {
-      if (file.endsWith(".svg")) {
+      if (file.endsWith('.svg')) {
         obj.object3D = await loadSVG(file, {
           ccw,
           color,
@@ -1340,12 +1295,8 @@ class SceneObject {
       const { from } = params as any;
       const { to } = params as any;
 
-      p1 = Array.isArray(from)
-        ? (from as [number, number, number?])
-        : [from.x, from.y, from.z];
-      p2 = Array.isArray(to)
-        ? (to as [number, number, number?])
-        : [to.x, to.y, to.z];
+      p1 = Array.isArray(from) ? (from as [number, number, number?]) : [from.x, from.y, from.z];
+      p2 = Array.isArray(to) ? (to as [number, number, number?]) : [to.x, to.y, to.z];
     }
 
     return this.addPolyline([p1, p2], params);
@@ -1354,10 +1305,7 @@ class SceneObject {
   // TODO: extract this into a separate class: LineObject
   verts: THREE.Vector3[] = [];
 
-  addPolyline(
-    points: [number, number, number?][],
-    params: AddLineParameters = {}
-  ): SceneObject {
+  addPolyline(points: [number, number, number?][], params: AddLineParameters = {}): SceneObject {
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1399,41 +1347,22 @@ class SceneObject {
   }
 
   addSphere(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.SphereGeometry(
-      0.5,
-      defaultSeg(params),
-      defaultSeg(params)
-    );
+    const geometry = new THREE.SphereGeometry(0.5, defaultSeg(params), defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
   addCone(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.ConeGeometry(
-      0.5,
-      1.0,
-      defaultSeg(params),
-      defaultSeg(params)
-    );
+    const geometry = new THREE.ConeGeometry(0.5, 1.0, defaultSeg(params), defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
   addCylinder(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.CylinderGeometry(
-      0.5,
-      0.5,
-      1,
-      defaultSeg(params)
-    );
+    const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
   addTorus(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.TorusGeometry(
-      0.375,
-      0.125,
-      defaultSeg(params),
-      defaultSeg(params)
-    );
+    const geometry = new THREE.TorusGeometry(0.375, 0.125, defaultSeg(params), defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
@@ -1468,12 +1397,7 @@ class SceneObject {
   }
 
   addRectOutline(params: AddOutlineParameters = {}) {
-    const {
-      width = 1,
-      height = 1,
-      lineWidth = DEFAULT_LINE_WIDTH,
-      color,
-    } = params;
+    const { width = 1, height = 1, lineWidth = DEFAULT_LINE_WIDTH, color } = params;
 
     const obj = new SceneObject();
     if (params.parent) {
@@ -1535,10 +1459,7 @@ class SceneObject {
     return obj;
   }
 
-  addPolygon(
-    vertices: [number, number][],
-    params: AddPolygonParameters = {}
-  ): SceneObject {
+  addPolygon(vertices: [number, number][], params: AddPolygonParameters = {}): SceneObject {
     const obj = new SceneObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1564,10 +1485,7 @@ class SceneObject {
 
       const geometry = new THREE.BufferGeometry();
       geometry.setIndex(indices);
-      geometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(positions, 3)
-      );
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       geometry.computeVertexNormals();
 
       obj.object3D = new THREE.Group();
@@ -1579,6 +1497,10 @@ class SceneObject {
     });
 
     return obj;
+  }
+
+  addPolygonOutline(vertices: [number, number, number?][], params: AddPolygonParameters = {}) {
+    return this.addPolyline(vertices.concat([vertices[0]]), params);
   }
 
   addTriangle(params: AddPolygonParameters = {}): SceneObject {
@@ -1671,10 +1593,7 @@ class SceneObject {
     return obj;
   }
 
-  addTextOutline(
-    text: string,
-    params: AddTextOutlineParameters = {}
-  ): TextObject {
+  addTextOutline(text: string, params: AddTextOutlineParameters = {}): TextObject {
     const obj = new TextObject();
     if (params.parent) {
       params.parent.children.push(obj);
@@ -1780,7 +1699,7 @@ class SceneObject {
           y: scale,
           z: scale,
         },
-        "<"
+        '<'
       );
 
       mainTimeline.add(tl, t);
@@ -1805,7 +1724,7 @@ class SceneObject {
         },
       });
 
-      tl.to(this.object3D.scale, { x: sx }, "<");
+      tl.to(this.object3D.scale, { x: sx }, '<');
       mainTimeline.add(tl, t);
     });
     return this;
@@ -1821,7 +1740,7 @@ class SceneObject {
         },
       });
 
-      tl.to(this.object3D.scale, { y: sy }, "<");
+      tl.to(this.object3D.scale, { y: sy }, '<');
       mainTimeline.add(tl, t);
     });
     return this;
@@ -1837,7 +1756,7 @@ class SceneObject {
         },
       });
 
-      tl.to(this.object3D.scale, { z: sz }, "<");
+      tl.to(this.object3D.scale, { z: sz }, '<');
       mainTimeline.add(tl, t);
     });
     return this;
@@ -1864,7 +1783,7 @@ class SceneObject {
     return this.scaleZ(sz, params);
   }
 
-  fadeIn({ duration = 0.25, ease = "linear", t }: AnimationParameters = {}) {
+  fadeIn({ duration = 0.25, ease = 'linear', t }: AnimationParameters = {}) {
     promise = promise.then(() => {
       const tl = createFadeInAnimation(this.object3D, { duration, ease });
       mainTimeline.add(tl, t);
@@ -1881,25 +1800,25 @@ class SceneObject {
 
   changeOpacity(
     opacity: number,
-    { duration = 0.25, ease = "linear", t }: FadeObjectParameters = {}
+    { duration = 0.25, ease = 'linear', t }: FadeObjectParameters = {}
   ) {
     promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const materials = getAllMaterials(this.object3D);
       for (const material of materials) {
-        tl.set(material, { transparent: true }, "<");
+        tl.set(material, { transparent: true }, '<');
         tl.to(
           material,
           {
             opacity,
           },
-          "<"
+          '<'
         );
       }
 
       if (opacity == 0) {
-        tl.set(this.object3D, { visible: false }, ">");
+        tl.set(this.object3D, { visible: false }, '>');
       }
 
       mainTimeline.add(tl, t);
@@ -1909,7 +1828,7 @@ class SceneObject {
 
   changeColor(
     color: string | number,
-    { duration = 0.25, ease = "power1.inOut", t }: AnimationParameters = {}
+    { duration = 0.25, ease = 'power1.inOut', t }: AnimationParameters = {}
   ) {
     promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
@@ -1925,7 +1844,7 @@ class SceneObject {
               g: destColor.g,
               b: destColor.b,
             },
-            "<"
+            '<'
           );
         }
       }
@@ -1943,13 +1862,13 @@ class SceneObject {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       if (r[0] !== undefined) {
-        tl.to(this.object3D.rotation, { x: r[0] * DEG2RAD }, "<");
+        tl.to(this.object3D.rotation, { x: r[0] * DEG2RAD }, '<');
       }
       if (r[1] !== undefined) {
-        tl.to(this.object3D.rotation, { y: r[1] * DEG2RAD }, "<");
+        tl.to(this.object3D.rotation, { y: r[1] * DEG2RAD }, '<');
       }
       if (r[2] !== undefined) {
-        tl.to(this.object3D.rotation, { z: r[2] * DEG2RAD }, "<");
+        tl.to(this.object3D.rotation, { z: r[2] * DEG2RAD }, '<');
       }
 
       mainTimeline.add(tl, t);
@@ -1970,12 +1889,7 @@ class SceneObject {
   /**
    * @deprecated Use `rotate()` instead.
    */
-  rotateTo(
-    rx?: number,
-    ry?: number,
-    rz?: number,
-    params: AnimationParameters = {}
-  ) {
+  rotateTo(rx?: number, ry?: number, rz?: number, params: AnimationParameters = {}) {
     return this.rotate([rx, ry, rz], params);
   }
 
@@ -1997,7 +1911,7 @@ class SceneObject {
     t,
     duration = 5,
     repeat,
-    ease = "none",
+    ease = 'none',
     x = Math.PI * 2,
     y = -Math.PI * 2,
   }: RotateParameters = {}) {
@@ -2006,22 +1920,18 @@ class SceneObject {
         defaults: { duration, ease, repeat },
       });
 
-      tl.to(this.object3D.rotation, { x, y }, "<");
+      tl.to(this.object3D.rotation, { x, y }, '<');
 
       mainTimeline.add(tl, t);
     });
     return this;
   }
 
-  rotateIn({
-    t,
-    duration = 0.5,
-    ease = defaultEase,
-  }: AnimationParameters = {}) {
+  rotateIn({ t, duration = 0.5, ease = defaultEase }: AnimationParameters = {}) {
     promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      tl.from(this.object3D.rotation, { z: Math.PI * 4, duration }, "<");
+      tl.from(this.object3D.rotation, { z: Math.PI * 4, duration }, '<');
       tl.from(
         this.object3D.scale,
         {
@@ -2030,7 +1940,7 @@ class SceneObject {
           z: Number.EPSILON,
           duration,
         },
-        "<"
+        '<'
       );
 
       mainTimeline.add(tl, t);
@@ -2053,7 +1963,7 @@ class SceneObject {
           ease,
           duration,
         },
-        "<"
+        '<'
       );
       mainTimeline.add(tl, t);
     });
@@ -2067,7 +1977,7 @@ class SceneObject {
       tl.fromTo(
         this.object3D,
         { visible: false },
-        { visible: true, ease: "none", duration: 0.001 }
+        { visible: true, ease: 'none', duration: 0.001 }
       );
 
       tl.from(
@@ -2076,12 +1986,12 @@ class SceneObject {
           x: 0,
           y: 0,
           z: 0,
-          ease: "elastic.out(1, 0.75)",
+          ease: 'elastic.out(1, 0.75)',
           onStart: () => {
             this.object3D.visible = true;
           },
         },
-        "<"
+        '<'
       );
 
       mainTimeline.add(tl, t);
@@ -2097,7 +2007,7 @@ class SceneObject {
           x: 0,
           y: 0,
           z: 0,
-          ease: "elastic.out(1, 0.2)",
+          ease: 'elastic.out(1, 0.2)',
           duration: 1.0,
         },
         t
@@ -2124,7 +2034,7 @@ class SceneObject {
             x: rng() * WIDTH - WIDTH / 2,
             y: rng() * HEIGHT - HEIGHT / 2,
             duration,
-            ease: "none",
+            ease: 'none',
           },
           0
         );
@@ -2135,12 +2045,7 @@ class SceneObject {
     return this;
   }
 
-  reveal({
-    direction = "up",
-    t,
-    duration = 0.5,
-    ease = defaultEase,
-  }: RevealParameters = {}) {
+  reveal({ direction = 'up', t, duration = 0.5, ease = defaultEase }: RevealParameters = {}) {
     promise = promise.then(() => {
       const object3d = this.object3D;
       const clippingPlanes: THREE.Plane[] = [];
@@ -2173,34 +2078,26 @@ class SceneObject {
           visible: true,
           duration: 0.001,
         },
-        "<"
+        '<'
       );
 
-      if (direction === "right") {
-        clippingPlanes.push(
-          new THREE.Plane(new THREE.Vector3(1, 0, 0), -box.min.x)
-        );
+      if (direction === 'right') {
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -box.min.x));
         tl.from(object3d.position, {
           x: object3d.position.x - (box.max.x - box.min.x),
         });
-      } else if (direction === "left") {
-        clippingPlanes.push(
-          new THREE.Plane(new THREE.Vector3(-1, 0, 0), box.max.x)
-        );
+      } else if (direction === 'left') {
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), box.max.x));
         tl.from(object3d.position, {
           x: object3d.position.x + (box.max.x - box.min.x),
         });
-      } else if (direction === "up") {
-        clippingPlanes.push(
-          new THREE.Plane(new THREE.Vector3(0, 1, 0), -box.min.y)
-        );
+      } else if (direction === 'up') {
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -box.min.y));
         tl.from(object3d.position, {
           y: object3d.position.y - (box.max.y - box.min.y),
         });
-      } else if (direction === "down") {
-        clippingPlanes.push(
-          new THREE.Plane(new THREE.Vector3(0, -1, 0), box.max.y)
-        );
+      } else if (direction === 'down') {
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, -1, 0), box.max.y));
         tl.from(object3d.position, {
           y: object3d.position.y + (box.max.y - box.min.y),
         });
@@ -2228,24 +2125,16 @@ class SceneObject {
   /**
    * @deprecated Use `setVert()` instead.
    */
-  updateVert(
-    i: number,
-    position: [number, number, number?],
-    params: AnimationParameters = {}
-  ) {
+  updateVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
     this.setVert(i, position, params.t);
     return this;
   }
 
-  moveVert(
-    i: number,
-    position: [number, number, number?],
-    params: AnimationParameters = {}
-  ) {
+  moveVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
     const { duration = 0.5, ease = defaultEase, t } = params;
 
     promise = promise.then(() => {
-      if (this.object3D.type == "Line2") {
+      if (this.object3D.type == 'Line2') {
         console.assert(this.verts.length > 0);
         const mesh = this.object3D as THREE.Mesh;
         // TODO: add support for all object types instead of just LineGeometry.
@@ -2295,12 +2184,7 @@ class SceneObject {
     return this.moveVert(i, position, { t, duration: 0 });
   }
 
-  wipeIn({
-    direction = "right",
-    t,
-    duration = 0.5,
-    ease = "power.out",
-  }: WipeInParameters = {}) {
+  wipeIn({ direction = 'right', t, duration = 0.5, ease = 'power.out' }: WipeInParameters = {}) {
     promise = promise.then(() => {
       this.object3D.visible = false;
 
@@ -2312,13 +2196,13 @@ class SceneObject {
       });
 
       let clipPlane: THREE.Plane;
-      if (direction === "right") {
+      if (direction === 'right') {
         clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0));
-      } else if (direction === "left") {
+      } else if (direction === 'left') {
         clipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0));
-      } else if (direction === "up") {
+      } else if (direction === 'up') {
         clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0));
-      } else if (direction === "down") {
+      } else if (direction === 'down') {
         clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0));
       }
 
@@ -2331,30 +2215,14 @@ class SceneObject {
         },
       });
 
-      if (direction === "right") {
-        tl.fromTo(
-          clipPlane,
-          { constant: boundingBox.min.x },
-          { constant: boundingBox.max.x }
-        );
-      } else if (direction === "left") {
-        tl.fromTo(
-          clipPlane,
-          { constant: boundingBox.min.x },
-          { constant: boundingBox.max.x }
-        );
-      } else if (direction === "up") {
-        tl.fromTo(
-          clipPlane,
-          { constant: boundingBox.min.y },
-          { constant: boundingBox.max.y }
-        );
-      } else if (direction === "down") {
-        tl.fromTo(
-          clipPlane,
-          { constant: boundingBox.min.y },
-          { constant: boundingBox.max.y }
-        );
+      if (direction === 'right') {
+        tl.fromTo(clipPlane, { constant: boundingBox.min.x }, { constant: boundingBox.max.x });
+      } else if (direction === 'left') {
+        tl.fromTo(clipPlane, { constant: boundingBox.min.x }, { constant: boundingBox.max.x });
+      } else if (direction === 'up') {
+        tl.fromTo(clipPlane, { constant: boundingBox.min.y }, { constant: boundingBox.max.y });
+      } else if (direction === 'down') {
+        tl.fromTo(clipPlane, { constant: boundingBox.min.y }, { constant: boundingBox.max.y });
       }
 
       tl.set(
@@ -2373,12 +2241,7 @@ class SceneObject {
     return this;
   }
 
-  shake2D({
-    interval = 0.01,
-    duration = 0.2,
-    strength = 0.2,
-    t,
-  }: Shake2DParameters = {}) {
+  shake2D({ interval = 0.01, duration = 0.2, strength = 0.2, t }: Shake2DParameters = {}) {
     function R(max: number, min: number) {
       return rng() * (max - min) + min;
     }
@@ -2386,8 +2249,8 @@ class SceneObject {
     promise = promise.then(() => {
       const object3d = this.object3D;
 
-      const tl = gsap.timeline({ defaults: { ease: "none" } });
-      tl.set(object3d, { x: "+=0" }); // this creates a full _gsTransform on object3d
+      const tl = gsap.timeline({ defaults: { ease: 'none' } });
+      tl.set(object3d, { x: '+=0' }); // this creates a full _gsTransform on object3d
 
       // store the transform values that exist before the shake so we can return to them later
       const initProps = {
@@ -2421,7 +2284,7 @@ class SceneObject {
 
   show({ duration = 0.001, t }: Shake2DParameters = {}) {
     promise = promise.then(() => {
-      const tl = gsap.timeline({ defaults: { ease: "none", duration } });
+      const tl = gsap.timeline({ defaults: { ease: 'none', duration } });
       tl.fromTo(this.object3D, { visible: false }, { visible: true });
 
       mainTimeline.add(tl, t);
@@ -2444,7 +2307,7 @@ interface ExplodeParameters extends AnimationParameters {
 class GroupObject extends SceneObject {
   explode2D({
     t,
-    ease = "expo.out",
+    ease = 'expo.out',
     duration = 2,
     minRotation = -2 * Math.PI,
     maxRotation = 2 * Math.PI,
@@ -2480,7 +2343,7 @@ class GroupObject extends SceneObject {
       const tl = gsap.timeline({
         defaults: {
           duration,
-          ease: "expo.inOut",
+          ease: 'expo.inOut',
         },
       });
 
@@ -2514,7 +2377,7 @@ class GroupObject extends SceneObject {
     return this;
   }
 
-  flyIn({ t, duration = 0.5, ease = "power.in" }: AnimationParameters = {}) {
+  flyIn({ t, duration = 0.5, ease = 'power.in' }: AnimationParameters = {}) {
     promise = promise.then(() => {
       const tl = gsap.timeline({
         defaults: {
@@ -2524,16 +2387,16 @@ class GroupObject extends SceneObject {
       });
 
       this.object3D.children.forEach((child) => {
-        tl.from(child.rotation, { x: -Math.PI / 2 }, "<0.03");
+        tl.from(child.rotation, { x: -Math.PI / 2 }, '<0.03');
         tl.from(
           child.position,
           {
             y: -child.scale.length(),
             z: -child.scale.length() * 2,
           },
-          "<"
+          '<'
         );
-        tl.add(createFadeInAnimation(child, { duration }), "<");
+        tl.add(createFadeInAnimation(child, { duration }), '<');
       });
 
       mainTimeline.add(tl, t);
@@ -2542,22 +2405,19 @@ class GroupObject extends SceneObject {
   }
 }
 
-function addCustomAnimation(
-  tl: gsap.core.Timeline,
-  callback: (t: number) => void
-) {
+function addCustomAnimation(tl: gsap.core.Timeline, callback: (t: number) => void) {
   const data = { val: 0 };
   tl.fromTo(
     data,
     { val: 0 },
     {
       val: 1,
-      ease: "linear",
+      ease: 'linear',
       onUpdate: () => {
         callback(data.val);
       },
     },
-    "<"
+    '<'
   );
 }
 
@@ -2576,13 +2436,7 @@ class TextObject extends GroupObject {
    */
   changeText(
     func: (val: number) => any,
-    {
-      from = 0,
-      to = 1,
-      duration = 5,
-      ease = "expo.out",
-      t,
-    }: ChangeTextParameters = {}
+    { from = 0, to = 1, duration = 5, ease = 'expo.out', t }: ChangeTextParameters = {}
   ) {
     promise = promise.then(() => {
       const textObject = this.object3D as any;
@@ -2611,7 +2465,7 @@ class TextObject extends GroupObject {
       }
 
       const tl = gsap.timeline({
-        defaults: { duration: interval, ease: "steps(1)" },
+        defaults: { duration: interval, ease: 'steps(1)' },
       });
 
       textObject.children.forEach((letter: any) => {
@@ -2648,7 +2502,7 @@ class TextObject extends GroupObject {
 }
 
 interface TransformTexParameters extends AnimationParameters {
-  type?: "transform" | "fade";
+  type?: 'transform' | 'fade';
   reverse?: boolean;
 }
 
@@ -2657,9 +2511,9 @@ function transformTexFromTo(
   to: THREE.Object3D[],
   params: TransformTexParameters = {}
 ) {
-  const { duration = 1, t, ease = defaultEase, type = "transform" } = params;
+  const { duration = 1, t, ease = defaultEase, type = 'transform' } = params;
 
-  if (type === "transform") {
+  if (type === 'transform') {
     const { _rightToLeft } = params as any;
 
     const tl = gsap.timeline({ defaults: { ease, duration } });
@@ -2667,8 +2521,8 @@ function transformTexFromTo(
     // From tex objects
     const fromTexObjects = [];
     for (const o of from) {
-      tl.set(o, { visible: true }, "<");
-      tl.set(o.children, { visible: true }, "<");
+      tl.set(o, { visible: true }, '<');
+      tl.set(o.children, { visible: true }, '<');
       o.updateWorldMatrix(true, true);
       console.assert(o instanceof THREE.Group);
       for (const c of o.children) {
@@ -2679,7 +2533,7 @@ function transformTexFromTo(
     // Dest tex objects
     const toTexObjects = [];
     for (const o of to) {
-      tl.set(o, { visible: true }, "<");
+      tl.set(o, { visible: true }, '<');
       for (const c of o.children) {
         c.visible = false;
       }
@@ -2695,7 +2549,7 @@ function transformTexFromTo(
       fromTexObjects.reverse();
     }
 
-    const diff: ["+" | "-" | "=", number, number?][] = [];
+    const diff: ['+' | '-' | '=', number, number?][] = [];
     {
       const a = fromTexObjects.map((x) => `${x.name}`);
       const b = toTexObjects.map((x) => `${x.name}`);
@@ -2704,13 +2558,13 @@ function transformTexFromTo(
       for (const d of Diff.diffArrays(a, b)) {
         for (let i = 0; i < d.count; i++) {
           if (d.added) {
-            diff.push(["+", k]);
+            diff.push(['+', k]);
             k++;
           } else if (d.removed) {
-            diff.push(["-", j]);
+            diff.push(['-', j]);
             j++;
           } else {
-            diff.push(["=", j, k]);
+            diff.push(['=', j, k]);
             j++;
             k++;
           }
@@ -2719,7 +2573,7 @@ function transformTexFromTo(
     }
 
     for (const [op, i, j] of diff) {
-      if (op === "=") {
+      if (op === '=') {
         const c1 = fromTexObjects[i];
         const c2 = toTexObjects[j];
 
@@ -2727,9 +2581,7 @@ function transformTexFromTo(
         posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
 
         const scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
-        scaleInSrcTexObject.divide(
-          c1.parent.getWorldScale(new THREE.Vector3())
-        );
+        scaleInSrcTexObject.divide(c1.parent.getWorldScale(new THREE.Vector3()));
 
         createTransformAnimation({
           object3d: c1,
@@ -2741,33 +2593,33 @@ function transformTexFromTo(
           sz: scaleInSrcTexObject.z,
           tl,
         });
-      } else if (op === "-") {
+      } else if (op === '-') {
         const c1 = fromTexObjects[i];
-        tl.add(createFadeOutAnimation(c1, { duration, ease: "power4.out" }), 0);
-      } else if (op === "+") {
+        tl.add(createFadeOutAnimation(c1, { duration, ease: 'power4.out' }), 0);
+      } else if (op === '+') {
         const c = toTexObjects[i];
-        tl.add(createFadeInAnimation(c, { duration, ease: "power4.in" }), 0);
+        tl.add(createFadeInAnimation(c, { duration, ease: 'power4.in' }), 0);
       }
     }
 
     // Hide all symbols in srcTexObject
-    tl.set(fromTexObjects, { visible: false }, "+=0");
+    tl.set(fromTexObjects, { visible: false }, '+=0');
 
     // Show all symbols in dstTexObject
-    tl.set(toTexObjects, { visible: true }, "+=0");
+    tl.set(toTexObjects, { visible: true }, '+=0');
 
     mainTimeline.add(tl, t);
-  } else if (type === "fade") {
+  } else if (type === 'fade') {
     const tl = gsap.timeline({ defaults: { ease, duration } });
 
     // From tex objects
     for (const o of from) {
-      tl.add(createFadeOutAnimation(o, { duration, ease: "linear" }), 0);
+      tl.add(createFadeOutAnimation(o, { duration, ease: 'linear' }), 0);
     }
 
     // Dest tex objects
     for (const o of to) {
-      tl.add(createFadeInAnimation(o, { duration, ease: "linear" }), 0);
+      tl.add(createFadeInAnimation(o, { duration, ease: 'linear' }), 0);
     }
 
     mainTimeline.add(tl, t);
@@ -2779,12 +2631,9 @@ function transformTexFromTo(
 class TexObject extends GroupObject {
   _initParams: AddTextParameters;
 
-  transformTexTo(
-    to: string | TexObject | TexObject[],
-    params: TransformTexParameters = {}
-  ) {
+  transformTexTo(to: string | TexObject | TexObject[], params: TransformTexParameters = {}) {
     promise = promise.then(async () => {
-      if (typeof to === "string") {
+      if (typeof to === 'string') {
         const texObject = await createTexObject(to, {
           color: `#${toThreeColor(this._initParams.color).getHexString()}`,
         });
@@ -2808,10 +2657,7 @@ class TexObject extends GroupObject {
     return this;
   }
 
-  transformTexFrom(
-    from: TexObject | TexObject[],
-    params: AnimationParameters = {}
-  ) {
+  transformTexFrom(from: TexObject | TexObject[], params: AnimationParameters = {}) {
     promise = promise.then(async () => {
       if (from instanceof TexObject) {
         from = [from];
@@ -2857,15 +2703,15 @@ class TexObject extends GroupObject {
       this.object3D.add(newTexObject);
 
       const tl = gsap.timeline();
-      tl.set(this.object3D.children, { visible: false }, "<");
-      tl.set(newTexObject, { visible: true }, "<");
+      tl.set(this.object3D.children, { visible: false }, '<');
+      tl.set(newTexObject, { visible: true }, '<');
       mainTimeline.add(tl, t);
     });
   }
 }
 
 interface AddTextParameters extends Transform, BasicMaterial {
-  font?: "en" | "condensed" | "code" | "math" | "arcade" | "zh" | "gdh";
+  font?: 'en' | 'condensed' | 'code' | 'math' | 'arcade' | 'zh' | 'gdh';
   fontSize?: number;
   letterSpacing?: number;
   centerTextVertically?: boolean;
@@ -2953,9 +2799,7 @@ interface AddGridParameters extends Transform, BasicMaterial {
   gridSize?: number;
 }
 
-function toThreeVector3(
-  v?: { x?: number; y?: number; z?: number } | [number, number, number?]
-) {
+function toThreeVector3(v?: { x?: number; y?: number; z?: number } | [number, number, number?]) {
   if (v === undefined) {
     return new THREE.Vector3(0, 0, 0);
   }
@@ -2989,14 +2833,14 @@ interface Transform {
   scale?: number;
   parent?: SceneObject;
   anchor?:
-    | "left"
-    | "right"
-    | "top"
-    | "bottom"
-    | "topLeft"
-    | "topRight"
-    | "bottomLeft"
-    | "bottomRight";
+    | 'left'
+    | 'right'
+    | 'top'
+    | 'bottom'
+    | 'topLeft'
+    | 'topRight'
+    | 'bottomLeft'
+    | 'bottomRight';
   billboarding?: boolean;
 }
 
@@ -3059,7 +2903,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   if (transform.position !== undefined) {
     obj.position.copy(toThreeVector3(transform.position));
   } else {
-    for (const prop of ["x", "y", "z"]) {
+    for (const prop of ['x', 'y', 'z']) {
       const T = transform as any;
       const V = obj.position as any;
       if (T[prop] !== undefined) {
@@ -3073,38 +2917,38 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
 
     const aabb = computeAABB(obj);
     const size = aabb.getSize(new THREE.Vector3());
-    if (transform.anchor === "left") {
+    if (transform.anchor === 'left') {
       for (const child of obj.children) {
         child.translateX(size.x / 2);
       }
-    } else if (transform.anchor === "right") {
+    } else if (transform.anchor === 'right') {
       for (const child of obj.children) {
         child.translateX(-size.x / 2);
       }
-    } else if (transform.anchor === "top") {
+    } else if (transform.anchor === 'top') {
       for (const child of obj.children) {
         child.translateY(-size.y / 2);
       }
-    } else if (transform.anchor === "bottom") {
+    } else if (transform.anchor === 'bottom') {
       for (const child of obj.children) {
         child.translateY(size.y / 2);
       }
-    } else if (transform.anchor === "topLeft") {
+    } else if (transform.anchor === 'topLeft') {
       for (const child of obj.children) {
         child.translateX(size.x / 2);
         child.translateY(-size.y / 2);
       }
-    } else if (transform.anchor === "topRight") {
+    } else if (transform.anchor === 'topRight') {
       for (const child of obj.children) {
         child.translateX(-size.x / 2);
         child.translateY(-size.y / 2);
       }
-    } else if (transform.anchor === "bottomLeft") {
+    } else if (transform.anchor === 'bottomLeft') {
       for (const child of obj.children) {
         child.translateX(size.x / 2);
         child.translateY(size.y / 2);
       }
-    } else if (transform.anchor === "bottomRight") {
+    } else if (transform.anchor === 'bottomRight') {
       for (const child of obj.children) {
         child.translateX(-size.x / 2);
         child.translateY(size.y / 2);
@@ -3130,16 +2974,13 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   // Rotation
   if (transform.rx !== undefined) {
     // XXX: when rx is greater than 10, use it as a degrees instead of radians.
-    obj.rotation.x =
-      Math.abs(transform.rx) > 10 ? transform.rx * DEG2RAD : transform.rx;
+    obj.rotation.x = Math.abs(transform.rx) > 10 ? transform.rx * DEG2RAD : transform.rx;
   }
   if (transform.ry !== undefined) {
-    obj.rotation.y =
-      Math.abs(transform.ry) > 10 ? transform.ry * DEG2RAD : transform.ry;
+    obj.rotation.y = Math.abs(transform.ry) > 10 ? transform.ry * DEG2RAD : transform.ry;
   }
   if (transform.rz !== undefined) {
-    obj.rotation.z =
-      Math.abs(transform.rz) > 10 ? transform.rz * DEG2RAD : transform.rz;
+    obj.rotation.z = Math.abs(transform.rz) > 10 ? transform.rz * DEG2RAD : transform.rz;
   }
 
   if (transform.billboarding) {
@@ -3149,14 +2990,14 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
 }
 
 function _setUILayer() {
-  currentLayer = "ui";
+  currentLayer = 'ui';
 }
 
 interface AddGroupParameters extends Transform {}
 
 export function getQueryString(url: string = undefined) {
   // get query string from url (optional) or window
-  let queryString = url ? url.split("?")[1] : window.location.search.slice(1);
+  let queryString = url ? url.split('?')[1] : window.location.search.slice(1);
 
   // we'll store the parameters here
   const obj: any = {};
@@ -3164,22 +3005,22 @@ export function getQueryString(url: string = undefined) {
   // if query string exists
   if (queryString) {
     // stuff after # is not part of query string, so get rid of it
-    queryString = queryString.split("#")[0];
+    queryString = queryString.split('#')[0];
 
     // split our query string into its component parts
-    const arr = queryString.split("&");
+    const arr = queryString.split('&');
 
     for (let i = 0; i < arr.length; i++) {
       // separate the keys and the values
-      const a = arr[i].split("=");
+      const a = arr[i].split('=');
 
       // set parameter name and value (use 'true' if empty)
       let paramName = a[0];
-      let paramValue = typeof a[1] === "undefined" ? true : a[1];
+      let paramValue = typeof a[1] === 'undefined' ? true : a[1];
 
       // (optional) keep case consistent
       paramName = paramName.toLowerCase();
-      if (typeof paramValue === "string") {
+      if (typeof paramValue === 'string') {
         // paramValue = paramValue.toLowerCase();
         paramValue = decodeURIComponent(paramValue);
       }
@@ -3187,7 +3028,7 @@ export function getQueryString(url: string = undefined) {
       // if the paramName ends with square brackets, e.g. colors[] or colors[2]
       if (paramName.match(/\[(\d+)?\]$/)) {
         // create key if it doesn't exist
-        const key = paramName.replace(/\[(\d+)?\]/, "");
+        const key = paramName.replace(/\[(\d+)?\]/, '');
         if (!obj[key]) obj[key] = [];
 
         // if it's an indexed array e.g. colors[2]
@@ -3204,7 +3045,7 @@ export function getQueryString(url: string = undefined) {
         if (!obj[paramName]) {
           // if it doesn't exist, create property
           obj[paramName] = paramValue;
-        } else if (obj[paramName] && typeof obj[paramName] === "string") {
+        } else if (obj[paramName] && typeof obj[paramName] === 'string') {
           // if property does exist and it's a string, convert it to an array
           obj[paramName] = [obj[paramName]];
           obj[paramName].push(paramValue);
@@ -3237,9 +3078,7 @@ function getGridPosition({ rows = 1, cols = 1, width = 25, height = 14 } = {}) {
   const results = [];
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
-      results.push(
-        new THREE.Vector3(j * gapX + startX, -(i * gapY + startY), 0)
-      );
+      results.push(new THREE.Vector3(j * gapX + startX, -(i * gapY + startY), 0));
     }
   }
   return results;
@@ -3265,10 +3104,7 @@ export function fadeOutAll(params: AnimationParameters = {}) {
   promise = promise.then(() => {
     const tl = gsap.timeline();
     for (const object3d of root.object3D.children) {
-      tl.add(
-        createFadeOutAnimation(object3d, { duration: params.duration }),
-        "<"
-      );
+      tl.add(createFadeOutAnimation(object3d, { duration: params.duration }), '<');
     }
     mainTimeline.add(tl, params.t);
   });
@@ -3279,7 +3115,7 @@ export function hideAll(params: AnimationParameters = {}) {
   promise = promise.then(() => {
     const tl = gsap.timeline();
     for (const object3d of root.object3D.children) {
-      tl.set(object3d, { visible: false }, "<");
+      tl.set(object3d, { visible: false }, '<');
     }
     mainTimeline.add(tl, params.t);
   });
@@ -3287,11 +3123,7 @@ export function hideAll(params: AnimationParameters = {}) {
 
 export function pause(duration: number | string) {
   promise = promise.then(() => {
-    mainTimeline.set(
-      {},
-      {},
-      typeof duration === "number" ? `+=${duration.toString()}` : duration
-    );
+    mainTimeline.set({}, {}, typeof duration === 'number' ? `+=${duration.toString()}` : duration);
   });
 }
 
@@ -3339,11 +3171,7 @@ async function loadObj(url: string): Promise<THREE.Group> {
   });
 }
 
-function _animateTo(
-  targets: gsap.TweenTarget,
-  vars: gsap.TweenVars,
-  t?: gsap.Position
-) {
+function _animateTo(targets: gsap.TweenTarget, vars: gsap.TweenVars, t?: gsap.Position) {
   promise = promise.then(() => {
     mainTimeline.to(targets, vars, t);
   });
@@ -3354,7 +3182,7 @@ let root: GroupObject;
 let uiRoot: GroupObject;
 
 function getRoot(): GroupObject {
-  if (currentLayer === "ui") {
+  if (currentLayer === 'ui') {
     return uiRoot;
   }
   return root;
@@ -3364,9 +3192,7 @@ export function addCircle(params: AddCircleParameters = {}): SceneObject {
   return getRoot().addCircle(params);
 }
 
-export function addCircleOutline(
-  params: AddCircleOutlineParameters = {}
-): SceneObject {
+export function addCircleOutline(params: AddCircleOutlineParameters = {}): SceneObject {
   return getRoot().addCircleOutline(params);
 }
 
@@ -3390,10 +3216,7 @@ export function addGroup(params: AddGroupParameters = {}): GroupObject {
   return getRoot().addGroup(params);
 }
 
-export function addImage(
-  file: string,
-  params: AddTextParameters = {}
-): SceneObject {
+export function addImage(file: string, params: AddTextParameters = {}): SceneObject {
   return getRoot().addImage(file, params);
 }
 
@@ -3412,6 +3235,13 @@ export function addPolyline(
   return getRoot().addPolyline(points, params);
 }
 
+export function addPolygonOutline(
+  points: [number, number, number?][],
+  params: AddObjectParameters = {}
+): SceneObject {
+  return getRoot().addPolygonOutline(points, params);
+}
+
 export function addPyramid(params: AddObjectParameters = {}): SceneObject {
   return getRoot().addPyramid(params);
 }
@@ -3428,24 +3258,15 @@ export function addSphere(params: AddObjectParameters = {}): SceneObject {
   return getRoot().addSphere(params);
 }
 
-export function addText(
-  text: string,
-  params: AddTextParameters = {}
-): TextObject {
+export function addText(text: string, params: AddTextParameters = {}): TextObject {
   return getRoot().addText(text, params);
 }
 
-export function addText3D(
-  text: string,
-  params: AddText3DParameters = {}
-): TextObject {
+export function addText3D(text: string, params: AddText3DParameters = {}): TextObject {
   return getRoot().addText3D(text, params);
 }
 
-export function addTextOutline(
-  text: string,
-  params: AddTextOutlineParameters = {}
-): TextObject {
+export function addTextOutline(text: string, params: AddTextOutlineParameters = {}): TextObject {
   return getRoot().addTextOutline(text, params);
 }
 
@@ -3468,23 +3289,15 @@ export function addPolygon(
   return getRoot().addPolygon(vertices, params);
 }
 
-export function addTriangleOutline(
-  params: AddOutlineParameters = {}
-): SceneObject {
+export function addTriangleOutline(params: AddOutlineParameters = {}): SceneObject {
   return getRoot().addTriangleOutline(params);
 }
 
-function _addMesh(
-  mesh: THREE.Mesh,
-  params: AddObjectParameters = {}
-): SceneObject {
+function _addMesh(mesh: THREE.Mesh, params: AddObjectParameters = {}): SceneObject {
   return getRoot()._addMesh(mesh, params);
 }
 
-export function add3DModel(
-  url: string,
-  params: AddObjectParameters = {}
-): SceneObject {
+export function add3DModel(url: string, params: AddObjectParameters = {}): SceneObject {
   return getRoot().add3DModel(url, params);
 }
 
@@ -3585,6 +3398,7 @@ const api = {
   addImage,
   addLine,
   addPolyline,
+  addPolygonOutline,
   addPyramid,
   addRect,
   addRectOutline,
@@ -3624,10 +3438,8 @@ function seek(t: number) {
   globalTimeline.seek(t, false);
 }
 
-function addPositionChangedCallback(
-  callback: (pos: number, duration: number) => void
-): void {
-  globalTimeline.eventCallback("onUpdate", () => {
+function addPositionChangedCallback(callback: (pos: number, duration: number) => void): void {
+  globalTimeline.eventCallback('onUpdate', () => {
     callback(globalTimeline.time(), globalTimeline.duration());
   });
 }
