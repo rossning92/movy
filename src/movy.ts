@@ -3,7 +3,6 @@ import * as Diff from 'diff';
 import gsap from 'gsap';
 import * as THREE from 'three';
 import { PerspectiveCamera } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
@@ -51,7 +50,6 @@ let uiCamera: THREE.Camera;
 let renderTarget: THREE.WebGLMultisampleRenderTarget;
 
 let lightGroup: THREE.Group;
-let orbitControls: OrbitControls;
 
 let glitchPass: any;
 let bloomPass: UnrealBloomPass;
@@ -210,8 +208,6 @@ function initEngine(container?: HTMLElement) {
   mainCamera = createOrthographicCamera();
   uiCamera = createOrthographicCamera();
 
-  // orbitControls = new OrbitControls(camera, renderer.domElement);
-
   // Create multi-sample render target in order to reduce aliasing (better
   // quality than FXAA).
   renderTarget = new THREE.WebGLMultisampleRenderTarget(renderTargetWidth, renderTargetHeight);
@@ -292,11 +288,6 @@ interface MoveCameraParameters extends Transform, AnimationParameters {
 
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
   promise = promise.then(() => {
-    if (orbitControls) {
-      // OrbitControls won't work as expected when camera transform is changed.
-      orbitControls.enabled = false;
-    }
-
     const { t, lookAt, duration = defaultDuration, ease = defaultEase, fov, zoom } = params;
 
     const tl = gsap.timeline({
