@@ -2,6 +2,7 @@ const CCapture = require('ccapture.js-npmfixed');
 import * as Diff from 'diff';
 import gsap from 'gsap';
 import * as THREE from 'three';
+import { PerspectiveCamera } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -33,6 +34,7 @@ gsap.ticker.remove(gsap.updateRoot);
 
 let renderTargetWidth = 1920;
 let renderTargetHeight = 1080;
+const viewportHeight = 10;
 let motionBlurSamples = 1;
 const globalTimeline = gsap.timeline({ onComplete: stopRender });
 const mainTimeline = gsap.timeline();
@@ -42,7 +44,7 @@ let renderer: THREE.WebGLRenderer;
 let composer: EffectComposer;
 let currentLayer = 'default';
 let scene: THREE.Scene;
-let camera: THREE.Camera;
+let mainCamera: THREE.Camera;
 let uiScene: THREE.Scene;
 let uiCamera: THREE.Camera;
 let renderTarget: THREE.WebGLMultisampleRenderTarget;
@@ -141,7 +143,6 @@ function stopRender() {
 
 function createOrthographicCamera() {
   const aspect = renderTargetWidth / renderTargetHeight;
-  const viewportHeight = 10;
   const camera = new THREE.OrthographicCamera(
     (viewportHeight * aspect) / -2,
     (viewportHeight * aspect) / 2,
@@ -204,7 +205,7 @@ function initEngine(container?: HTMLElement) {
 
   scene.background = new THREE.Color(0);
 
-  camera = createOrthographicCamera();
+  mainCamera = createOrthographicCamera();
   uiCamera = createOrthographicCamera();
 
   // orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -257,14 +258,14 @@ function animate() {
       }
 
       if (child.billboarding) {
-        child.lookAt(camera.position);
+        child.lookAt(mainCamera.position);
       }
     });
 
     renderer.setRenderTarget(renderTarget);
 
     // Render scene
-    renderer.render(scene, camera);
+    renderer.render(scene, mainCamera);
 
     // Render UI on top of the scene
     renderer.autoClearColor = false;
@@ -303,14 +304,14 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
         onUpdate: () => {
           // Keep looking at the target while camera is moving.
           if (lookAt) {
-            camera.lookAt(toThreeVector3(lookAt));
+            mainCamera.lookAt(toThreeVector3(lookAt));
           }
         },
       },
     });
 
-    if (camera instanceof THREE.PerspectiveCamera) {
-      const perspectiveCamera = camera as THREE.PerspectiveCamera;
+    if (mainCamera instanceof THREE.PerspectiveCamera) {
+      const perspectiveCamera = mainCamera as THREE.PerspectiveCamera;
 
       // Animate FoV
       if (fov !== undefined) {
@@ -330,16 +331,16 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
     createTransformAnimation({
       ...params,
       tl,
-      object3d: camera,
+      object3d: mainCamera,
     });
 
     if (zoom !== undefined) {
       tl.to(
-        camera,
+        mainCamera,
         {
           zoom,
           onUpdate: () => {
-            (camera as any).updateProjectionMatrix();
+            (mainCamera as any).updateProjectionMatrix();
           },
         },
         '<'
@@ -3153,7 +3154,7 @@ export function enableBloom() {
 }
 
 function _setCamera(cam: THREE.Camera) {
-  camera = cam;
+  mainCamera = cam;
 }
 
 async function loadObj(url: string): Promise<THREE.Group> {
@@ -3343,11 +3344,11 @@ export function moveTo(params: MoveObjectParameters = {}) {
 }
 
 export function usePerspectiveCamera() {
-  camera = createPerspectiveCamera();
+  mainCamera = createPerspectiveCamera();
 }
 
 export function useOrthographicCamera() {
-  camera = createOrthographicCamera();
+  mainCamera = createOrthographicCamera();
 }
 
 export function addFog() {
@@ -3373,6 +3374,38 @@ function loadGLTF(url: string): Promise<THREE.Object3D> {
     );
   });
 }
+
+interface DollyZoomParameters extends AnimationParameters {
+  fov?: number;
+}
+
+class CameraObject {
+  dollyZoom(params: DollyZoomParameters = {}) {
+    const { duration = 1, ease = defaultEase, fov = 60 } = params;
+
+    promise = promise.then(() => {
+      const cam = mainCamera as PerspectiveCamera;
+      const halfViewportHeight = viewportHeight * 0.5;
+
+      mainTimeline.to(cam, {
+        fov,
+        duration,
+        ease,
+        onUpdate: () => {
+          const dist = (1 / Math.tan(cam.fov * 0.5 * DEG2RAD)) * halfViewportHeight;
+          const dir = new THREE.Vector3();
+          cam.getWorldDirection(dir);
+          dir.multiplyScalar(-dist);
+          cam.position.copy(dir);
+          cam.updateProjectionMatrix();
+        },
+      });
+    });
+    return this;
+  }
+}
+
+export const camera = new CameraObject();
 
 const api = {
   cameraMoveTo,
@@ -3425,6 +3458,7 @@ const api = {
   usePerspectiveCamera,
   useOrthographicCamera,
   addFog,
+  camera,
 };
 
 function runCode(s: string): Promise<void> {
@@ -3483,7 +3517,7 @@ function onMouseMove(event: MouseEvent) {
     -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1
   );
 
-  raycaster.setFromCamera(mouse, camera);
+  raycaster.setFromCamera(mouse, mainCamera);
   const target = new THREE.Vector3();
   raycaster.ray.intersectPlane(planeZ, target);
 

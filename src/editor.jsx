@@ -27,6 +27,7 @@ const examples = [
   'examples/symmetric-crypto.js',
   'examples/text-3d.js',
   'examples/text-outline.js',
+  'examples/camera/dolly-zoom.js',
 ];
 
 function loadFile(file) {
