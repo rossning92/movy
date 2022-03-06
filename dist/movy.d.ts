@@ -1,5 +1,5 @@
-import * as THREE from "three";
-import "./style/player.css";
+import * as THREE from 'three';
+import './style/player.css';
 interface MoveCameraParameters extends Transform, AnimationParameters {
     lookAt?: {
         x?: number;
@@ -21,7 +21,7 @@ export declare function getPolygonVertices({ sides, radius }?: {
     sides?: number;
     radius?: number;
 }): [number, number][];
-export declare function getTriangleVertices({ radius, }?: {
+export declare function getTriangleVertices({ radius }?: {
     radius?: number;
 }): [number, number][];
 interface AnimationParameters {
@@ -39,10 +39,10 @@ interface FadeObjectParameters extends AnimationParameters {
     opacity?: number;
 }
 interface WipeInParameters extends AnimationParameters {
-    direction?: "up" | "down" | "left" | "right";
+    direction?: 'up' | 'down' | 'left' | 'right';
 }
 interface RevealParameters extends AnimationParameters {
-    direction?: "up" | "down" | "left" | "right";
+    direction?: 'up' | 'down' | 'left' | 'right';
 }
 interface RotateParameters extends AnimationParameters {
     x?: number;
@@ -79,6 +79,7 @@ declare class SceneObject {
     addRectOutline(params?: AddOutlineParameters): SceneObject;
     addRect(params?: AddRectParameters): SceneObject;
     addPolygon(vertices: [number, number][], params?: AddPolygonParameters): SceneObject;
+    addPolygonOutline(vertices: [number, number, number?][], params?: AddPolygonParameters): SceneObject;
     addTriangle(params?: AddPolygonParameters): SceneObject;
     addTriangleOutline(params?: AddOutlineParameters): SceneObject;
     addText(text: string, params?: AddTextParameters): TextObject;
@@ -114,6 +115,7 @@ declare class SceneObject {
     rotate(r: [number?, number?, number?], { t, duration, ease }?: AnimationParameters): this;
     rotateX(degrees: number, params?: AnimationParameters): this;
     rotateY(degrees: number, params?: AnimationParameters): this;
+    rotateZ(degrees: number, params?: AnimationParameters): this;
     /**
      * @deprecated Use `rotate()` instead.
      */
@@ -127,12 +129,12 @@ declare class SceneObject {
      */
     rotateYTo(degrees: number, params?: AnimationParameters): this;
     spinning({ t, duration, repeat, ease, x, y, }?: RotateParameters): this;
-    rotateIn({ t, duration, ease, }?: AnimationParameters): this;
+    rotateIn({ t, duration, ease }?: AnimationParameters): this;
     grow({ t, ease, duration }?: AnimationParameters): this;
     grow2({ t }?: AnimationParameters): this;
     grow3({ t }?: AnimationParameters): this;
     flying({ t, duration }?: AnimationParameters): this;
-    reveal({ direction, t, duration, ease, }?: RevealParameters): this;
+    reveal({ direction, t, duration, ease }?: RevealParameters): this;
     vertexToAnimate: Map<number, THREE.Vector3>;
     /**
      * @deprecated Use `setVert()` instead.
@@ -140,8 +142,8 @@ declare class SceneObject {
     updateVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
     moveVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
     setVert(i: number, position: [number, number, number?], t?: number | string): this;
-    wipeIn({ direction, t, duration, ease, }?: WipeInParameters): this;
-    shake2D({ interval, duration, strength, t, }?: Shake2DParameters): this;
+    wipeIn({ direction, t, duration, ease }?: WipeInParameters): this;
+    shake2D({ interval, duration, strength, t }?: Shake2DParameters): this;
     show({ duration, t }?: Shake2DParameters): this;
 }
 interface ExplodeParameters extends AnimationParameters {
@@ -170,7 +172,7 @@ declare class TextObject extends GroupObject {
     /**
      * @deprecated Use `setText()` instead.
      */
-    changeText(func: (val: number) => any, { from, to, duration, ease, t, }?: ChangeTextParameters): this;
+    changeText(func: (val: number) => any, { from, to, duration, ease, t }?: ChangeTextParameters): this;
     typeText({ t, duration, interval }?: TypeTextParameters): this;
     /**
      * @deprecated Use `setText()` instead.
@@ -179,7 +181,7 @@ declare class TextObject extends GroupObject {
     setText(text: string, t?: number | string): void;
 }
 interface TransformTexParameters extends AnimationParameters {
-    type?: "transform" | "fade";
+    type?: 'transform' | 'crossfade';
     reverse?: boolean;
 }
 declare class TexObject extends GroupObject {
@@ -194,7 +196,7 @@ declare class TexObject extends GroupObject {
     setTex(tex: string, t?: number | string): void;
 }
 interface AddTextParameters extends Transform, BasicMaterial {
-    font?: "en" | "condensed" | "code" | "math" | "arcade" | "zh" | "gdh";
+    font?: 'en' | 'condensed' | 'code' | 'math' | 'arcade' | 'zh' | 'gdh';
     fontSize?: number;
     letterSpacing?: number;
     centerTextVertically?: boolean;
@@ -260,7 +262,7 @@ interface Transform {
     position?: [number, number] | [number, number, number];
     scale?: number;
     parent?: SceneObject;
-    anchor?: "left" | "right" | "top" | "bottom" | "topLeft" | "topRight" | "bottomLeft" | "bottomRight";
+    anchor?: 'left' | 'right' | 'top' | 'bottom' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
     billboarding?: boolean;
 }
 interface AddObjectParameters extends Transform, BasicMaterial {
@@ -314,6 +316,7 @@ export declare function addGroup(params?: AddGroupParameters): GroupObject;
 export declare function addImage(file: string, params?: AddTextParameters): SceneObject;
 export declare function addLine(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): SceneObject;
 export declare function addPolyline(points: [number, number, number][], params?: AddObjectParameters): SceneObject;
+export declare function addPolygonOutline(points: [number, number, number?][], params?: AddObjectParameters): SceneObject;
 export declare function addPyramid(params?: AddObjectParameters): SceneObject;
 export declare function addRect(params?: AddRectParameters): SceneObject;
 export declare function addRectOutline(params?: AddOutlineParameters): SceneObject;
@@ -336,4 +339,11 @@ export declare function moveTo(params?: MoveObjectParameters): GroupObject;
 export declare function usePerspectiveCamera(): void;
 export declare function useOrthographicCamera(): void;
 export declare function addFog(): void;
+interface DollyZoomParameters extends AnimationParameters {
+    fov?: number;
+}
+declare class CameraObject {
+    dollyZoom(params?: DollyZoomParameters): this;
+}
+export declare const camera: CameraObject;
 export {};
