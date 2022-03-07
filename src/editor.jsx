@@ -216,22 +216,18 @@ function toHHMMSS(seconds) {
   return `${hh}:${mm}:${ss}.${ms}`;
 }
 
-function Slider({ mo, disabled }) {
+function Slider({ mo, disabled, markers }) {
   const [slider, setSlider] = useState({ position: 0, duration: 0 });
-
-  // eslint-disable-next-line no-unused-vars
-  const [markers, setMarkers] = useState([]);
 
   useEffect(() => {
     mo.addPositionChangedCallback((position, duration) => {
       setSlider({ position, duration });
-      // setMarkers(mo.getMarkers());
     });
   }, []);
 
   return (
     <div
-      style={{ height: '24px', position: 'relative' }}
+      style={{ height: '24px', position: 'relative', overflow: 'hidden' }}
       onClick={(e) => {
         if (!disabled) {
           e.preventDefault();
@@ -265,8 +261,9 @@ function Slider({ mo, disabled }) {
       >
         {toHHMMSS(slider.position)}
       </div>
-      {markers.map((marker) => (
+      {markers.map((marker, i) => (
         <div
+          key={i}
           className="unselectable clickthrough"
           style={{
             position: 'absolute',
@@ -277,6 +274,8 @@ function Slider({ mo, disabled }) {
             textAlign: 'center',
             lineHeight: '24px',
             transform: 'translate(-50%, 0%)',
+            color: 'gray',
+            fontSize: '0.8em',
           }}
         >
           ⬥
@@ -295,9 +294,9 @@ function App({ mo }) {
   const [filePath, setFilePath] = useState(null);
   // const [duration, setDuration] = useState(0);
   // const [position, setPosition] = useState(0);
+  const [markers, setMarkers] = useState([]);
 
   const uiDisabled = isLoading || isExporting;
-
   function exportVideo() {
     setIsExporting(true);
 
@@ -309,16 +308,21 @@ function App({ mo }) {
     });
   }
 
+  function runCode(s) {
+    if (!uiDisabled) {
+      setIsLoading(true);
+      return mo.runCode(s).finally(() => {
+        setIsLoading(false);
+        setMarkers(mo.getMarkers());
+      });
+    }
+  }
+
   const onKeyDown = useCallback((e) => {
     if (e.ctrlKey) {
       if (e.key === 'Enter') {
         e.preventDefault();
-        if (!uiDisabled) {
-          setIsLoading(true);
-          mo.runCode(liveCode).finally(() => {
-            setIsLoading(false);
-          });
-        }
+        runCode(liveCode);
       } else if (e.key === 'm') {
         e.preventDefault();
         exportVideo();
@@ -334,16 +338,12 @@ function App({ mo }) {
   function loadAnimation(file) {
     setIsLoading(true);
 
-    return loadFile(file)
-      .then((s) => {
-        const importStripped = s.replace(/import \* as mo from ['"]movy['"];?\s+/, '');
-        setFilePath(file);
-        setCode(importStripped);
-        return mo.runCode(importStripped);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    return loadFile(file).then((s) => {
+      const importStripped = s.replace(/import \* as mo from ['"]movy['"];?\s+/, '');
+      setFilePath(file);
+      setCode(importStripped);
+      return runCode(importStripped);
+    });
   }
 
   useEffect(() => {
@@ -482,7 +482,7 @@ function App({ mo }) {
               }}
               ref={rendererRef}
             />
-            <Slider mo={mo} disabled={uiDisabled} />
+            <Slider mo={mo} disabled={uiDisabled} markers={markers} />
             {isLoading && (
               <div
                 style={{
@@ -530,7 +530,7 @@ function App({ mo }) {
             href="#"
             onClick={(e) => {
               e.preventDefault();
-              mo.runCode(liveCode);
+              runCode(liveCode);
             }}
             style={{
               position: 'absolute',
