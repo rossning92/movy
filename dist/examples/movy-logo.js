@@ -77,9 +77,9 @@ mo.pause(1);
 function addParticle({ position, t }) {
   const particles = mo.addGroup({ scale: 0.5, position });
   for (let i = 0; i < 3; i++) {
-    particles.addRectOutline({ opacity: 0.7, scale: 0.8 });
-    particles.addTriangleOutline({ opacity: 0.7, scale: 0.8 });
-    particles.addCircleOutline({ opacity: 0.7, scale: 0.8 });
+    particles.addRectOutline({ opacity: 0.7, scale: 0.8, lineWidth: 0.05 });
+    particles.addTriangleOutline({ opacity: 0.7, scale: 0.8, lineWidth: 0.05 });
+    particles.addCircleOutline({ opacity: 0.7, scale: 0.8, lineWidth: 0.05 });
   }
   particles.explode2D({ t });
   particles.fadeOut({ t: '1.5', duration: 1 });
