@@ -218,6 +218,7 @@ function toHHMMSS(seconds) {
 
 function Slider({ mo, disabled, markers }) {
   const [slider, setSlider] = useState({ position: 0, duration: 0 });
+  const [timeToSeek, setTimeToSeek] = useState(null);
 
   useEffect(() => {
     mo.addPositionChangedCallback((position, duration) => {
@@ -225,9 +226,18 @@ function Slider({ mo, disabled, markers }) {
     });
   }, []);
 
+  function onMouseMove(e) {
+    const x = e.nativeEvent.offsetX;
+    const width = e.currentTarget.offsetWidth;
+    const p = (x / width) * slider.duration;
+    setTimeToSeek(p);
+  }
+
   return (
     <div
       style={{ height: '24px', position: 'relative', overflow: 'hidden' }}
+      onMouseMove={onMouseMove}
+      onMouseOut={() => setTimeToSeek(null)}
       onClick={(e) => {
         if (!disabled) {
           e.preventDefault();
@@ -259,7 +269,7 @@ function Slider({ mo, disabled, markers }) {
           lineHeight: '24px',
         }}
       >
-        {toHHMMSS(slider.position)}
+        {toHHMMSS(timeToSeek !== null ? timeToSeek : slider.position)}
       </div>
       {markers.map((marker, i) => (
         <div
@@ -329,7 +339,6 @@ function App({ mo }) {
       }
     }
   });
-
   useEffect(() => {
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
