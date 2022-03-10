@@ -479,7 +479,7 @@ function App({ mo }) {
           width: '100%',
         }}
       >
-        <div className="pure-u-1 pure-u-md-1-2">
+        <div className="pure-u-1 pure-u-lg-1-2">
           <div
             style={{
               position: 'relative',
@@ -515,7 +515,7 @@ function App({ mo }) {
           </div>
         </div>
         <div
-          className="pure-u-1 pure-u-md-1-2"
+          className="pure-u-1 pure-u-lg-1-2"
           style={{
             position: 'relative',
             maxHeight: '100%',
