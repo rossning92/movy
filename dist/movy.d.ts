@@ -108,11 +108,11 @@ declare class SceneObject {
      * @deprecated Use `scaleZ()` instead.
      */
     scaleZTo(sz: number, params?: AnimationParameters): this;
-    fadeIn({ duration, ease, t }?: AnimationParameters): this;
+    fadeIn(params?: AnimationParameters): this;
     fadeOut(params?: FadeObjectParameters): this;
-    changeOpacity(opacity: number, { duration, ease, t }?: FadeObjectParameters): this;
+    changeOpacity(opacity: number, params?: FadeObjectParameters): this;
     changeColor(color: string | number, { duration, ease, t }?: AnimationParameters): this;
-    rotate(r: [number?, number?, number?], { t, duration, ease }?: AnimationParameters): this;
+    rotate(r: [number?, number?, number?], params?: AnimationParameters): this;
     rotateX(degrees: number, params?: AnimationParameters): this;
     rotateY(degrees: number, params?: AnimationParameters): this;
     rotateZ(degrees: number, params?: AnimationParameters): this;
@@ -129,12 +129,12 @@ declare class SceneObject {
      */
     rotateYTo(degrees: number, params?: AnimationParameters): this;
     spinning({ t, duration, repeat, ease, x, y, }?: RotateParameters): this;
-    rotateIn({ t, duration, ease }?: AnimationParameters): this;
-    grow({ t, ease, duration }?: AnimationParameters): this;
+    rotateIn(params?: AnimationParameters): this;
+    grow(params?: AnimationParameters): this;
     grow2({ t }?: AnimationParameters): this;
     grow3({ t }?: AnimationParameters): this;
     flying({ t, duration }?: AnimationParameters): this;
-    reveal({ direction, t, duration, ease }?: RevealParameters): this;
+    reveal(params?: RevealParameters): this;
     vertexToAnimate: Map<number, THREE.Vector3>;
     /**
      * @deprecated Use `setVert()` instead.
@@ -142,7 +142,7 @@ declare class SceneObject {
     updateVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
     moveVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
     setVert(i: number, position: [number, number, number?], t?: number | string): this;
-    wipeIn({ direction, t, duration, ease }?: WipeInParameters): this;
+    wipeIn(params?: WipeInParameters): this;
     shake2D({ interval, duration, strength, t }?: Shake2DParameters): this;
     show({ duration, t }?: Shake2DParameters): this;
 }
@@ -158,8 +158,8 @@ interface ExplodeParameters extends AnimationParameters {
 }
 declare class GroupObject extends SceneObject {
     explode2D({ t, ease, duration, minRotation, maxRotation, minRadius, maxRadius, minScale, maxScale, stagger, speed, }?: ExplodeParameters): this;
-    implode2D({ t, duration }?: AnimationParameters): this;
-    flyIn({ t, duration, ease }?: AnimationParameters): this;
+    implode2D(params?: AnimationParameters): this;
+    flyIn(params?: AnimationParameters): this;
 }
 interface ChangeTextParameters extends AnimationParameters {
     from?: number;
@@ -339,6 +339,7 @@ export declare function moveTo(params?: MoveObjectParameters): GroupObject;
 export declare function usePerspectiveCamera(): void;
 export declare function useOrthographicCamera(): void;
 export declare function addFog(): void;
+export declare function setDefaultDuration(duration: number): void;
 interface DollyZoomParameters extends AnimationParameters {
     fov?: number;
 }
