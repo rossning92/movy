@@ -11,9 +11,9 @@ import {
   ExtrudeGeometry,
   BufferGeometry,
   Vector3,
-} from "three";
-import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader";
-import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
+} from 'three';
+import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
+import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
 
 const fontLoader = new FontLoader();
 
@@ -22,22 +22,20 @@ const fontMap: Record<string, Font> = {};
 async function preloadFont(fontName: string): Promise<Font> {
   if (!(fontName in fontMap)) {
     let font: Font;
-    if (fontName == "zh") {
-      font = await fontLoader.loadAsync(
-        "fonts/Source-Han-Sans-SC-Regular.subset.json"
-      );
-    } else if (fontName == "en") {
-      font = await fontLoader.loadAsync("fonts/Roboto-Regular.json");
-    } else if (fontName == "condensed") {
-      font = await fontLoader.loadAsync("fonts/Roboto-Condensed-Regular.json");
-    } else if (fontName == "math") {
-      font = await fontLoader.loadAsync("fonts/Latin-Modern-Math-Regular.json");
-    } else if (fontName == "code") {
-      font = await fontLoader.loadAsync("fonts/Consolas-Regular.json");
-    } else if (fontName == "gdh") {
-      font = await fontLoader.loadAsync("fonts/zcool-gdh-Regular.subset.json");
-    } else if (fontName == "arcade") {
-      font = await fontLoader.loadAsync("fonts/Public-Pixel-Regular.json");
+    if (fontName == 'zh') {
+      font = await fontLoader.loadAsync('fonts/Source-Han-Sans-SC-Regular.subset.json');
+    } else if (fontName == 'en') {
+      font = await fontLoader.loadAsync('fonts/Roboto-Regular.json');
+    } else if (fontName == 'condensed') {
+      font = await fontLoader.loadAsync('fonts/Roboto-Condensed-Regular.json');
+    } else if (fontName == 'math') {
+      font = await fontLoader.loadAsync('fonts/Computer-Modern-Regular.json');
+    } else if (fontName == 'code') {
+      font = await fontLoader.loadAsync('fonts/Consolas-Regular.json');
+    } else if (fontName == 'gdh') {
+      font = await fontLoader.loadAsync('fonts/zcool-gdh-Regular.subset.json');
+    } else if (fontName == 'arcade') {
+      font = await fontLoader.loadAsync('fonts/Public-Pixel-Regular.json');
     } else {
       throw `Invalid font name: ${fontName}`;
     }
@@ -72,7 +70,7 @@ export default class TextMeshObject extends Group {
       fontSize: 1.0,
       letterSpacing: 0,
       color: new Color(0xffffff),
-      font: "en,zh",
+      font: 'en,zh',
       centerTextVertically: false,
       stroke: false,
       strokeWidth: 0.02,
@@ -83,7 +81,7 @@ export default class TextMeshObject extends Group {
 
   async init() {
     this.fonts = await Promise.all(
-      this.params.font.split(",").map((fontName) => preloadFont(fontName))
+      this.params.font.split(',').map((fontName) => preloadFont(fontName))
     );
   }
 
@@ -106,7 +104,7 @@ export default class TextMeshObject extends Group {
       let maxY = Number.MIN_VALUE;
       const geometries: ShapeBufferGeometry[] = [];
       for (const [i, char] of [...this.text].entries()) {
-        if (char === " ") {
+        if (char === ' ') {
           totalWidth += this.params.fontSize * 0.5;
         } else {
           // Create material
@@ -128,7 +126,7 @@ export default class TextMeshObject extends Group {
             if (glyph) {
               break;
             } else if (j == this.fonts.length - 1) {
-              glyph = (font.data as any).glyphs["?"];
+              glyph = (font.data as any).glyphs['?'];
             }
           }
 
@@ -172,8 +170,7 @@ export default class TextMeshObject extends Group {
               );
               geoms.push(geom);
             }
-            geometry =
-              geoms.length > 1 ? mergeBufferGeometries(geoms) : geoms[0];
+            geometry = geoms.length > 1 ? mergeBufferGeometries(geoms) : geoms[0];
           } else {
             geometry = new ShapeBufferGeometry(shapes);
           }
@@ -195,9 +192,7 @@ export default class TextMeshObject extends Group {
           letterPosX.push(totalWidth + xMid);
           totalWidth +=
             letterWidth +
-            (i < this.text.length - 1
-              ? this.params.letterSpacing * this.params.fontSize
-              : 0);
+            (i < this.text.length - 1 ? this.params.letterSpacing * this.params.fontSize : 0);
           minY = Math.min(minY, geometry.boundingBox.min.y);
           maxY = Math.max(maxY, geometry.boundingBox.max.y);
 
