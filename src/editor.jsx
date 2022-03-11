@@ -396,7 +396,7 @@ function App({ mo }) {
                     className="pure-menu-link"
                     onClick={(e) => {
                       e.preventDefault();
-                      window.history.pushState(null, '', `/?file=${file}`);
+                      window.history.pushState(null, '', `?file=${file}`);
                       if (!uiDisabled) {
                         loadAnimation(`${file}`);
                       }
