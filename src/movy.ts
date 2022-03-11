@@ -945,12 +945,22 @@ class SceneObject {
       const group = new THREE.Group();
       group.add(object);
 
-      if (params.wireframe || params.color || params.opacity !== undefined) {
-        const material = createMaterial({ ...params, lighting: true });
-        object.traverse((o: any) => {
-          if (o.isMesh) o.material = material;
-        });
-      }
+      object.traverse((object: THREE.Object3D) => {
+        if (object instanceof THREE.Mesh) {
+          if (params.wireframe) {
+            object.material.wireframe = true;
+          }
+          if (params.color) {
+            object.material.color = toThreeColor(params.color);
+          }
+          if (params.opacity !== undefined) {
+            object.material.opacity = params.opacity;
+          }
+          if (params.doubleSided !== undefined) {
+            object.material.side = params.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+          }
+        }
+      });
 
       obj.object3D = group;
       updateTransform(group, params);
@@ -2884,11 +2894,15 @@ interface BasicMaterial {
   opacity?: number;
   wireframe?: boolean;
   lighting?: boolean;
+  doubleSided?: boolean;
 }
 
 function createMaterial(params: BasicMaterial = {}) {
+  const side = params.doubleSided === undefined ? THREE.FrontSide : THREE.DoubleSide;
+
   if (params.wireframe) {
     return new THREE.MeshBasicMaterial({
+      side,
       color: toThreeColor(params.color),
       wireframe: true,
     });
@@ -2897,6 +2911,7 @@ function createMaterial(params: BasicMaterial = {}) {
     addDefaultLights();
 
     return new THREE.MeshStandardMaterial({
+      side,
       color: toThreeColor(params.color),
       roughness: 0.5,
       transparent: params.opacity !== undefined && params.opacity < 1.0,
@@ -2904,7 +2919,7 @@ function createMaterial(params: BasicMaterial = {}) {
     });
   }
   return new THREE.MeshBasicMaterial({
-    side: THREE.DoubleSide,
+    side,
     color: toThreeColor(params.color),
     transparent: params.opacity !== undefined && params.opacity < 1.0,
     opacity: params.opacity || 1.0,
