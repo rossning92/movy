@@ -58,7 +58,7 @@ module.exports = {
   devServer: {
     compress: true,
     static: [path.resolve(__dirname, 'dist')].concat(
-      process.env.FILE ? [path.dirname(path.resolve(process.env.FILE))] : [],
+      process.env.FILE ? [path.dirname(path.resolve(process.env.FILE))] : []
     ),
     devMiddleware: {
       stats: 'minimal',
