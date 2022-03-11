@@ -3002,7 +3002,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   }
 }
 
-function setActiveLayer(layer: 'ui' | 'main') {
+export function setActiveLayer(layer: 'ui' | 'main') {
   engine.activeLayer = layer;
 }
 
