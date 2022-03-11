@@ -390,7 +390,7 @@ function createLine3D(
   // style.strokeLineJoin = "round";
   const geometry = SVGLoader.pointsToStroke(points, style, 12, 0.001);
 
-  const material = createMaterial({ color });
+  const material = createMaterial({ color, doubleSided: true });
   const mesh = new THREE.Mesh(geometry, material);
   return mesh;
 }
@@ -619,7 +619,7 @@ function createArrowLine(
     threeDimensional = false,
   } = params;
 
-  const material = createMaterial(params);
+  const material = createMaterial({ ...params, doubleSided: true });
 
   const direction = new THREE.Vector3();
   direction.subVectors(to, from);
@@ -981,7 +981,7 @@ class SceneObject {
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
+      const material = createMaterial({ ...params, doubleSided: true });
 
       const geometry = new THREE.CircleGeometry(params.radius || 0.5, 128);
 
@@ -1452,7 +1452,7 @@ class SceneObject {
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
+      const material = createMaterial({ ...params, doubleSided: true });
 
       const { width = 1, height = 1 } = params;
       const geometry = new THREE.PlaneGeometry(width, height);
@@ -1478,7 +1478,7 @@ class SceneObject {
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
-      const material = createMaterial(params);
+      const material = createMaterial({ ...params, doubleSided: true });
 
       // Vertex positions
       const positions: number[] = [];
@@ -1553,7 +1553,7 @@ class SceneObject {
     }
 
     promise = promise.then(async () => {
-      const material = createMaterial({ ...params });
+      const material = createMaterial({ ...params, doubleSided: true });
 
       const textObject = new TextMeshObject({
         ...params,
@@ -1583,6 +1583,7 @@ class SceneObject {
       const material = createMaterial({
         ...params,
         lighting: params.lighting !== undefined ? params.lighting : true,
+        doubleSided: true,
       });
 
       const textObject = new TextMeshObject({
@@ -1611,7 +1612,7 @@ class SceneObject {
     }
 
     promise = promise.then(async () => {
-      const material = createMaterial({ ...params });
+      const material = createMaterial({ ...params, doubleSided: true });
 
       const textObject = new TextMeshObject({
         ...params,
