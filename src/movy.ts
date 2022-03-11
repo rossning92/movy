@@ -2032,6 +2032,28 @@ class SceneObject {
     return this;
   }
 
+  shrink(params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const { t, ease = defaultEase, duration = engine.defaultDuration } = params;
+
+      const tl = gsap.timeline();
+      tl.to(
+        this.object3D.scale,
+        {
+          x: 0,
+          y: 0,
+          z: 0,
+          ease,
+          duration,
+        },
+        '<'
+      );
+      tl.set(this.object3D, { visible: false });
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
   flying({ t, duration = 5 }: AnimationParameters = {}) {
     const WIDTH = 30;
     const HEIGHT = 15;
