@@ -3431,9 +3431,9 @@ interface DollyZoomParameters extends AnimationParameters {
 
 class CameraObject {
   dollyZoom(params: DollyZoomParameters = {}) {
-    const { duration = 1, ease = defaultEase, fov = 60 } = params;
-
     promise = promise.then(() => {
+      const { duration = engine.defaultDuration, ease = defaultEase, fov = 60 } = params;
+
       const cam = engine.mainCamera as PerspectiveCamera;
       const halfViewportHeight = viewportHeight * 0.5;
 
