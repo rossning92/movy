@@ -1,4 +1,4 @@
-import { Color, Group, Font, Material } from "three";
+import { Color, Group, Font, Material } from 'three';
 interface TextMeshObjectParams {
     fontSize?: number;
     letterSpacing?: number;

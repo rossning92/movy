@@ -133,6 +133,7 @@ declare class SceneObject {
     grow(params?: AnimationParameters): this;
     grow2({ t }?: AnimationParameters): this;
     grow3({ t }?: AnimationParameters): this;
+    shrink(params?: AnimationParameters): this;
     flying({ t, duration }?: AnimationParameters): this;
     reveal(params?: RevealParameters): this;
     vertexToAnimate: Map<number, THREE.Vector3>;
@@ -291,7 +292,9 @@ interface BasicMaterial {
     opacity?: number;
     wireframe?: boolean;
     lighting?: boolean;
+    doubleSided?: boolean;
 }
+export declare function setActiveLayer(layer: 'ui' | 'main'): void;
 interface AddGroupParameters extends Transform {
 }
 export declare function getQueryString(url?: string): any;
