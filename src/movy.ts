@@ -819,6 +819,11 @@ function createLine(
   return { line, geometry, material };
 }
 
+interface RotateInParameters extends AnimationParameters {
+  axis?: 'x' | 'y' | 'z';
+  rotation?: number;
+}
+
 class SceneObject {
   object3D: THREE.Object3D;
 
@@ -1942,12 +1947,25 @@ class SceneObject {
     return this;
   }
 
-  rotateIn(params: AnimationParameters = {}) {
+  rotateIn(params: RotateInParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const {
+        t,
+        duration = engine.defaultDuration,
+        ease = defaultEase,
+        axis = 'z',
+        rotation = 360,
+      } = params;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
-      tl.from(this.object3D.rotation, { z: Math.PI * 4, duration }, '<');
+      if (axis === 'x') {
+        tl.from(this.object3D.rotation, { x: rotation * DEG2RAD, duration }, '<');
+      } else if (axis === 'y') {
+        tl.from(this.object3D.rotation, { y: rotation * DEG2RAD, duration }, '<');
+      } else if (axis === 'z') {
+        tl.from(this.object3D.rotation, { z: rotation * DEG2RAD, duration }, '<');
+      }
+
       tl.from(
         this.object3D.scale,
         {
