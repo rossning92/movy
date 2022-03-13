@@ -2237,7 +2237,7 @@ class SceneObject {
         direction = 'right',
         t,
         duration = engine.defaultDuration,
-        ease = 'power.out',
+        ease = defaultEase,
       } = params;
       this.object3D.visible = false;
 
