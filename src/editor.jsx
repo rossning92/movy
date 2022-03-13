@@ -200,11 +200,11 @@ function getFileNameWithoutExtension(path) {
 
 function toHHMMSS(seconds) {
   function pad(num, size) {
-    num = num.toString();
-    while (num.length < size) {
-      num = `0${num}`;
+    let numStr = num.toString();
+    while (numStr.length < size) {
+      numStr = `0${numStr}`;
     }
-    return num;
+    return numStr;
   }
 
   const secs = parseInt(seconds, 10);
@@ -216,34 +216,24 @@ function toHHMMSS(seconds) {
   return `${hh}:${mm}:${ss}.${ms}`;
 }
 
-function Slider({ mo, disabled, markers }) {
-  const [slider, setSlider] = useState({ position: 0, duration: 0 });
-  const [timeToSeek, setTimeToSeek] = useState(null);
+function Slider({ mo, disabled, timeline }) {
+  const [position, setPosition] = useState(0);
 
   useEffect(() => {
     mo.addPositionChangedCallback((position, duration) => {
-      setSlider({ position, duration });
+      setPosition(position);
     });
   }, []);
-
-  function onMouseMove(e) {
-    const x = e.nativeEvent.offsetX;
-    const width = e.currentTarget.offsetWidth;
-    const p = (x / width) * slider.duration;
-    setTimeToSeek(p);
-  }
 
   return (
     <div
       style={{ height: '24px', position: 'relative', overflow: 'hidden' }}
-      onMouseMove={onMouseMove}
-      onMouseOut={() => setTimeToSeek(null)}
       onClick={(e) => {
         if (!disabled) {
           e.preventDefault();
           const x = e.nativeEvent.offsetX;
           const width = e.currentTarget.offsetWidth;
-          const p = (x / width) * slider.duration;
+          const p = (x / width) * timeline.duration;
           mo.seek(p);
         }
       }}
@@ -252,43 +242,44 @@ function Slider({ mo, disabled, markers }) {
         style={{
           background: disabled ? 'gray' : 'blue',
           height: '100%',
-          width: `${(slider.position / slider.duration) * 100}%`,
+          width: `${(position / timeline.duration) * 100}%`,
         }}
       />
-      <div
-        className="unselectable"
-        style={{
-          position: 'absolute',
-          zIndex: 2,
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          fontSize: '0.8em',
-          textAlign: 'center',
-          lineHeight: '24px',
-        }}
-      >
-        {toHHMMSS(timeToSeek !== null ? timeToSeek : slider.position)}
-      </div>
-      {markers.map((marker, i) => (
+
+      {timeline.markers.map((marker, i) => (
         <div
           key={i}
           className="unselectable clickthrough"
           style={{
             position: 'absolute',
             zIndex: 1,
-            top: 0,
-            left: `${(marker.t / slider.duration) * 100}%`,
+            left: `${(marker.t / timeline.duration) * 100}%`,
             bottom: 0,
             textAlign: 'center',
-            lineHeight: '24px',
             transform: 'translate(-50%, 0%)',
             color: 'gray',
-            fontSize: '0.8em',
+            fontSize: '0.75em',
           }}
         >
           ⬥
+        </div>
+      ))}
+
+      {[...Array(Math.floor(timeline.duration + 1)).keys()].map((i) => (
+        <div
+          key={i}
+          className="unselectable clickthrough"
+          style={{
+            position: 'absolute',
+            zIndex: 2,
+            top: 0,
+            left: `${(i / timeline.duration) * 100}%`,
+            textAlign: 'center',
+            transform: 'translate(-50%, 0%)',
+            fontSize: '0.75em',
+          }}
+        >
+          {i}
         </div>
       ))}
     </div>
@@ -302,9 +293,7 @@ function App({ mo }) {
   const [code, setCode] = useState('');
   const [liveCode, setLiveCode] = useState('');
   const [filePath, setFilePath] = useState(null);
-  // const [duration, setDuration] = useState(0);
-  // const [position, setPosition] = useState(0);
-  const [markers, setMarkers] = useState([]);
+  const [timeline, setTimeline] = useState({ markers: [], duration: 0 });
 
   const uiDisabled = isLoading || isExporting;
   function exportVideo() {
@@ -323,7 +312,7 @@ function App({ mo }) {
       setIsLoading(true);
       return mo.runCode(s).finally(() => {
         setIsLoading(false);
-        setMarkers(mo.getMarkers());
+        setTimeline(mo.getTimeline());
       });
     }
   }
@@ -492,7 +481,7 @@ function App({ mo }) {
               }}
               ref={rendererRef}
             />
-            <Slider mo={mo} disabled={uiDisabled} markers={markers} />
+            <Slider mo={mo} disabled={uiDisabled} timeline={timeline} />
             {isLoading && (
               <div
                 style={{

@@ -3544,10 +3544,13 @@ function addPositionChangedCallback(callback: (pos: number, duration: number) =>
   });
 }
 
-function getMarkers() {
-  return mainTimeline.getChildren().map((child) => {
-    return { t: child.startTime() };
-  });
+function getTimeline() {
+  return {
+    markers: mainTimeline.getChildren().map((child) => {
+      return { t: child.startTime() };
+    }),
+    duration: globalTimeline.duration(),
+  };
 }
 
 let promise: Promise<void> = new Promise((resolve, reject) => {
@@ -3559,7 +3562,7 @@ let promise: Promise<void> = new Promise((resolve, reject) => {
       runCode,
       seek,
       addPositionChangedCallback,
-      getMarkers,
+      getTimeline,
     });
     resolve();
   });
