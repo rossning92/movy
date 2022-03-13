@@ -428,7 +428,7 @@ function createFadeInAnimation(
 
   const materials = getAllMaterials(object3d);
   for (const material of materials) {
-    tl.set(material, { transparent: true }, '<');
+    tl.set(material, { transparent: true, depthWrite: false }, '<');
     tl.from(
       material,
       {
@@ -443,23 +443,31 @@ function createFadeInAnimation(
   return tl;
 }
 
-function createFadeOutAnimation(
+function createOpacityAnimation(
   obj: THREE.Object3D,
-  { duration = engine.defaultDuration, ease = defaultEase }: AnimationParameters = {}
+  {
+    duration = engine.defaultDuration,
+    ease = defaultEase,
+    opacity = 0,
+  }: { duration?: number; ease?: string; opacity?: number } = {}
 ): gsap.core.Timeline {
   const tl = gsap.timeline({ defaults: { duration, ease } });
 
   const materials = getAllMaterials(obj);
-  materials.forEach((material) => {
-    tl.set(material, { transparent: true }, '<');
+  for (const material of materials) {
+    tl.set(material, { transparent: true, depthWrite: false }, '<');
     tl.to(
       material,
       {
-        opacity: 0,
+        opacity,
       },
       '<'
     );
-  });
+  }
+
+  if (opacity == 0) {
+    tl.set(obj, { visible: false }, '>');
+  }
 
   return tl;
 }
@@ -1820,24 +1828,7 @@ class SceneObject {
   changeOpacity(opacity: number, params: FadeObjectParameters = {}) {
     promise = promise.then(() => {
       const { duration = engine.defaultDuration, ease = defaultEase, t } = params;
-      const tl = gsap.timeline({ defaults: { duration, ease } });
-
-      const materials = getAllMaterials(this.object3D);
-      for (const material of materials) {
-        tl.set(material, { transparent: true }, '<');
-        tl.to(
-          material,
-          {
-            opacity,
-          },
-          '<'
-        );
-      }
-
-      if (opacity == 0) {
-        tl.set(this.object3D, { visible: false }, '>');
-      }
-
+      const tl = createOpacityAnimation(this.object3D, { duration, ease, opacity });
       mainTimeline.add(tl, t);
     });
     return this;
@@ -2659,7 +2650,7 @@ function transformTexFromTo(
         });
       } else if (op === '-') {
         const c1 = fromTexObjects[i];
-        tl.add(createFadeOutAnimation(c1, { duration, ease: 'power4.out' }), 0);
+        tl.add(createOpacityAnimation(c1, { duration, ease: 'power4.out' }), 0);
       } else if (op === '+') {
         const c = toTexObjects[i];
         tl.add(createFadeInAnimation(c, { duration, ease: 'power4.in' }), 0);
@@ -2678,7 +2669,7 @@ function transformTexFromTo(
 
     // From tex objects
     for (const o of from) {
-      tl.add(createFadeOutAnimation(o, { duration, ease: 'expo.out' }), 0);
+      tl.add(createOpacityAnimation(o, { duration, ease: 'expo.out' }), 0);
     }
 
     // Dest tex objects
@@ -3173,7 +3164,7 @@ export function fadeOutAll(params: AnimationParameters = {}) {
   promise = promise.then(() => {
     const tl = gsap.timeline();
     for (const object3d of root.object3D.children) {
-      tl.add(createFadeOutAnimation(object3d, { duration: params.duration }), '<');
+      tl.add(createOpacityAnimation(object3d, { duration: params.duration }), '<');
     }
     mainTimeline.add(tl, params.t);
   });
