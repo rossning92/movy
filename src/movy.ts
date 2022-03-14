@@ -267,7 +267,11 @@ function animate() {
       }
 
       if (child.billboarding) {
-        child.lookAt(engine.mainCamera.position);
+        const quat = child.quaternion;
+        quat.copy(engine.mainCamera.quaternion);
+        child.traverseAncestors((o: any) => {
+          quat.multiply(o.quaternion.clone().invert());
+        });
       }
     });
 
