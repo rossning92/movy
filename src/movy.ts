@@ -832,6 +832,15 @@ interface RotateInParameters extends AnimationParameters {
   rotation?: number;
 }
 
+function updateLinePoints(points: THREE.Vector3[], geometry: LineGeometry) {
+  const vertexBuffer: number[] = [];
+  for (const v of points) {
+    vertexBuffer.push(v.x, v.y, v.z);
+  }
+  // TODO: perf optimization: multiple vertice update.
+  geometry.setPositions(vertexBuffer);
+}
+
 class SceneObject {
   object3D: THREE.Object3D;
 
@@ -1347,7 +1356,7 @@ class SceneObject {
         obj.verts.push(new THREE.Vector3(x, y, z));
       }
 
-      const { geometry, line } = createLine(positions, params);
+      const { line } = createLine(positions, params);
       obj.object3D = line;
 
       updateTransform(obj.object3D, params);
@@ -2189,17 +2198,8 @@ class SceneObject {
         const geometry = mesh.geometry as LineGeometry;
 
         const vert = this.verts[i];
-
         const onUpdate = () => {
-          const vertexBuffer: number[] = [];
-          for (const v of this.verts) {
-            vertexBuffer.push(v.x, v.y, v.z);
-          }
-          vertexBuffer[3 * i] = vert.x;
-          vertexBuffer[3 * i + 1] = vert.y;
-          vertexBuffer[3 * i + 2] = vert.z;
-          // TODO: perf optimization: multiple vertice update.
-          geometry.setPositions(vertexBuffer);
+          updateLinePoints(this.verts, geometry);
         };
 
         if (duration) {
