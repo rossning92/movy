@@ -25,7 +25,6 @@ import { createTexObject } from './utils/tex';
 import WebmMediaRecorder from './utils/WebmMediaRecorder';
 
 const DEFAULT_LINE_WIDTH = 0.02;
-const defaultEase = 'power2.out';
 const DEG2RAD = Math.PI / 180;
 const defaultAxesLabelScale = 0.25;
 
@@ -57,6 +56,7 @@ interface Engine {
   uiRoot?: GroupObject;
   uiScene?: THREE.Scene;
   defaultDuration?: number;
+  defaultEase?: string;
 }
 
 let engine: Engine = {};
@@ -229,6 +229,7 @@ function initEngine(container?: HTMLElement) {
     uiRoot,
     uiScene,
     defaultDuration: 0.5,
+    defaultEase: 'power2.out',
   };
 
   promise = new Promise((resolve, reject) => {
@@ -303,7 +304,14 @@ interface MoveCameraParameters extends Transform, AnimationParameters {
 
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
   promise = promise.then(() => {
-    const { t, lookAt, duration = engine.defaultDuration, ease = defaultEase, fov, zoom } = params;
+    const {
+      t,
+      lookAt,
+      duration = engine.defaultDuration,
+      ease = engine.defaultEase,
+      fov,
+      zoom,
+    } = params;
 
     const tl = gsap.timeline({
       defaults: {
@@ -451,7 +459,7 @@ function createOpacityAnimation(
   obj: THREE.Object3D,
   {
     duration = engine.defaultDuration,
-    ease = defaultEase,
+    ease = engine.defaultEase,
     opacity = 0,
   }: { duration?: number; ease?: string; opacity?: number } = {}
 ): gsap.core.Timeline {
@@ -1682,7 +1690,7 @@ class SceneObject {
 
   moveTo(params: MoveObjectParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -1719,7 +1727,7 @@ class SceneObject {
 
   scale(scale: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -1752,7 +1760,7 @@ class SceneObject {
 
   scaleX(sx: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -1769,7 +1777,7 @@ class SceneObject {
 
   scaleY(sy: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -1786,7 +1794,7 @@ class SceneObject {
 
   scaleZ(sz: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -1824,7 +1832,7 @@ class SceneObject {
 
   fadeIn(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = defaultEase, t } = params;
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
       const tl = createFadeInAnimation(this.object3D, { duration, ease });
       mainTimeline.add(tl, t);
     });
@@ -1840,7 +1848,7 @@ class SceneObject {
 
   changeOpacity(opacity: number, params: FadeObjectParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = defaultEase, t } = params;
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
       const tl = createOpacityAnimation(this.object3D, { duration, ease, opacity });
       mainTimeline.add(tl, t);
     });
@@ -1877,7 +1885,7 @@ class SceneObject {
 
   rotate(r: [number?, number?, number?], params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       if (r[0] !== undefined) {
@@ -1956,7 +1964,7 @@ class SceneObject {
       const {
         t,
         duration = engine.defaultDuration,
-        ease = defaultEase,
+        ease = engine.defaultEase,
         axis = 'z',
         rotation = 360,
       } = params;
@@ -1988,7 +1996,7 @@ class SceneObject {
 
   grow(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, ease = defaultEase, duration = engine.defaultDuration } = params;
+      const { t, ease = engine.defaultEase, duration = engine.defaultDuration } = params;
       this.object3D.visible = false;
 
       const tl = gsap.timeline();
@@ -2057,7 +2065,7 @@ class SceneObject {
 
   shrink(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, ease = defaultEase, duration = engine.defaultDuration } = params;
+      const { t, ease = engine.defaultEase, duration = engine.defaultDuration } = params;
 
       const tl = gsap.timeline();
       tl.to(
@@ -2108,7 +2116,12 @@ class SceneObject {
 
   reveal(params: RevealParameters = {}) {
     promise = promise.then(() => {
-      const { direction = 'up', t, duration = engine.defaultDuration, ease = defaultEase } = params;
+      const {
+        direction = 'up',
+        t,
+        duration = engine.defaultDuration,
+        ease = engine.defaultEase,
+      } = params;
       const object3d = this.object3D;
       const clippingPlanes: THREE.Plane[] = [];
       const box = computeAABB(object3d);
@@ -2194,7 +2207,7 @@ class SceneObject {
 
   moveVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = defaultEase, t } = params;
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
       if (this.object3D.type == 'Line2') {
         console.assert(this.verts.length > 0);
         const mesh = this.object3D as THREE.Mesh;
@@ -2241,7 +2254,7 @@ class SceneObject {
         direction = 'right',
         t,
         duration = engine.defaultDuration,
-        ease = defaultEase,
+        ease = engine.defaultEase,
       } = params;
       this.object3D.visible = false;
 
@@ -2570,7 +2583,7 @@ function transformTexFromTo(
   to: THREE.Object3D[],
   params: TransformTexParameters = {}
 ) {
-  const { duration = 1, t, ease = defaultEase, type = 'transform' } = params;
+  const { duration = 1, t, ease = engine.defaultEase, type = 'transform' } = params;
 
   if (type === 'transform') {
     const { _rightToLeft } = params as any;
@@ -3421,6 +3434,12 @@ export function setDefaultDuration(duration: number) {
   });
 }
 
+export function setDefaultEase(ease: string) {
+  promise = promise.then(() => {
+    engine.defaultEase = ease;
+  });
+}
+
 const gltfLoader = new GLTFLoader();
 
 function loadGLTF(url: string): Promise<THREE.Object3D> {
@@ -3446,7 +3465,7 @@ interface DollyZoomParameters extends AnimationParameters {
 class CameraObject {
   dollyZoom(params: DollyZoomParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = defaultEase, fov = 60 } = params;
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, fov = 60 } = params;
 
       const cam = engine.mainCamera as PerspectiveCamera;
       const halfViewportHeight = viewportHeight * 0.5;
@@ -3521,6 +3540,7 @@ const api = {
   setActiveLayer,
   setBackgroundColor,
   setDefaultDuration,
+  setDefaultEase,
   setResolution,
   setSeed,
   useOrthographicCamera,
