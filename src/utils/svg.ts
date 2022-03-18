@@ -1,7 +1,7 @@
-import * as THREE from "three";
-import { SVGLoader, SVGResult } from "three/examples/jsm/loaders/SVGLoader";
-import { toThreeColor } from "./color";
-import { computeAABB } from "./math";
+import * as THREE from 'three';
+import { SVGLoader, SVGResult } from 'three/examples/jsm/loaders/SVGLoader';
+import { toThreeColor } from './color';
+import { computeAABB } from './math';
 
 interface SVGParameters {
   color?: string | number;
@@ -15,8 +15,7 @@ function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
 
   for (const path of paths) {
     const material = new THREE.MeshBasicMaterial({
-      color:
-        params.color !== undefined ? toThreeColor(params.color) : path.color,
+      color: params.color !== undefined ? toThreeColor(params.color) : path.color,
       side: THREE.DoubleSide,
       opacity: params.opacity || 1.0,
       transparent: params.opacity !== undefined && params.opacity < 1,
@@ -28,6 +27,18 @@ function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
 
     let name = path.userData.node.id as string;
     mesh.name = name;
+
+    {
+      // HACK: turn off the blending for matrix brackets, as this will cause
+      // artifacts during fade in animation.
+      if (name.includes('TEX-S4-23A2') || name.includes('TEX-S4-23A5')) {
+        material.blending = THREE.CustomBlending;
+        material.blendEquation = THREE.AddEquation;
+        material.blendSrc = THREE.SrcAlphaFactor;
+        material.blendDst = THREE.ZeroFactor;
+      }
+    }
+
     group.add(mesh);
   }
 
@@ -64,10 +75,7 @@ function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
   return group;
 }
 
-export async function loadSVG(
-  url: string,
-  params: SVGParameters = {}
-): Promise<THREE.Object3D> {
+export async function loadSVG(url: string, params: SVGParameters = {}): Promise<THREE.Object3D> {
   return new Promise((resolve, reject) => {
     let loader = new SVGLoader();
     loader.load(
@@ -79,17 +87,14 @@ export async function loadSVG(
         // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
       },
       function (error) {
-        console.log("An error happened");
+        console.log('An error happened');
         reject(error);
       }
     );
   });
 }
 
-export function parseSVG(
-  text: string,
-  params: SVGParameters = {}
-): THREE.Object3D {
+export function parseSVG(text: string, params: SVGParameters = {}): THREE.Object3D {
   let loader = new SVGLoader();
   const svgResult = loader.parse(text);
   return createSVGObject(svgResult, params);
