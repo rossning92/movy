@@ -2195,6 +2195,22 @@ class SceneObject {
     return this;
   }
 
+  revealL(params: RevealParameters = {}) {
+    return this.reveal({ ...params, direction: 'left' });
+  }
+
+  revealR(params: RevealParameters = {}) {
+    return this.reveal({ ...params, direction: 'right' });
+  }
+
+  revealU(params: RevealParameters = {}) {
+    return this.reveal({ ...params, direction: 'up' });
+  }
+
+  revealD(params: RevealParameters = {}) {
+    return this.reveal({ ...params, direction: 'down' });
+  }
+
   vertexToAnimate = new Map<number, THREE.Vector3>();
 
   /**
