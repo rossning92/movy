@@ -2124,7 +2124,7 @@ class SceneObject {
       } = params;
       const object3d = this.object3D;
       const clippingPlanes: THREE.Plane[] = [];
-      const box = computeAABB(object3d);
+      const bbox = computeAABB(object3d);
       const materials = getAllMaterials(object3d);
 
       const tl = gsap.timeline({
@@ -2156,27 +2156,27 @@ class SceneObject {
         '<'
       );
 
+      const pos = object3d.position.clone();
+      object3d.localToWorld(pos);
       if (direction === 'right') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -box.min.x));
-        tl.from(object3d.position, {
-          x: object3d.position.x - (box.max.x - box.min.x),
-        });
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -bbox.min.x));
+        pos.x -= bbox.max.x - bbox.min.x;
       } else if (direction === 'left') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), box.max.x));
-        tl.from(object3d.position, {
-          x: object3d.position.x + (box.max.x - box.min.x),
-        });
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), bbox.max.x));
+        pos.x += bbox.max.x - bbox.min.x;
       } else if (direction === 'up') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -box.min.y));
-        tl.from(object3d.position, {
-          y: object3d.position.y - (box.max.y - box.min.y),
-        });
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -bbox.min.y));
+        pos.y -= bbox.max.y - bbox.min.y;
       } else if (direction === 'down') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, -1, 0), box.max.y));
-        tl.from(object3d.position, {
-          y: object3d.position.y + (box.max.y - box.min.y),
-        });
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, -1, 0), bbox.max.y));
+        pos.y += bbox.max.y - bbox.min.y;
       }
+      object3d.worldToLocal(pos);
+
+      tl.from(object3d.position, {
+        x: pos.x,
+        y: pos.y,
+      });
 
       // Detach clipping planes to each material.
       tl.set(
