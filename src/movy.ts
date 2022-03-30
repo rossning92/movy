@@ -341,11 +341,15 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
       }
     }
 
-    createTransformAnimation({
-      ...params,
-      tl,
-      object3d: engine.mainCamera,
-    });
+    tl.add(
+      createTransformAnimation({
+        ...params,
+        object3d: engine.mainCamera,
+        duration,
+        ease,
+      }),
+      '<'
+    );
 
     if (zoom !== undefined) {
       tl.to(
@@ -771,8 +775,9 @@ function createTransformAnimation({
   sy,
   sz,
   scale,
-  tl,
   object3d,
+  ease,
+  duration,
 }: {
   x?: number | ((t: number) => number);
   y?: number | ((t: number) => number);
@@ -785,10 +790,17 @@ function createTransformAnimation({
   sz?: number;
   position?: [number, number] | [number, number, number];
   scale?: number;
-
-  tl: gsap.core.Timeline;
   object3d: THREE.Object3D;
+  duration?: number;
+  ease?: string;
 }) {
+  const tl = gsap.timeline({
+    defaults: {
+      duration,
+      ease,
+    },
+  });
+
   if (position) {
     const p = toThreeVector3(position);
     tl.to(object3d.position, { x: p.x, y: p.y, z: p.z }, '<');
@@ -817,6 +829,8 @@ function createTransformAnimation({
     if (sy !== undefined) tl.to(object3d.scale, { y: sy }, '<');
     if (sz !== undefined) tl.to(object3d.scale, { z: sz }, '<');
   }
+
+  return tl;
 }
 
 function createLine(
@@ -1679,6 +1693,9 @@ class SceneObject {
       });
       updateTransform(texObject, params);
       obj.object3D = texObject;
+
+      // addTransformControl(texObject);
+
       this.addObjectToScene(obj, params);
     });
 
@@ -1696,11 +1713,15 @@ class SceneObject {
         },
       });
 
-      createTransformAnimation({
-        ...params,
-        tl,
-        object3d: this.object3D,
-      });
+      mainTimeline.add(
+        createTransformAnimation({
+          ...params,
+          object3d: this.object3D,
+          duration,
+          ease,
+        }),
+        '<'
+      );
 
       mainTimeline.add(tl, t);
     });
@@ -2608,8 +2629,6 @@ function transformTexFromTo(
   const { duration = 1, t, ease = engine.defaultEase, type = 'transform' } = params;
 
   if (type === 'transform') {
-    const { _rightToLeft } = params as any;
-
     const tl = gsap.timeline({ defaults: { ease, duration } });
 
     // From tex objects
@@ -2677,16 +2696,20 @@ function transformTexFromTo(
         const scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
         scaleInSrcTexObject.divide(c1.parent.getWorldScale(new THREE.Vector3()));
 
-        createTransformAnimation({
-          object3d: c1,
-          x: posInSrcTexObject.x,
-          y: posInSrcTexObject.y,
-          z: posInSrcTexObject.z,
-          sx: scaleInSrcTexObject.x,
-          sy: scaleInSrcTexObject.y,
-          sz: scaleInSrcTexObject.z,
-          tl,
-        });
+        tl.add(
+          createTransformAnimation({
+            object3d: c1,
+            x: posInSrcTexObject.x,
+            y: posInSrcTexObject.y,
+            z: posInSrcTexObject.z,
+            sx: scaleInSrcTexObject.x,
+            sy: scaleInSrcTexObject.y,
+            sz: scaleInSrcTexObject.z,
+            ease,
+            duration,
+          }),
+          0
+        );
       } else if (op === '-') {
         const c1 = fromTexObjects[i];
         tl.add(createOpacityAnimation(c1, { duration, ease: 'power4.out' }), 0);
