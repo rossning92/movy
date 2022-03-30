@@ -23,6 +23,7 @@ import { computeAABB } from './utils/math';
 import { loadSVG } from './utils/svg';
 import { createTexObject } from './utils/tex';
 import WebmMediaRecorder from './utils/WebmMediaRecorder';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
 const DEFAULT_LINE_WIDTH = 0.02;
 const DEG2RAD = Math.PI / 180;
@@ -2487,6 +2488,15 @@ class GroupObject extends SceneObject {
     });
     return this;
   }
+}
+
+function addTransformControl(object: THREE.Object3D<THREE.Event>) {
+  const control = new TransformControls(engine.mainCamera, renderer.domElement);
+  control.attach(object);
+  engine.scene.add(control);
+  control.addEventListener('mouseUp', () => {
+    console.log(object.position);
+  });
 }
 
 function addCustomAnimation(tl: gsap.core.Timeline, callback: (t: number) => void) {
