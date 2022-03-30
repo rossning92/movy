@@ -263,10 +263,6 @@ function animate() {
 
   if (engine.scene) {
     engine.scene.traverse((child: any) => {
-      if (typeof child.update === 'function') {
-        child.update(delta);
-      }
-
       if (child.billboarding) {
         const quat = child.quaternion;
         quat.copy(engine.mainCamera.quaternion);
