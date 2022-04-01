@@ -264,6 +264,10 @@ function animate() {
 
   if (engine.scene) {
     engine.scene.traverse((child: any) => {
+      if (child instanceof TextMeshObject) {
+        child.updateText();
+      }
+
       if (child.billboarding) {
         const quat = child.quaternion;
         quat.copy(engine.mainCamera.quaternion);

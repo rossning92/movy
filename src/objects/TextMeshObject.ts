@@ -89,11 +89,11 @@ export default class TextMeshObject extends Group {
     this.text = text;
     this.shouldUpdate = true;
     if (forceUpdate) {
-      this.update();
+      this.updateText();
     }
   }
 
-  update() {
+  updateText() {
     if (this.shouldUpdate) {
       // TODO: optimize: text update is slow.
       this.children.length = 0;
