@@ -25,6 +25,8 @@ import { createTexObject } from './utils/tex';
 import WebmMediaRecorder from './utils/WebmMediaRecorder';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
+const debug = false;
+
 const DEFAULT_LINE_WIDTH = 0.02;
 const DEG2RAD = Math.PI / 180;
 const defaultAxesLabelScale = 0.25;
@@ -868,6 +870,17 @@ function updateLinePoints(points: THREE.Vector3[], geometry: LineGeometry) {
   geometry.setPositions(vertexBuffer);
 }
 
+function addTransformControl(object: THREE.Object3D<THREE.Event>) {
+  const control = new TransformControls(engine.mainCamera, renderer.domElement);
+  control.attach(object);
+  engine.scene.add(control);
+  control.addEventListener('mouseUp', () => {
+    const p = object.position;
+    const clipboard = `x: ${p.x.toFixed(4)}, y: ${p.y.toFixed(4)}, z: ${p.z.toFixed(4)}`;
+    window.navigator.clipboard.writeText(clipboard);
+  });
+}
+
 class SceneObject {
   object3D: THREE.Object3D;
 
@@ -879,6 +892,10 @@ class SceneObject {
     } else {
       console.assert(obj.object3D);
       this.object3D.add(obj.object3D);
+    }
+
+    if (debug) {
+      addTransformControl(obj.object3D);
     }
   }
 
@@ -1698,7 +1715,7 @@ class SceneObject {
       updateTransform(texObject, params);
       obj.object3D = texObject;
 
-      // addTransformControl(texObject);
+      addTransformControl(texObject);
 
       this.addObjectToScene(obj, params);
     });
@@ -2513,15 +2530,6 @@ class GroupObject extends SceneObject {
     });
     return this;
   }
-}
-
-function addTransformControl(object: THREE.Object3D<THREE.Event>) {
-  const control = new TransformControls(engine.mainCamera, renderer.domElement);
-  control.attach(object);
-  engine.scene.add(control);
-  control.addEventListener('mouseUp', () => {
-    console.log(object.position);
-  });
 }
 
 function addCustomAnimation(tl: gsap.core.Timeline, callback: (t: number) => void) {
