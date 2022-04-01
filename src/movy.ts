@@ -1715,8 +1715,6 @@ class SceneObject {
       updateTransform(texObject, params);
       obj.object3D = texObject;
 
-      addTransformControl(texObject);
-
       this.addObjectToScene(obj, params);
     });
 
@@ -2633,7 +2631,7 @@ interface TransformTexParameters extends AnimationParameters {
   reverse?: boolean;
 }
 
-function transformTexFromTo(
+function createTextTransformAnimation(
   from: THREE.Object3D[],
   to: THREE.Object3D[],
   params: TransformTexParameters = {}
@@ -2702,24 +2700,38 @@ function transformTexFromTo(
         const c1 = fromTexObjects[i];
         const c2 = toTexObjects[j];
 
-        let posInSrcTexObject = c2.getWorldPosition(new THREE.Vector3());
-        posInSrcTexObject = c1.parent.worldToLocal(posInSrcTexObject);
+        const posInSrcTexObject = new THREE.Vector3();
+        const scaleInSrcTexObject = new THREE.Vector3();
+        tl.set(
+          {},
+          {
+            onComplete: () => {
+              c2.getWorldPosition(posInSrcTexObject);
+              c1.parent.worldToLocal(posInSrcTexObject);
 
-        const scaleInSrcTexObject = c2.getWorldScale(new THREE.Vector3());
-        scaleInSrcTexObject.divide(c1.parent.getWorldScale(new THREE.Vector3()));
+              c2.getWorldScale(scaleInSrcTexObject);
+              scaleInSrcTexObject.divide(c1.parent.getWorldScale(new THREE.Vector3()));
+            },
+          },
+          0
+        );
 
-        tl.add(
-          createTransformAnimation({
-            object3d: c1,
-            x: posInSrcTexObject.x,
-            y: posInSrcTexObject.y,
-            z: posInSrcTexObject.z,
-            sx: scaleInSrcTexObject.x,
-            sy: scaleInSrcTexObject.y,
-            sz: scaleInSrcTexObject.z,
-            ease,
-            duration,
-          }),
+        tl.to(
+          c1.position,
+          {
+            x: () => posInSrcTexObject.x,
+            y: () => posInSrcTexObject.y,
+            z: () => posInSrcTexObject.z,
+          },
+          0
+        );
+        tl.to(
+          c1.scale,
+          {
+            x: () => scaleInSrcTexObject.x,
+            y: () => scaleInSrcTexObject.y,
+            z: () => scaleInSrcTexObject.z,
+          },
           0
         );
       } else if (op === '-') {
@@ -2737,7 +2749,7 @@ function transformTexFromTo(
     // Show all symbols in dstTexObject
     tl.set(toTexObjects, { visible: true }, '+=0');
 
-    mainTimeline.add(tl, t);
+    return tl;
   } else if (type === 'crossfade') {
     const tl = gsap.timeline({ defaults: { ease, duration } });
 
@@ -2751,7 +2763,7 @@ function transformTexFromTo(
       tl.add(createFadeInAnimation(o, { duration, ease: 'expo.out' }), 0);
     }
 
-    mainTimeline.add(tl, t);
+    return tl;
   } else {
     throw new Error(`Unknown type: ${type}`);
   }
@@ -2763,23 +2775,40 @@ class TexObject extends GroupObject {
   transformTexTo(to: string | TexObject | TexObject[], params: TransformTexParameters = {}) {
     promise = promise.then(async () => {
       if (typeof to === 'string') {
-        const texObject = await createTexObject(to, {
+        const dstTexObject = await createTexObject(to, {
           color: `#${toThreeColor(this._initParams.color).getHexString()}`,
         });
-        updateTransform(texObject, this._initParams);
-        this.object3D.parent.add(texObject);
+        // updateTransform(dstTexObject, this._initParams);
+        this.object3D.parent.add(dstTexObject);
+        const srcTexObject = this.object3D;
 
-        transformTexFromTo([this.object3D], [texObject], params);
+        const { duration = 1, ease = engine.defaultEase } = params;
+        const tl = gsap.timeline({ defaults: { ease, duration } });
+        tl.set(
+          {},
+          {
+            onComplete: () => {
+              dstTexObject.position.copy(srcTexObject.position);
+              dstTexObject.scale.copy(srcTexObject.scale);
+              dstTexObject.rotation.copy(srcTexObject.rotation);
+            },
+          },
+          0
+        );
+        tl.add(createTextTransformAnimation([srcTexObject], [dstTexObject], params), 0);
+        mainTimeline.add(tl, params.t);
 
-        this.object3D = texObject;
+        this.object3D = dstTexObject;
       } else if (to instanceof TexObject) {
-        transformTexFromTo([this.object3D], [to.object3D], params);
+        const tl = createTextTransformAnimation([this.object3D], [to.object3D], params);
+        mainTimeline.add(tl, params.t);
       } else {
-        transformTexFromTo(
+        const tl = createTextTransformAnimation(
           [this.object3D],
           to.map((x) => x.object3D),
           params
         );
+        mainTimeline.add(tl, params.t);
       }
     });
 
@@ -2792,11 +2821,12 @@ class TexObject extends GroupObject {
         from = [from];
       }
 
-      transformTexFromTo(
+      const tl = createTextTransformAnimation(
         from.map((x) => x.object3D),
         [this.object3D],
         params
       );
+      mainTimeline.add(tl, params.t);
     });
 
     return this;
