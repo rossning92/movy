@@ -35,7 +35,7 @@ function createSVGObject(svgResult: SVGResult, params: SVGParameters = {}) {
         material.blending = THREE.CustomBlending;
         material.blendEquation = THREE.AddEquation;
         material.blendSrc = THREE.SrcAlphaFactor;
-        material.blendDst = THREE.ZeroFactor;
+        material.blendDst = THREE.DstColorFactor;
       }
     }
 
