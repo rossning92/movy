@@ -1412,8 +1412,8 @@ class SceneObject {
   }
 
   addPyramid(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, defaultSeg(params));
-    return this.add3DGeometry(params, geometry);
+    const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, 1);
+    return this.add3DGeometry({ ...params, flatShading: true }, geometry);
   }
 
   addCube(params: AddObjectParameters = {}): SceneObject {
@@ -3052,6 +3052,7 @@ function createMaterial(params: BasicMaterial = {}) {
       roughness: 0.5,
       transparent: params.opacity !== undefined && params.opacity < 1.0,
       opacity: params.opacity || 1.0,
+      flatShading: params.flatShading,
     });
   }
   return new THREE.MeshBasicMaterial({
