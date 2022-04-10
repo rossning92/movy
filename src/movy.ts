@@ -3,9 +3,11 @@ import * as Diff from 'diff';
 import gsap from 'gsap';
 import * as THREE from 'three';
 import { PerspectiveCamera } from 'three';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { WireframeGeometry2 } from 'three/examples/jsm/lines/WireframeGeometry2.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
@@ -23,7 +25,6 @@ import { computeAABB } from './utils/math';
 import { loadSVG } from './utils/svg';
 import { createTexObject } from './utils/tex';
 import WebmMediaRecorder from './utils/WebmMediaRecorder';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 
 const debug = false;
 
@@ -179,6 +180,7 @@ function initEngine(container?: HTMLElement) {
     console.log('new webgl renderer');
     renderer = new THREE.WebGLRenderer({
       alpha: true,
+      antialias: true,
     });
     renderer.localClippingEnabled = true;
     renderer.setSize(renderTargetWidth, renderTargetHeight);
@@ -628,7 +630,6 @@ function createArrow2DGeometry(arrowLength: number) {
 }
 
 interface CreateArrowLineParameters extends BasicMaterial {
-  lineWidth?: number;
   arrowEnd?: boolean;
   arrowStart?: boolean;
   threeDimensional?: boolean;
@@ -846,11 +847,7 @@ function createLine(
   const geometry = new LineGeometry();
   geometry.setPositions(positions);
 
-  const material = new LineMaterial({
-    color: toThreeColor(color).getHex(),
-    linewidth: lineWidth || DEFAULT_LINE_WIDTH,
-    worldUnits: true,
-  });
+  const material = createLineMaterial(color, lineWidth);
 
   const line = new Line2(geometry, material);
   return { line, geometry, material };
@@ -859,6 +856,14 @@ function createLine(
 interface RotateInParameters extends AnimationParameters {
   axis?: 'x' | 'y' | 'z';
   rotation?: number;
+}
+
+function createLineMaterial(color?: string | number, lineWidth?: number) {
+  return new LineMaterial({
+    color: toThreeColor(color).getHex(),
+    linewidth: lineWidth || DEFAULT_LINE_WIDTH,
+    worldUnits: true,
+  });
 }
 
 function updateLinePoints(points: THREE.Vector3[], geometry: LineGeometry) {
@@ -912,6 +917,11 @@ class SceneObject {
       const material = createMaterial(params);
 
       obj.object3D = new THREE.Group();
+
+      if (params.wireframe && params.lineWidth) {
+        geometry = new WireframeGeometry2(geometry);
+      }
+
       obj.object3D.add(new THREE.Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
@@ -3031,17 +3041,23 @@ interface BasicMaterial {
   wireframe?: boolean;
   lighting?: boolean;
   doubleSided?: boolean;
+  flatShading?: boolean;
+  lineWidth?: number;
 }
 
 function createMaterial(params: BasicMaterial = {}) {
   const side = params.doubleSided === undefined ? THREE.FrontSide : THREE.DoubleSide;
 
   if (params.wireframe) {
-    return new THREE.MeshBasicMaterial({
-      side,
-      color: toThreeColor(params.color),
-      wireframe: true,
-    });
+    if (params.lineWidth) {
+      return createLineMaterial(params.color, params.lineWidth);
+    } else {
+      return new THREE.MeshBasicMaterial({
+        side,
+        color: toThreeColor(params.color),
+        wireframe: true,
+      });
+    }
   }
   if (params.lighting) {
     addDefaultLights();
