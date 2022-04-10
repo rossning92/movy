@@ -3138,13 +3138,13 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   // Rotation
   if (transform.rx !== undefined) {
     // XXX: when rx is greater than 10, use it as a degrees instead of radians.
-    obj.rotation.x = Math.abs(transform.rx) > 10 ? transform.rx * DEG2RAD : transform.rx;
+    obj.rotation.x = Math.abs(transform.rx) >= 10 ? transform.rx * DEG2RAD : transform.rx;
   }
   if (transform.ry !== undefined) {
-    obj.rotation.y = Math.abs(transform.ry) > 10 ? transform.ry * DEG2RAD : transform.ry;
+    obj.rotation.y = Math.abs(transform.ry) >= 10 ? transform.ry * DEG2RAD : transform.ry;
   }
   if (transform.rz !== undefined) {
-    obj.rotation.z = Math.abs(transform.rz) > 10 ? transform.rz * DEG2RAD : transform.rz;
+    obj.rotation.z = Math.abs(transform.rz) >= 10 ? transform.rz * DEG2RAD : transform.rz;
   }
 
   if (transform.billboarding) {
