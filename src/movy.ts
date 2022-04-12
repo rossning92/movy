@@ -322,12 +322,12 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
       defaults: {
         duration,
         ease,
-        onUpdate: () => {
-          // Keep looking at the target while camera is moving.
-          if (lookAt) {
-            engine.mainCamera.lookAt(toThreeVector3(lookAt));
-          }
-        },
+      },
+      onUpdate: () => {
+        // Keep looking at the target while camera is moving.
+        if (lookAt) {
+          engine.mainCamera.lookAt(toThreeVector3(lookAt));
+        }
       },
     });
 

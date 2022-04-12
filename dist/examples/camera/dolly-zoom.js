@@ -1,5 +1,7 @@
 import * as mo from 'movy';
 
+mo.setDefaultEase('power2.inOut');
+mo.setDefaultDuration(1);
 mo.usePerspectiveCamera();
 mo.cameraMoveTo({ position: [3, 3, 3], lookAt: [0, 0, 0], duration: 0 });
 mo.addGrid({ color: 'gray', rx: 0 });
