@@ -47,7 +47,7 @@ function addLineChart({
     const tickX = transform([x, 0])[0];
 
     mo.addText(`${x}`, { x: tickX, y: -0.2, scale: 0.2 }).fadeIn({ t: '<' });
-    mo.addLine({ from: [tickX, 0], to: [tickX, 0.1], lineWidth: 0.05 }).reveal({
+    mo.addLine({ from: [tickX, 0], to: [tickX, 0.1], lineWidth: 0.02 }).reveal({
       t: '<',
       direction: 'down',
     });
@@ -59,7 +59,7 @@ function addLineChart({
     const y = yMin + i * tickIntervalY;
     const tickY = transform([0, y])[1];
 
-    mo.addLine({ from: [0, tickY], to: [0.1, tickY], lineWidth: 0.05 }).fadeIn({
+    mo.addLine({ from: [0, tickY], to: [0.1, tickY], lineWidth: 0.02 }).fadeIn({
       t: '<',
     });
     mo.addText(`${y.toFixed(2)}`, { x: -0.5, y: tickY, scale: 0.2 }).reveal({
@@ -88,10 +88,10 @@ function addLineChart({
 
   for (let i = 0; i < data.length - 1; i++) {
     mo.addLine(transform(data[i]), transform(data[i + 1]), {
-      lineWidth: 0.05,
+      lineWidth: 0.02,
       color: 'green',
     }).fadeIn({
-      t: '<0.05',
+      t: '<0.02',
     });
   }
 }

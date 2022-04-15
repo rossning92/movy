@@ -840,17 +840,27 @@ function createTransformAnimation({
   return tl;
 }
 
-function createLine(
-  positions: number[],
-  { lineWidth, color }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
-) {
-  const geometry = new LineGeometry();
-  geometry.setPositions(positions);
+class Line_ extends Line2 {
+  lineWidth: number;
 
-  const material = createLineMaterial(color, lineWidth);
+  constructor(
+    positions: number[],
+    { lineWidth, color }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
+  ) {
+    const geometry = new LineGeometry();
+    geometry.setPositions(positions);
 
-  const line = new Line2(geometry, material);
-  return { line, geometry, material };
+    const material = createLineMaterial(color, lineWidth);
+
+    super(geometry, material);
+
+    this.lineWidth = lineWidth || DEFAULT_LINE_WIDTH;
+    const worldScale = new THREE.Vector3();
+    this.onBeforeRender = () => {
+      this.getWorldScale(worldScale);
+      this.material.linewidth = ((this.lineWidth * worldScale.length()) / 10) * renderTargetHeight;
+    };
+  }
 }
 
 interface RotateInParameters extends AnimationParameters {
@@ -859,11 +869,15 @@ interface RotateInParameters extends AnimationParameters {
 }
 
 function createLineMaterial(color?: string | number, lineWidth?: number) {
-  return new LineMaterial({
+  const material = new LineMaterial({
     color: toThreeColor(color).getHex(),
     linewidth: lineWidth || DEFAULT_LINE_WIDTH,
-    worldUnits: true,
+    worldUnits: false,
+    alphaToCoverage: false, // TODO: this will cause artifact during fadeIn and fadeOut
+    dashed: false,
+    resolution: new THREE.Vector2(renderTargetWidth, renderTargetHeight),
   });
+  return material;
 }
 
 function updateLinePoints(points: THREE.Vector3[], geometry: LineGeometry) {
@@ -1286,7 +1300,7 @@ class SceneObject {
       for (const pt of points) {
         points2.push(pt.x, pt.y, 0);
       }
-      const { line } = createLine(points2, params);
+      const line = new Line_(points2, params);
 
       obj.object3D = line;
       updateTransform(obj.object3D, params);
@@ -1410,7 +1424,7 @@ class SceneObject {
         obj.verts.push(new THREE.Vector3(x, y, z));
       }
 
-      const { line } = createLine(positions, params);
+      const line = new Line_(positions, params);
       obj.object3D = line;
 
       updateTransform(obj.object3D, params);
