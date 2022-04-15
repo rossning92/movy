@@ -1731,6 +1731,31 @@ class SceneObject {
     return obj;
   }
 
+  addFrustum(params: AddFrustumParameters = {}) {
+    const obj = new SceneObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    promise = promise.then(async () => {
+      const { fov = 45, near = 1, far = 5, aspect = 1 } = params;
+
+      const group = new THREE.Group();
+      const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+      const cameraHelper = new THREE.CameraHelper(camera);
+      group.add(camera);
+      group.add(cameraHelper);
+      obj.object3D = group;
+
+      updateTransform(obj.object3D, params);
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
+  }
+
   moveTo(params: MoveObjectParameters = {}) {
     promise = promise.then(() => {
       const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
@@ -3544,6 +3569,17 @@ export function setDefaultEase(ease: string) {
   });
 }
 
+interface AddFrustumParameters extends Transform, BasicMaterial {
+  fov?: number;
+  aspect?: number;
+  near?: number;
+  far?: number;
+}
+
+export function addFrustum(params: AddFrustumParameters = {}): SceneObject {
+  return getRoot().addFrustum(params);
+}
+
 const gltfLoader = new GLTFLoader();
 
 function loadGLTF(url: string): Promise<THREE.Object3D> {
@@ -3626,6 +3662,7 @@ const api = {
   addTorus,
   addTriangle,
   addTriangleOutline,
+  addFrustum,
   camera,
   cameraMoveTo,
   enableBloom,
