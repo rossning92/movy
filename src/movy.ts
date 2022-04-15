@@ -2864,7 +2864,7 @@ class TexObject extends GroupObject {
     return this;
   }
 
-  transformTexFrom(from: TexObject | TexObject[], params: AnimationParameters = {}) {
+  transformTexFrom(from: TexObject | TexObject[], params: TransformTexParameters = {}) {
     promise = promise.then(async () => {
       if (from instanceof TexObject) {
         from = [from];
