@@ -38,7 +38,7 @@ let renderTargetWidth = 1920;
 let renderTargetHeight = 1080;
 const viewportHeight = 10;
 let motionBlurSamples = 1;
-const globalTimeline = gsap.timeline({ onComplete: stopRender });
+const globalTimeline = gsap.timeline({ paused: true, onComplete: stopRender });
 const mainTimeline = gsap.timeline();
 
 let capturer: any;
@@ -639,7 +639,7 @@ const startAnimation = () => {
     engine.scene.add(gridHelper);
   }
 
-  globalTimeline.seek(0, false);
+  globalTimeline.play(0, false);
 };
 
 function createArrow2DGeometry(arrowLength: number) {
@@ -3654,25 +3654,31 @@ interface DollyZoomParameters extends AnimationParameters {
 class CameraObject {
   dollyZoom(params: DollyZoomParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, fov = 60 } = params;
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, fov = 60, t } = params;
 
       const cam = engine.mainCamera as PerspectiveCamera;
       const halfViewportHeight = viewportHeight * 0.5;
 
-      mainTimeline.to(cam, {
-        fov,
-        duration,
-        ease,
-        onUpdate: () => {
-          const dist = (1 / Math.tan(cam.fov * 0.5 * DEG2RAD)) * halfViewportHeight;
-          const dir = new THREE.Vector3();
-          cam.getWorldDirection(dir);
-          dir.multiplyScalar(-dist);
-          cam.position.copy(dir);
-          cam.updateProjectionMatrix();
+      mainTimeline.to(
+        cam,
+        {
+          immediateRender: false,
+          fov,
+          duration,
+          ease,
+          onUpdate: () => {
+            const dist = (1 / Math.tan(cam.fov * 0.5 * DEG2RAD)) * halfViewportHeight;
+            const dir = new THREE.Vector3();
+            cam.getWorldDirection(dir);
+            dir.multiplyScalar(-dist);
+            cam.position.copy(dir);
+            cam.updateProjectionMatrix();
+          },
         },
-      });
+        t
+      );
     });
+
     return this;
   }
 }
