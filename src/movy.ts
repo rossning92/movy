@@ -84,6 +84,7 @@ const options = {
 const seedrandom = require('seedrandom');
 
 let onRenderComplete: () => void;
+let exportFileName: string = undefined;
 
 function render({
   resetTiming = true,
@@ -95,6 +96,7 @@ function render({
   onComplete?: () => void;
 } = {}) {
   onRenderComplete = onComplete;
+  exportFileName = name;
 
   if (gridHelper !== undefined) {
     gridHelper.visible = false;
@@ -129,16 +131,42 @@ function render({
   }
 }
 
+function downloadObjectAsJson(exportObj: any, exportName: string) {
+  var dataStr =
+    'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+  var downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute('href', dataStr);
+  downloadAnchorNode.setAttribute('download', exportName + '.json');
+  document.body.appendChild(downloadAnchorNode); // required for firefox
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
+
+function getMarkers() {
+  return Object.keys(mainTimeline.labels).map((name) => ({
+    name,
+    time: mainTimeline.labels[name],
+  }));
+}
+
+function exportVideoMetadata() {
+  const data = {
+    markers: getMarkers(),
+  };
+  downloadObjectAsJson(data, exportFileName);
+}
+
 function stopRender() {
-  console.log('stopped');
   if (options.format == 'webm-fast') {
     if (recorder) {
       recorder.stop();
+      exportVideoMetadata();
     }
   } else if (capturer) {
     (capturer as any).stop();
     (capturer as any).save();
     capturer = undefined;
+    exportVideoMetadata();
 
     // XXX: workaround for requestAnimationFrame() is not running.
     requestAnimationFrame(animate);
@@ -3594,6 +3622,13 @@ export function addFrustum(params: AddFrustumParameters = {}): SceneObject {
   return getRoot().addFrustum(params);
 }
 
+export function addMarker(name: string = undefined, t: string | number = undefined) {
+  promise = promise.then(() => {
+    const numMarkers = Object.keys(mainTimeline.labels).length;
+    mainTimeline.addLabel(name ? name : `m${numMarkers + 1}`, t);
+  });
+}
+
 const gltfLoader = new GLTFLoader();
 
 function loadGLTF(url: string): Promise<THREE.Object3D> {
@@ -3677,6 +3712,7 @@ const api = {
   addTriangle,
   addTriangleOutline,
   addFrustum,
+  addMarker,
   camera,
   cameraMoveTo,
   enableBloom,
@@ -3728,6 +3764,7 @@ function getTimeline() {
     animations: mainTimeline.getChildren().map((child) => {
       return { t: child.startTime() };
     }),
+    markers: getMarkers(),
     duration: globalTimeline.duration(),
   };
 }

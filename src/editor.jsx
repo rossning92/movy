@@ -229,7 +229,7 @@ function Slider({ mo, disabled, timeline }) {
     <div
       style={{ height: '24px', position: 'relative', overflow: 'hidden' }}
       onClick={(e) => {
-        if (!disabled) {
+        if (!disabled && timeline) {
           e.preventDefault();
           const x = e.nativeEvent.offsetX;
           const width = e.currentTarget.offsetWidth;
@@ -242,46 +242,65 @@ function Slider({ mo, disabled, timeline }) {
         style={{
           background: disabled ? 'gray' : 'blue',
           height: '100%',
-          width: `${(position / timeline.duration) * 100}%`,
+          width: timeline ? `${(position / timeline.duration) * 100}%` : '0%',
         }}
       />
 
-      {timeline.animations.map((anim, i) => (
-        <div
-          key={i}
-          className="unselectable clickthrough"
-          style={{
-            position: 'absolute',
-            zIndex: 1,
-            left: `${(anim.t / timeline.duration) * 100}%`,
-            bottom: 0,
-            textAlign: 'center',
-            transform: 'translate(-50%, 0%)',
-            color: 'gray',
-            fontSize: '0.75em',
-          }}
-        >
-          ⬥
-        </div>
-      ))}
+      {timeline &&
+        timeline.animations.map((anim, i) => (
+          <div
+            key={i}
+            className="unselectable clickthrough"
+            style={{
+              position: 'absolute',
+              zIndex: 1,
+              left: `${(anim.t / timeline.duration) * 100}%`,
+              bottom: 0,
+              transform: 'translate(-50%, 0%)',
+              color: 'gray',
+              fontSize: '0.75em',
+            }}
+          >
+            |
+          </div>
+        ))}
 
-      {[...Array(Math.floor(timeline.duration + 1)).keys()].map((i) => (
-        <div
-          key={i}
-          className="unselectable clickthrough"
-          style={{
-            position: 'absolute',
-            zIndex: 2,
-            top: 0,
-            left: `${(i / timeline.duration) * 100}%`,
-            textAlign: 'center',
-            transform: 'translate(-50%, 0%)',
-            fontSize: '0.75em',
-          }}
-        >
-          {i}
-        </div>
-      ))}
+      {timeline &&
+        timeline.markers.map((marker, i) => (
+          <div
+            key={i}
+            className="unselectable clickthrough"
+            style={{
+              position: 'absolute',
+              zIndex: 1,
+              left: `${(marker.time / timeline.duration) * 100}%`,
+              bottom: 0,
+              color: 'gray',
+              fontSize: '0.75em',
+            }}
+          >
+            {marker.name}
+          </div>
+        ))}
+
+      {timeline &&
+        [...Array(Math.floor(timeline.duration + 1)).keys()].map((i) => (
+          <div
+            key={i}
+            className="unselectable clickthrough"
+            style={{
+              position: 'absolute',
+              zIndex: 2,
+              top: 0,
+              left: `${(i / timeline.duration) * 100}%`,
+              textAlign: 'center',
+              transform: 'translate(-50%, 0%)',
+              fontSize: '0.75em',
+            }}
+          >
+            {i}
+          </div>
+        ))}
     </div>
   );
 }
@@ -293,7 +312,7 @@ function App({ mo }) {
   const [code, setCode] = useState('');
   const [liveCode, setLiveCode] = useState('');
   const [filePath, setFilePath] = useState(null);
-  const [timeline, setTimeline] = useState({ animations: [], duration: 0 });
+  const [timeline, setTimeline] = useState(null);
 
   const uiDisabled = isLoading || isExporting;
   function exportVideo() {
