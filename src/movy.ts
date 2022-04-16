@@ -3725,7 +3725,7 @@ function addPositionChangedCallback(callback: (pos: number, duration: number) =>
 
 function getTimeline() {
   return {
-    markers: mainTimeline.getChildren().map((child) => {
+    animations: mainTimeline.getChildren().map((child) => {
       return { t: child.startTime() };
     }),
     duration: globalTimeline.duration(),

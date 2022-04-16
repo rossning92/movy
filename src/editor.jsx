@@ -246,14 +246,14 @@ function Slider({ mo, disabled, timeline }) {
         }}
       />
 
-      {timeline.markers.map((marker, i) => (
+      {timeline.animations.map((anim, i) => (
         <div
           key={i}
           className="unselectable clickthrough"
           style={{
             position: 'absolute',
             zIndex: 1,
-            left: `${(marker.t / timeline.duration) * 100}%`,
+            left: `${(anim.t / timeline.duration) * 100}%`,
             bottom: 0,
             textAlign: 'center',
             transform: 'translate(-50%, 0%)',
@@ -293,7 +293,7 @@ function App({ mo }) {
   const [code, setCode] = useState('');
   const [liveCode, setLiveCode] = useState('');
   const [filePath, setFilePath] = useState(null);
-  const [timeline, setTimeline] = useState({ markers: [], duration: 0 });
+  const [timeline, setTimeline] = useState({ animations: [], duration: 0 });
 
   const uiDisabled = isLoading || isExporting;
   function exportVideo() {
