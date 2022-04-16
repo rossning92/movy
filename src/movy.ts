@@ -1808,8 +1808,7 @@ class SceneObject {
           ease,
         },
       });
-
-      mainTimeline.add(
+      tl.add(
         createTransformAnimation({
           ...params,
           object3d: this.object3D,
@@ -1818,7 +1817,6 @@ class SceneObject {
         }),
         '<'
       );
-
       mainTimeline.add(tl, t);
     });
     return this;
