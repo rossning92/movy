@@ -886,7 +886,7 @@ class Line_ extends Line2 {
     const worldScale = new THREE.Vector3();
     this.onBeforeRender = () => {
       this.getWorldScale(worldScale);
-      this.material.linewidth = ((this.lineWidth * worldScale.length()) / 10) * renderTargetHeight;
+      this.material.linewidth = ((this.lineWidth * worldScale.length()) / 10 * 0.5) * renderTargetHeight;
     };
   }
 }
