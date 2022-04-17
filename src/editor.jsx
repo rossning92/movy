@@ -275,7 +275,7 @@ function Slider({ mo, disabled, timeline }) {
               zIndex: 1,
               left: `${(marker.time / timeline.duration) * 100}%`,
               bottom: 0,
-              color: 'gray',
+              color: '#ffffff',
               fontSize: '0.75em',
             }}
           >
