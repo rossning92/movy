@@ -886,7 +886,8 @@ class Line_ extends Line2 {
     const worldScale = new THREE.Vector3();
     this.onBeforeRender = () => {
       this.getWorldScale(worldScale);
-      this.material.linewidth = ((this.lineWidth * worldScale.length()) / 10 * 0.5) * renderTargetHeight;
+      this.material.linewidth =
+        ((this.lineWidth * worldScale.length()) / 10) * 0.5 * renderTargetHeight;
     };
   }
 }
@@ -1414,7 +1415,7 @@ class SceneObject {
     p1: [number, number, number?],
     p2: [number, number, number?],
     params: AddLineParameters = {}
-  ): SceneObject {
+  ): LineObject {
     // For back compat
     if (!Array.isArray(p1)) {
       params = p1;
@@ -1429,11 +1430,8 @@ class SceneObject {
     return this.addPolyline([p1, p2], params);
   }
 
-  // TODO: extract this into a separate class: LineObject
-  verts: THREE.Vector3[] = [];
-
-  addPolyline(points: [number, number, number?][], params: AddLineParameters = {}): SceneObject {
-    const obj = new SceneObject();
+  addPolyline(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
+    const obj = new LineObject();
     if (params.parent) {
       params.parent.children.push(obj);
     } else {
@@ -2325,57 +2323,6 @@ class SceneObject {
 
   vertexToAnimate = new Map<number, THREE.Vector3>();
 
-  /**
-   * @deprecated Use `setVert()` instead.
-   */
-  updateVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
-    this.setVert(i, position, params.t);
-    return this;
-  }
-
-  moveVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
-    promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
-      if (this.object3D.type == 'Line2') {
-        console.assert(this.verts.length > 0);
-        const mesh = this.object3D as THREE.Mesh;
-        // TODO: add support for all object types instead of just LineGeometry.
-        const geometry = mesh.geometry as LineGeometry;
-
-        const vert = this.verts[i];
-        const onUpdate = () => {
-          updateLinePoints(this.verts, geometry);
-        };
-
-        if (duration) {
-          mainTimeline.to(
-            vert,
-            {
-              ease,
-              duration,
-              x: position[0],
-              y: position[1],
-              z: position[2] || 0,
-              onUpdate,
-            },
-            t
-          );
-        } else {
-          mainTimeline.set(
-            vert,
-            { x: position[0], y: position[1], z: position[2] || 0, onUpdate },
-            t
-          );
-        }
-      }
-    });
-    return this;
-  }
-
-  setVert(i: number, position: [number, number, number?], t?: number | string) {
-    return this.moveVert(i, position, { t, duration: 0 });
-  }
-
   wipeIn(params: WipeInParameters = {}) {
     promise = promise.then(() => {
       const {
@@ -2698,6 +2645,61 @@ class TextObject extends GroupObject {
         t
       );
     });
+  }
+}
+
+class LineObject extends SceneObject {
+  verts: THREE.Vector3[] = [];
+
+  /**
+   * @deprecated Use `setVert()` instead.
+   */
+  updateVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
+    this.setVert(i, position, params.t);
+    return this;
+  }
+
+  moveVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      if (this.object3D.type == 'Line2') {
+        console.assert(this.verts.length > 0);
+        const mesh = this.object3D as THREE.Mesh;
+        // TODO: add support for all object types instead of just LineGeometry.
+        const geometry = mesh.geometry as LineGeometry;
+
+        const vert = this.verts[i];
+        const onUpdate = () => {
+          updateLinePoints(this.verts, geometry);
+        };
+
+        if (duration) {
+          mainTimeline.to(
+            vert,
+            {
+              ease,
+              duration,
+              x: position[0],
+              y: position[1],
+              z: position[2] || 0,
+              onUpdate,
+            },
+            t
+          );
+        } else {
+          mainTimeline.set(
+            vert,
+            { x: position[0], y: position[1], z: position[2] || 0, onUpdate },
+            t
+          );
+        }
+      }
+    });
+    return this;
+  }
+
+  setVert(i: number, position: [number, number, number?], t?: number | string) {
+    return this.moveVert(i, position, { t, duration: 0 });
   }
 }
 
@@ -3469,14 +3471,14 @@ export function addLine(
   p1: [number, number, number?],
   p2: [number, number, number?],
   params: AddLineParameters = {}
-): SceneObject {
+): LineObject {
   return getRoot().addLine(p1, p2, params);
 }
 
 export function addPolyline(
   points: [number, number, number][],
   params: AddObjectParameters = {}
-): SceneObject {
+): LineObject {
   return getRoot().addPolyline(points, params);
 }
 
