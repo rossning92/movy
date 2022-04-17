@@ -872,11 +872,11 @@ class Line_ extends Line2 {
   lineWidth: number;
 
   constructor(
-    positions: number[],
+    verts: THREE.Vector3[],
     { lineWidth, color }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
   ) {
     const geometry = new LineGeometry();
-    geometry.setPositions(positions);
+    updateLinePoints(verts, geometry, 1);
 
     const material = createLineMaterial(color, lineWidth);
 
@@ -909,7 +909,20 @@ function createLineMaterial(color?: string | number, lineWidth?: number) {
   return material;
 }
 
-function updateLinePoints(points: THREE.Vector3[], geometry: LineGeometry) {
+function updateLinePoints(verts: THREE.Vector3[], geometry: LineGeometry, progress = 1) {
+  const points = [];
+  const division = (verts.length - 1) * 1;
+  for (let i = 0; i < verts.length; i++) {
+    if (i <= progress * division) {
+      points.push(verts[i]);
+    } else {
+      const k = Math.floor(progress * division);
+      const point = new THREE.Vector3();
+      point.lerpVectors(verts[k], verts[k + 1], progress * division - k);
+      points.push(point);
+    }
+  }
+
   const vertexBuffer: number[] = [];
   for (const v of points) {
     vertexBuffer.push(v.x, v.y, v.z);
@@ -1324,12 +1337,12 @@ class SceneObject {
         0
       );
 
-      const points = curve.getSpacedPoints(64);
-      const points2 = [];
-      for (const pt of points) {
-        points2.push(pt.x, pt.y, 0);
+      const points2d = curve.getSpacedPoints(64);
+      const point3d: THREE.Vector3[] = [];
+      for (const pt of points2d) {
+        point3d.push(new THREE.Vector3(pt.x, pt.y, 0));
       }
-      const line = new Line_(points2, params);
+      const line = new Line_(point3d, params);
 
       obj.object3D = line;
       updateTransform(obj.object3D, params);
@@ -1439,18 +1452,14 @@ class SceneObject {
     }
 
     promise = promise.then(async () => {
-      let positions: number[];
-
-      positions = [];
       for (const pt of points) {
         const x = pt[0];
         const y = pt[1];
         const z = pt.length <= 2 ? 0 : pt[2];
-        positions.push(x, y, z);
         obj.verts.push(new THREE.Vector3(x, y, z));
       }
 
-      const line = new Line_(positions, params);
+      const line = new Line_(obj.verts, params);
       obj.object3D = line;
 
       updateTransform(obj.object3D, params);
@@ -2664,13 +2673,11 @@ class LineObject extends SceneObject {
       const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
       if (this.object3D.type == 'Line2') {
         console.assert(this.verts.length > 0);
-        const mesh = this.object3D as THREE.Mesh;
-        // TODO: add support for all object types instead of just LineGeometry.
-        const geometry = mesh.geometry as LineGeometry;
+        const line = this.object3D as Line2;
 
         const vert = this.verts[i];
         const onUpdate = () => {
-          updateLinePoints(this.verts, geometry);
+          updateLinePoints(this.verts, line.geometry);
         };
 
         if (duration) {
@@ -2700,6 +2707,26 @@ class LineObject extends SceneObject {
 
   setVert(i: number, position: [number, number, number?], t?: number | string) {
     return this.moveVert(i, position, { t, duration: 0 });
+  }
+
+  animateLineDrawing(params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const animParams = {
+        progress: 0,
+      };
+      mainTimeline.fromTo(
+        animParams,
+        { progress: 0 },
+        {
+          progress: 1,
+          onUpdate: () => {
+            updateLinePoints(this.verts, (this.object3D as Line2).geometry, animParams.progress);
+          },
+        },
+        params.t
+      );
+    });
+    return this;
   }
 }
 
