@@ -845,9 +845,9 @@ function createTransformAnimation({
     if (z !== undefined) tl.to(object3d.position, { z }, '<');
   }
 
-  if (rx !== undefined) tl.to(object3d.rotation, { x: rx }, '<');
-  if (ry !== undefined) tl.to(object3d.rotation, { y: ry }, '<');
-  if (rz !== undefined) tl.to(object3d.rotation, { z: rz }, '<');
+  if (rx !== undefined) tl.to(object3d.rotation, { x: fixRotation(rx) }, '<');
+  if (ry !== undefined) tl.to(object3d.rotation, { y: fixRotation(ry) }, '<');
+  if (rz !== undefined) tl.to(object3d.rotation, { z: fixRotation(rz) }, '<');
 
   if (scale !== undefined) {
     tl.to(
@@ -3173,6 +3173,11 @@ function createMaterial(params: BasicMaterial = {}) {
   });
 }
 
+function fixRotation(rotation: number) {
+  // XXX: when rx is greater than 10, use it as a degrees instead of radians.
+  return Math.abs(rotation) >= 10 ? rotation * DEG2RAD : rotation;
+}
+
 function updateTransform(obj: THREE.Object3D, transform: Transform) {
   // Position
   if (transform.position !== undefined) {
@@ -3248,14 +3253,13 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
 
   // Rotation
   if (transform.rx !== undefined) {
-    // XXX: when rx is greater than 10, use it as a degrees instead of radians.
-    obj.rotation.x = Math.abs(transform.rx) >= 10 ? transform.rx * DEG2RAD : transform.rx;
+    obj.rotation.x = fixRotation(transform.rx);
   }
   if (transform.ry !== undefined) {
-    obj.rotation.y = Math.abs(transform.ry) >= 10 ? transform.ry * DEG2RAD : transform.ry;
+    obj.rotation.y = fixRotation(transform.ry);
   }
   if (transform.rz !== undefined) {
-    obj.rotation.z = Math.abs(transform.rz) >= 10 ? transform.rz * DEG2RAD : transform.rz;
+    obj.rotation.z = fixRotation(transform.rz);
   }
 
   if (transform.billboarding) {
