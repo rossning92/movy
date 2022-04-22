@@ -880,12 +880,16 @@ class Line_ extends Line2 {
 
   constructor(
     verts: THREE.Vector3[],
-    { lineWidth, color }: { lineWidth?: number; color?: string | number; opacity?: number } = {}
+    {
+      lineWidth,
+      color,
+      dashed,
+    }: { lineWidth?: number; color?: string | number; opacity?: number; dashed?: boolean } = {}
   ) {
     const geometry = new LineGeometry();
     updateLinePoints(verts, geometry, 1);
 
-    const material = createLineMaterial(color, lineWidth);
+    const material = createLineMaterial(color, lineWidth, dashed);
 
     super(geometry, material);
 
@@ -893,6 +897,7 @@ class Line_ extends Line2 {
     this.onBeforeRender = () => {
       this.material.linewidth = convertScreenToWorld(this, this.lineWidth);
     };
+    this.computeLineDistances();
   }
 }
 
@@ -901,13 +906,16 @@ interface RotateInParameters extends AnimationParameters {
   rotation?: number;
 }
 
-function createLineMaterial(color?: string | number, lineWidth?: number) {
+function createLineMaterial(color?: string | number, lineWidth?: number, dashed?: boolean) {
+  lineWidth ||= DEFAULT_LINE_WIDTH;
   const material = new LineMaterial({
     color: toThreeColor(color).getHex(),
-    linewidth: lineWidth || DEFAULT_LINE_WIDTH,
+    linewidth: lineWidth,
     worldUnits: false,
     alphaToCoverage: false, // TODO: this will cause artifact during fadeIn and fadeOut
-    dashed: false,
+    dashed,
+    dashSize: lineWidth * 2,
+    gapSize: lineWidth * 2,
     resolution: new THREE.Vector2(renderTargetWidth, renderTargetHeight),
   });
   return material;
@@ -3153,7 +3161,6 @@ interface Transform {
 interface AddObjectParameters extends Transform, BasicMaterial {
   vertices?: any;
   outline?: any;
-  outlineWidth?: any;
   width?: any;
   height?: any;
   t?: number | string;
@@ -3164,7 +3171,6 @@ interface AddObjectParameters extends Transform, BasicMaterial {
   fontSize?: any;
   start?: any;
   end?: any;
-  lineWidth?: any;
   gridSize?: any;
   centralAngle?: any;
   letterSpacing?: any;
@@ -3182,6 +3188,7 @@ interface BasicMaterial {
   lineWidth?: number;
   showPoints?: boolean;
   pointSize?: number;
+  dashed?: boolean;
 }
 
 function createPoints(geometry: THREE.BufferGeometry, params: BasicMaterial = {}) {
@@ -3203,7 +3210,7 @@ function createMaterial(params: BasicMaterial = {}) {
   }
   if (params.wireframe) {
     if (params.lineWidth) {
-      return createLineMaterial(params.color, params.lineWidth);
+      return createLineMaterial(params.color, params.lineWidth, params.dashed);
     } else {
       return new THREE.MeshBasicMaterial({
         side,
