@@ -868,6 +868,12 @@ function createTransformAnimation({
   return tl;
 }
 
+function convertScreenToWorld(object3d: THREE.Object3D, v: number) {
+  const worldScale = new THREE.Vector3();
+  object3d.getWorldScale(worldScale);
+  return ((v * worldScale.length()) / 10) * 0.5 * renderTargetHeight;
+}
+
 class Line_ extends Line2 {
   lineWidth: number;
 
@@ -883,11 +889,8 @@ class Line_ extends Line2 {
     super(geometry, material);
 
     this.lineWidth = lineWidth || DEFAULT_LINE_WIDTH;
-    const worldScale = new THREE.Vector3();
     this.onBeforeRender = () => {
-      this.getWorldScale(worldScale);
-      this.material.linewidth =
-        ((this.lineWidth * worldScale.length()) / 10) * 0.5 * renderTargetHeight;
+      this.material.linewidth = convertScreenToWorld(this, this.lineWidth);
     };
   }
 }
@@ -970,15 +973,18 @@ class SceneObject {
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = true;
-      const material = createMaterial(params);
 
       obj.object3D = new THREE.Group();
 
-      if (params.wireframe && params.lineWidth) {
-        geometry = new WireframeGeometry2(geometry);
+      if (params.showPoints) {
+        obj.object3D.add(createPoints(geometry, params));
+      } else {
+        if (params.wireframe && params.lineWidth) {
+          geometry = new WireframeGeometry2(geometry);
+        }
+        const material = createMaterial(params);
+        obj.object3D.add(new THREE.Mesh(geometry, material));
       }
-
-      obj.object3D.add(new THREE.Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -1077,19 +1083,24 @@ class SceneObject {
       const group = new THREE.Group();
       group.add(object);
 
-      object.traverse((object: THREE.Object3D) => {
-        if (object instanceof THREE.Mesh) {
-          if (params.wireframe) {
-            object.material.wireframe = true;
-          }
-          if (params.color) {
-            object.material.color = toThreeColor(params.color);
-          }
-          if (params.opacity !== undefined) {
-            object.material.opacity = params.opacity;
-          }
-          if (params.doubleSided !== undefined) {
-            object.material.side = params.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+      object.traverse((childObject: THREE.Object3D) => {
+        if (childObject instanceof THREE.Mesh) {
+          if (params.showPoints) {
+            childObject.parent.add(createPoints(childObject.geometry, params));
+            childObject.removeFromParent();
+          } else {
+            if (params.wireframe) {
+              childObject.material.wireframe = true;
+            }
+            if (params.color) {
+              childObject.material.color = toThreeColor(params.color);
+            }
+            if (params.opacity !== undefined) {
+              childObject.material.opacity = params.opacity;
+            }
+            if (params.doubleSided !== undefined) {
+              childObject.material.side = params.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+            }
           }
         }
       });
@@ -3137,11 +3148,24 @@ interface BasicMaterial {
   doubleSided?: boolean;
   flatShading?: boolean;
   lineWidth?: number;
+  showPoints?: boolean;
+  pointSize?: number;
+}
+
+function createPoints(geometry: THREE.BufferGeometry, params: BasicMaterial = {}) {
+  const points = new THREE.Points(geometry, createMaterial(params));
+  (points.material as THREE.PointsMaterial).size = params.pointSize
+    ? convertScreenToWorld(points, params.pointSize)
+    : 1;
+  return points;
 }
 
 function createMaterial(params: BasicMaterial = {}) {
   const side = params.doubleSided === undefined ? THREE.FrontSide : THREE.DoubleSide;
 
+  if (params.showPoints) {
+    return new THREE.PointsMaterial({ color: toThreeColor(params.color) });
+  }
   if (params.wireframe) {
     if (params.lineWidth) {
       return createLineMaterial(params.color, params.lineWidth);
