@@ -1077,17 +1077,21 @@ class SceneObject {
       } else if (url.endsWith('.gltf')) {
         object = await loadGLTF(url);
       }
-      const aabb = computeAABB(object);
 
-      const size = new THREE.Vector3();
-      aabb.getSize(size);
-      const length = Math.max(size.x, size.y, size.z);
-      object.scale.divideScalar(length);
+      const { autoResize = true } = params;
+      if (autoResize) {
+        const aabb = computeAABB(object);
 
-      const center = new THREE.Vector3();
-      aabb.getCenter(center);
-      center.divideScalar(length);
-      object.position.sub(center);
+        const size = new THREE.Vector3();
+        aabb.getSize(size);
+        const length = Math.max(size.x, size.y, size.z);
+        object.scale.divideScalar(length);
+
+        const center = new THREE.Vector3();
+        aabb.getCenter(center);
+        center.divideScalar(length);
+        object.position.sub(center);
+      }
 
       const group = new THREE.Group();
       group.add(object);
@@ -3156,6 +3160,7 @@ interface Transform {
     | 'bottomLeft'
     | 'bottomRight';
   billboarding?: boolean;
+  autoResize?: boolean;
 }
 
 interface AddObjectParameters extends Transform, BasicMaterial {
