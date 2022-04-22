@@ -29,6 +29,7 @@ import WebmMediaRecorder from './utils/WebmMediaRecorder';
 const debug = false;
 
 const DEFAULT_LINE_WIDTH = 0.02;
+const DEFAULT_POINT_SIZE = 0.1;
 const DEG2RAD = Math.PI / 180;
 const defaultAxesLabelScale = 0.25;
 
@@ -1452,6 +1453,37 @@ class SceneObject {
     }
 
     return this.addPolyline([p1, p2], params);
+  }
+
+  addPoint(position: [number, number, number], params: AddObjectParameters = {}): PointsObject {
+    return addPoints([position], params);
+  }
+
+  addPoints(positions: [number, number, number][], params: AddObjectParameters = {}): PointsObject {
+    const obj = new PointsObject();
+    if (params.parent) {
+      params.parent.children.push(obj);
+    } else {
+      this.children.push(obj);
+    }
+
+    promise = promise.then(async () => {
+      obj.points = positions;
+
+      const vertices = [].concat.apply([], positions);
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
+      obj.object3D = createPoints(geometry, params);
+
+      updateTransform(obj.object3D, {
+        ...params,
+      });
+
+      this.addObjectToScene(obj, params);
+    });
+
+    return obj;
   }
 
   addPolyline(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
@@ -3153,10 +3185,13 @@ interface BasicMaterial {
 }
 
 function createPoints(geometry: THREE.BufferGeometry, params: BasicMaterial = {}) {
-  const points = new THREE.Points(geometry, createMaterial(params));
-  (points.material as THREE.PointsMaterial).size = params.pointSize
-    ? convertScreenToWorld(points, params.pointSize)
-    : 1;
+  const points = new THREE.Points(geometry, createMaterial({ ...params, showPoints: true }));
+  points.onBeforeRender = () => {
+    (points.material as THREE.PointsMaterial).size = convertScreenToWorld(
+      points,
+      params.pointSize || DEFAULT_POINT_SIZE
+    );
+  };
   return points;
 }
 
@@ -3530,6 +3565,58 @@ export function addLine(
   return getRoot().addLine(p1, p2, params);
 }
 
+export function addPoint(
+  position: [number, number, number],
+  params: AddObjectParameters = {}
+): PointsObject {
+  return getRoot().addPoint(position, params);
+}
+
+class PointsObject extends SceneObject {
+  points: [number, number, number][];
+
+  moveVerts(positions: [number, number, number][], params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const srcPoints = this.points;
+      console.assert(srcPoints.length === positions.length);
+
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      const data = { progress: 0 };
+      mainTimeline.to(
+        data,
+        {
+          progress: 1,
+          ease,
+          duration,
+          onUpdate: () => {
+            const geometry = (this.object3D as THREE.Points).geometry;
+            const vertices: number[] = [];
+            for (let i = 0; i < srcPoints.length; i++) {
+              vertices.push(
+                srcPoints[i][0] + (positions[i][0] - srcPoints[i][0]) * data.progress,
+                srcPoints[i][1] + (positions[i][1] - srcPoints[i][1]) * data.progress,
+                srcPoints[i][2] + (positions[i][2] - srcPoints[i][2]) * data.progress
+              );
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+          },
+        },
+        t
+      );
+
+      this.points = positions;
+    });
+    return this;
+  }
+}
+
+export function addPoints(
+  positions: [number, number, number][],
+  params: AddObjectParameters = {}
+): PointsObject {
+  return getRoot().addPoints(positions, params);
+}
+
 export function addPolyline(
   points: [number, number, number][],
   params: AddObjectParameters = {}
@@ -3758,6 +3845,8 @@ const api = {
   addGroup,
   addImage,
   addLine,
+  addPoint,
+  addPoints,
   addPolygon,
   addPolygonOutline,
   addPolyline,
