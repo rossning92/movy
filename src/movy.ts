@@ -2701,6 +2701,7 @@ class LineObject extends SceneObject {
           progress: 1,
           onUpdate: () => {
             updateLinePoints(this.verts, (this.object3D as Line2).geometry, animParams.progress);
+            (this.object3D as Line2).computeLineDistances();
           },
         },
         params.t
@@ -3848,11 +3849,16 @@ const api = {
 function runCode(s: string): Promise<void> {
   initEngine();
 
-  return promise.then(() => {
+  return promise.then(async () => {
     // eslint-disable-next-line no-eval
     ((str: string) => eval(`var mo=this;${str}`)).call(api, s);
 
-    return promise.then(startAnimation);
+    // HACK: find a better solution.
+    for (let i = 0; i < 10; i++) {
+      await promise;
+    }
+
+    startAnimation();
   });
 }
 
