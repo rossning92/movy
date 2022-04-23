@@ -1055,8 +1055,8 @@ class SceneObject {
     return obj;
   }
 
-  add3DModel(url: string, params: AddObjectParameters = {}): SceneObject {
-    const obj = new SceneObject();
+  add3DModel(url: string, params: AddObjectParameters = {}): GeometryObject {
+    const obj = new GeometryObject();
     this.addToChildren(obj, params.parent);
 
     promise = promise.then(async () => {
@@ -1087,23 +1087,24 @@ class SceneObject {
       const group = new THREE.Group();
       group.add(object);
 
-      object.traverse((childObject: THREE.Object3D) => {
-        if (childObject instanceof THREE.Mesh) {
+      object.traverse((child: THREE.Object3D) => {
+        if (child instanceof THREE.Mesh) {
+          obj.geometry = child.geometry;
           if (params.showPoints) {
-            childObject.parent.add(createPoints(childObject.geometry, params));
-            childObject.removeFromParent();
+            child.parent.add(createPoints(child.geometry, params));
+            child.removeFromParent();
           } else {
             if (params.wireframe) {
-              childObject.material.wireframe = true;
+              child.material.wireframe = true;
             }
             if (params.color) {
-              childObject.material.color = toThreeColor(params.color);
+              child.material.color = toThreeColor(params.color);
             }
             if (params.opacity !== undefined) {
-              childObject.material.opacity = params.opacity;
+              child.material.opacity = params.opacity;
             }
             if (params.doubleSided !== undefined) {
-              childObject.material.side = params.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+              child.material.side = params.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
             }
           }
         }
@@ -1450,8 +1451,6 @@ class SceneObject {
     this.addToChildren(obj, params.parent);
 
     promise = promise.then(async () => {
-      obj.points = positions;
-
       const vertices = [].concat.apply([], positions);
       obj.geometry = new THREE.BufferGeometry();
       obj.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -3511,11 +3510,31 @@ export function addPoint(
 }
 
 class GeometryObject extends SceneObject {
-  points: [number, number, number][];
+  private points: [number, number, number][];
   geometry: THREE.BufferGeometry;
+
+  private init() {
+    console.assert(this.geometry);
+    if (!this.points) {
+      this.points = [];
+      const positions = this.geometry.getAttribute('position').array as number[];
+      for (let i = 0; i < positions.length; i += 3) {
+        this.points.push([positions[i], positions[i + 1], positions[i + 2]]);
+      }
+    }
+  }
+
+  getVerts(callback: (points: [number, number, number][]) => void) {
+    promise = promise.then(() => {
+      this.init();
+      callback(this.points);
+    });
+    return this;
+  }
 
   moveVerts(positions: [number, number, number][], params: AnimationParameters = {}) {
     promise = promise.then(() => {
+      this.init();
       const srcPoints = this.points;
       console.assert(srcPoints.length === positions.length);
 
@@ -3624,7 +3643,7 @@ function _addMesh(mesh: THREE.Mesh, params: AddObjectParameters = {}): SceneObje
   return getRoot()._addMesh(mesh, params);
 }
 
-export function add3DModel(url: string, params: AddObjectParameters = {}): SceneObject {
+export function add3DModel(url: string, params: AddObjectParameters = {}): GeometryObject {
   return getRoot().add3DModel(url, params);
 }
 
