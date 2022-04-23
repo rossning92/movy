@@ -1167,6 +1167,7 @@ class SceneObject {
         arrowEnd,
         lineWidth,
         color: params.color,
+        threeDimensional: true,
       });
 
       updateTransform(obj.object3D, params);
