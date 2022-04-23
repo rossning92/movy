@@ -1438,22 +1438,25 @@ class SceneObject {
     return this.addPolyline([p1, p2], params);
   }
 
-  addPoint(position: [number, number, number], params: AddObjectParameters = {}): PointsObject {
+  addPoint(position: [number, number, number], params: AddObjectParameters = {}): GeometryObject {
     return addPoints([position], params);
   }
 
-  addPoints(positions: [number, number, number][], params: AddObjectParameters = {}): PointsObject {
-    const obj = new PointsObject();
+  addPoints(
+    positions: [number, number, number][],
+    params: AddObjectParameters = {}
+  ): GeometryObject {
+    const obj = new GeometryObject();
     this.addToChildren(obj, params.parent);
 
     promise = promise.then(async () => {
       obj.points = positions;
 
       const vertices = [].concat.apply([], positions);
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      obj.geometry = new THREE.BufferGeometry();
+      obj.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
 
-      obj.object3D = createPoints(geometry, params);
+      obj.object3D = createPoints(obj.geometry, params);
 
       updateTransform(obj.object3D, {
         ...params,
@@ -3503,12 +3506,13 @@ export function addLine(
 export function addPoint(
   position: [number, number, number],
   params: AddObjectParameters = {}
-): PointsObject {
+): GeometryObject {
   return getRoot().addPoint(position, params);
 }
 
-class PointsObject extends SceneObject {
+class GeometryObject extends SceneObject {
   points: [number, number, number][];
+  geometry: THREE.BufferGeometry;
 
   moveVerts(positions: [number, number, number][], params: AnimationParameters = {}) {
     promise = promise.then(() => {
@@ -3524,7 +3528,6 @@ class PointsObject extends SceneObject {
           ease,
           duration,
           onUpdate: () => {
-            const geometry = (this.object3D as THREE.Points).geometry;
             const vertices: number[] = [];
             for (let i = 0; i < srcPoints.length; i++) {
               vertices.push(
@@ -3533,7 +3536,7 @@ class PointsObject extends SceneObject {
                 srcPoints[i][2] + (positions[i][2] - srcPoints[i][2]) * data.progress
               );
             }
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
           },
         },
         t
@@ -3548,7 +3551,7 @@ class PointsObject extends SceneObject {
 export function addPoints(
   positions: [number, number, number][],
   params: AddObjectParameters = {}
-): PointsObject {
+): GeometryObject {
   return getRoot().addPoints(positions, params);
 }
 
