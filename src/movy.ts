@@ -1280,30 +1280,39 @@ class SceneObject {
   }
 
   addAxes3D(params: AddAxes3DParameters = {}): SceneObject {
-    const { showLabels = true, xRange = [-4, 4], yRange = [-4, 4], zRange = [-4, 4] } = params;
+    const {
+      showLabels = true,
+      xRange = [-4, 4],
+      yRange = [-4, 4],
+      zRange = [-4, 4],
+      showAxisX = true,
+      showAxisY = true,
+      showAxisZ = true,
+    } = params;
 
     const obj = this.addGroup(params);
 
     if (showLabels) {
       const labelColors = ['red', 'green', 'blue'];
       const labelNames = ['x', 'y', 'z'];
+      const showLabel = [showAxisX, showAxisY, showAxisZ];
       for (let i = 0; i < 3; i++) {
-        obj.addTex(labelNames[i], {
-          color: labelColors[i],
-          x: i === 0 ? xRange[1] + 0.4 : 0,
-          y: i === 1 ? yRange[1] + 0.4 : 0,
-          z: i === 2 ? zRange[1] + 0.4 : 0,
-          font: 'math',
-          centerTextVertically: true,
-          scale: 0.4,
-          billboarding: true,
-        });
+        if (showLabel[i]) {
+          obj.addTex(labelNames[i], {
+            color: labelColors[i],
+            x: i === 0 ? xRange[1] + 0.4 : 0,
+            y: i === 1 ? yRange[1] + 0.4 : 0,
+            z: i === 2 ? zRange[1] + 0.4 : 0,
+            font: 'math',
+            centerTextVertically: true,
+            scale: 0.4,
+            billboarding: true,
+          });
+        }
       }
     }
 
     promise = promise.then(async () => {
-      // obj.object3D = new THREE.Group();
-
       const arrowParams = {
         arrowStart: false,
         arrowEnd: true,
@@ -1312,25 +1321,30 @@ class SceneObject {
         lineWidth: 0.05,
       };
 
-      obj.object3D.add(
-        createArrowLine(new THREE.Vector3(xRange[0], 0, 0), new THREE.Vector3(xRange[1], 0, 0), {
-          ...arrowParams,
-          color: 'red',
-        })
-      );
-
-      obj.object3D.add(
-        createArrowLine(new THREE.Vector3(0, yRange[0], 0), new THREE.Vector3(0, yRange[1], 0), {
-          ...arrowParams,
-          color: 'green',
-        })
-      );
-      obj.object3D.add(
-        createArrowLine(new THREE.Vector3(0, 0, zRange[0]), new THREE.Vector3(0, 0, zRange[1]), {
-          ...arrowParams,
-          color: 'blue',
-        })
-      );
+      if (showAxisX) {
+        obj.object3D.add(
+          createArrowLine(new THREE.Vector3(xRange[0], 0, 0), new THREE.Vector3(xRange[1], 0, 0), {
+            ...arrowParams,
+            color: 'red',
+          })
+        );
+      }
+      if (showAxisY) {
+        obj.object3D.add(
+          createArrowLine(new THREE.Vector3(0, yRange[0], 0), new THREE.Vector3(0, yRange[1], 0), {
+            ...arrowParams,
+            color: 'green',
+          })
+        );
+      }
+      if (showAxisZ) {
+        obj.object3D.add(
+          createArrowLine(new THREE.Vector3(0, 0, zRange[0]), new THREE.Vector3(0, 0, zRange[1]), {
+            ...arrowParams,
+            color: 'blue',
+          })
+        );
+      }
 
       updateTransform(obj.object3D, params);
       this.addObjectToScene(obj, params);
@@ -3090,6 +3104,9 @@ interface AddAxes2DParameters extends Transform, BasicMaterial {
 }
 
 interface AddAxes3DParameters extends Transform, BasicMaterial {
+  showAxisX?: boolean;
+  showAxisY?: boolean;
+  showAxisZ?: boolean;
   xRange?: [number, number, number?];
   yRange?: [number, number, number?];
   zRange?: [number, number, number?];
