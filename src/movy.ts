@@ -1358,8 +1358,8 @@ class SceneObject {
     endAngle: number,
     radius = 1,
     params: AddLineParameters = {}
-  ): SceneObject {
-    const obj = new SceneObject();
+  ): LineObject {
+    const obj = new LineObject();
     this.addToChildren(obj, params.parent);
 
     promise = promise.then(async () => {
@@ -1379,11 +1379,11 @@ class SceneObject {
       );
 
       const points2d = curve.getSpacedPoints(64);
-      const point3d: THREE.Vector3[] = [];
       for (const pt of points2d) {
-        point3d.push(new THREE.Vector3(pt.x, pt.y, 0));
+        obj.verts.push(new THREE.Vector3(pt.x, pt.y, 0));
       }
-      const line = new Line_(point3d, params);
+      obj.verts.reverse();
+      const line = new Line_(obj.verts, params);
 
       obj.object3D = line;
       updateTransform(obj.object3D, params);
@@ -3755,7 +3755,7 @@ export function addArc(
   endAngle: number,
   radius = 1,
   params: AddLineParameters = {}
-): SceneObject {
+): LineObject {
   return getRoot().addArc(startAngle, endAngle, radius, params);
 }
 
