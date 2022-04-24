@@ -16,6 +16,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
+import { OutlinePass } from './utils/OutlinePass.js';
 import { createEditor } from './editor.jsx';
 import TextMeshObject from './objects/TextMeshObject';
 import './style/player.css';
@@ -62,6 +63,7 @@ interface Engine {
   uiScene?: THREE.Scene;
   defaultDuration?: number;
   defaultEase?: string;
+  outlinePass?: any;
 }
 
 let engine: Engine = {};
@@ -265,6 +267,21 @@ function initEngine(container?: HTMLElement) {
     defaultDuration: 0.5,
     defaultEase: 'power2.out',
   };
+
+  if (0) {
+    engine.outlinePass = new OutlinePass(
+      new THREE.Vector2(renderTargetWidth, renderTargetHeight),
+      scene,
+      mainCamera
+    );
+    engine.outlinePass.edgeStrength = 10;
+    engine.outlinePass.edgeGlow = 0;
+    engine.outlinePass.edgeThickness = 1;
+    engine.outlinePass.pulsePeriod = 0;
+    engine.outlinePass.visibleEdgeColor.set('#ffffff');
+    engine.outlinePass.hiddenEdgeColor.set('#ffffff');
+    composer.addPass(engine.outlinePass);
+  }
 
   promise = new Promise((resolve, reject) => {
     resolve();
@@ -1790,6 +1807,9 @@ class SceneObject {
       });
       updateTransform(texObject, params);
       obj.object3D = texObject;
+      if (engine.outlinePass) {
+        engine.outlinePass.selectedObjects.push(texObject);
+      }
 
       this.addObjectToScene(obj, params);
     });
