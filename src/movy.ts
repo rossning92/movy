@@ -301,6 +301,11 @@ function animate() {
         child.updateText();
       }
 
+      // check if onUpdate is defined
+      if (child.onUpdate) {
+        child.onUpdate();
+      }
+
       if (child.billboarding) {
         const quat = child.quaternion;
         quat.copy(engine.mainCamera.quaternion);
@@ -1548,7 +1553,7 @@ class SceneObject {
   }
 
   addRectOutline(params: AddOutlineParameters = {}) {
-    const { width = 1, height = 1, lineWidth = DEFAULT_LINE_WIDTH, color } = params;
+    const { width = 1, height = 1 } = params;
 
     const obj = new LineObject();
     this.addToChildren(obj, params.parent);
@@ -1597,6 +1602,36 @@ class SceneObject {
     });
 
     return obj;
+  }
+
+  setClipRect(params: AddRectParameters = {}): SceneObject {
+    promise = promise.then(async () => {
+      const { width = 1, height = 1 } = params;
+
+      const clippingPlanes = [
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), 1),
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1),
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), 1),
+        new THREE.Plane(new THREE.Vector3(0, -1, 0), 1),
+      ];
+
+      (this.object3D as any).onUpdate = () => {
+        getAllMaterials(this.object3D).forEach((material) => {
+          material.clippingPlanes = clippingPlanes;
+        });
+
+        const worldPosition = new THREE.Vector3();
+        this.object3D.getWorldPosition(worldPosition);
+        const worldScale = new THREE.Vector3();
+        this.object3D.getWorldScale(worldScale);
+
+        clippingPlanes[0].constant = -worldPosition.x + 0.5 * worldScale.x * width;
+        clippingPlanes[1].constant = worldPosition.x + 0.5 * worldScale.x * width;
+        clippingPlanes[2].constant = -worldPosition.y + 0.5 * worldScale.y * height;
+        clippingPlanes[3].constant = worldPosition.y + 0.5 * worldScale.y * height;
+      };
+    });
+    return this;
   }
 
   addPolygon(vertices: [number, number][], params: AddPolygonParameters = {}): SceneObject {
@@ -3599,7 +3634,11 @@ export function addRect(params: AddRectParameters = {}): SceneObject {
   return getRoot().addRect(params);
 }
 
-export function addRectOutline(params: AddOutlineParameters = {}): SceneObject {
+export function setClipRect(params: AddRectParameters = {}): SceneObject {
+  return getRoot().setClipRect(params);
+}
+
+export function addRectOutline(params: AddOutlineParameters = {}): LineObject {
   return getRoot().addRectOutline(params);
 }
 
@@ -3813,6 +3852,7 @@ const api = {
   addPyramid,
   addRect,
   addRectOutline,
+  setClipRect,
   addSphere,
   addTex,
   addText,
