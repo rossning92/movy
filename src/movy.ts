@@ -1550,7 +1550,7 @@ class SceneObject {
   addRectOutline(params: AddOutlineParameters = {}) {
     const { width = 1, height = 1, lineWidth = DEFAULT_LINE_WIDTH, color } = params;
 
-    const obj = new SceneObject();
+    const obj = new LineObject();
     this.addToChildren(obj, params.parent);
 
     promise = promise.then(async () => {
@@ -1558,19 +1558,16 @@ class SceneObject {
 
       const halfWidth = width * 0.5;
       const halfHeight = height * 0.5;
-      obj.object3D = createLine3D(
-        [
-          new THREE.Vector3(-halfWidth, -halfHeight, 0),
-          new THREE.Vector3(-halfWidth, halfHeight, 0),
-          new THREE.Vector3(halfWidth, halfHeight, 0),
-          new THREE.Vector3(halfWidth, -halfHeight, 0),
-          new THREE.Vector3(-halfWidth, -halfHeight, 0),
-        ],
-        {
-          lineWidth,
-          color,
-        }
+      obj.verts.push(
+        new THREE.Vector3(-halfWidth, -halfHeight, 0),
+        new THREE.Vector3(-halfWidth, halfHeight, 0),
+        new THREE.Vector3(halfWidth, halfHeight, 0),
+        new THREE.Vector3(halfWidth, -halfHeight, 0),
+        new THREE.Vector3(-halfWidth, -halfHeight, 0)
       );
+
+      const line = new Line_(obj.verts, params);
+      obj.object3D = line;
 
       updateTransform(obj.object3D, params);
 
