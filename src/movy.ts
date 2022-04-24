@@ -2689,6 +2689,8 @@ class LineObject extends SceneObject {
 
   animateLineDrawing(params: AnimationParameters = {}) {
     promise = promise.then(() => {
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+
       const animParams = {
         progress: 0,
       };
@@ -2701,8 +2703,10 @@ class LineObject extends SceneObject {
             updateLinePoints(this.verts, (this.object3D as Line2).geometry, animParams.progress);
             (this.object3D as Line2).computeLineDistances();
           },
+          duration,
+          ease,
         },
-        params.t
+        t
       );
     });
     return this;
