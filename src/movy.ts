@@ -2634,27 +2634,30 @@ interface TypeTextParameters extends AnimationParameters {
 }
 
 class TextObject extends GroupObject {
-  /**
-   * @deprecated Use `setText()` instead.
-   */
-  changeText(
-    func: (val: number) => any,
-    { from = 0, to = 1, duration = 5, ease = 'expo.out', t }: ChangeTextParameters = {}
-  ) {
+  changeText(func: (val: number) => any, params: ChangeTextParameters = {}) {
     promise = promise.then(() => {
-      const textObject = this.object3D as any;
-      const tl = gsap.timeline({ defaults: { duration, ease } });
+      const {
+        from = 0,
+        to = 1,
+        duration = engine.defaultDuration,
+        ease = engine.defaultEase,
+        t,
+      } = params;
 
       const data = { val: from };
-      tl.to(data, {
-        val: to,
-        onUpdate: () => {
-          const text = func(data.val).toString();
-          textObject.setText(text);
+      mainTimeline.to(
+        data,
+        {
+          val: to,
+          duration,
+          ease,
+          onUpdate: () => {
+            const text = func(data.val).toString();
+            (this.object3D as TextMeshObject).setText(text);
+          },
         },
-      });
-
-      mainTimeline.add(tl, t);
+        t
+      );
     });
     return this;
   }
