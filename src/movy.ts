@@ -1832,17 +1832,17 @@ class SceneObject {
   }
 
   addFrustum(params: AddFrustumParameters = {}) {
-    const obj = new SceneObject();
+    const obj = new FrustumObject();
     this.addToChildren(obj, params.parent);
 
     promise = promise.then(async () => {
       const { fov = 45, near = 1, far = 5, aspect = 1 } = params;
 
       const group = new THREE.Group();
-      const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-      const cameraHelper = new THREE.CameraHelper(camera);
-      group.add(camera);
-      group.add(cameraHelper);
+      obj.perspectiveCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+      obj.perspectiveCameraHelper = new THREE.CameraHelper(obj.perspectiveCamera);
+      group.add(obj.perspectiveCamera);
+      group.add(obj.perspectiveCameraHelper);
       obj.object3D = group;
 
       updateTransform(obj.object3D, params);
@@ -3796,7 +3796,31 @@ interface AddFrustumParameters extends Transform, BasicMaterial {
   far?: number;
 }
 
-export function addFrustum(params: AddFrustumParameters = {}): SceneObject {
+class FrustumObject extends SceneObject {
+  perspectiveCamera: THREE.PerspectiveCamera;
+  perspectiveCameraHelper: THREE.CameraHelper;
+
+  changeFov(fov: number, params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      mainTimeline.to(
+        this.perspectiveCamera,
+        {
+          fov,
+          onUpdate: () => {
+            this.perspectiveCamera.updateProjectionMatrix();
+            this.perspectiveCameraHelper.update();
+          },
+          duration,
+          ease,
+        },
+        t
+      );
+    });
+  }
+}
+
+export function addFrustum(params: AddFrustumParameters = {}): FrustumObject {
   return getRoot().addFrustum(params);
 }
 
