@@ -1017,7 +1017,16 @@ class SceneObject {
           geometry = new WireframeGeometry2(geometry);
         }
         const material = createMaterial(params);
-        obj.object3D.add(new THREE.Mesh(geometry, material));
+        const mesh = new THREE.Mesh(geometry, material);
+        if (params.wireframe && params.lineWidth) {
+          mesh.onBeforeRender = () => {
+            (mesh.material as LineMaterial).linewidth = convertScreenToWorld(
+              mesh,
+              params.lineWidth
+            );
+          };
+        }
+        obj.object3D.add(mesh);
       }
 
       updateTransform(obj.object3D, params);
