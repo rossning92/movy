@@ -733,7 +733,7 @@ function createArrowLine(
       : new THREE.CylinderGeometry(lineWidth / 2, lineWidth / 2, length, 16);
 
     const line = new THREE.Mesh(geometry, material);
-    line.position.copy(direction.clone().multiplyScalar(offset).add(center));
+    line.position.copy(direction.clone().multiplyScalar(offset));
     line.setRotationFromQuaternion(quaternion);
 
     group.add(line);
@@ -752,11 +752,13 @@ function createArrowLine(
     const arrow = new THREE.Mesh(geometry, material);
     arrow.setRotationFromQuaternion(quaternion);
     arrow.position.copy(i === 0 ? from : to);
+    arrow.position.sub(center);
     group.add(arrow);
 
     if (i === 0) arrow.rotateZ(Math.PI);
   }
 
+  group.position.copy(center);
   return group;
 }
 
