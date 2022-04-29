@@ -2777,7 +2777,17 @@ class LineObject extends SceneObject {
       const animParams = {
         progress: 0,
       };
-      mainTimeline.fromTo(
+
+      const tl = gsap.timeline({
+        defaults: {
+          duration,
+          ease,
+        },
+      });
+
+      this.object3D.visible = false;
+      tl.set(this.object3D, { visible: true });
+      tl.fromTo(
         animParams,
         { progress: 0 },
         {
@@ -2786,11 +2796,9 @@ class LineObject extends SceneObject {
             updateLinePoints(this.verts, (this.object3D as Line2).geometry, animParams.progress);
             (this.object3D as Line2).computeLineDistances();
           },
-          duration,
-          ease,
-        },
-        t
+        }
       );
+      mainTimeline.add(tl, t);
     });
     return this;
   }
