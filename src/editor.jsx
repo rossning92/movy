@@ -359,7 +359,6 @@ function App() {
       iframeNew.style.left = '0';
       iframeNew.style.width = '100%';
       iframeNew.style.height = '100%';
-      iframeNew.sandbox = 'allow-same-origin allow-scripts';
       containerRef.current.appendChild(iframeNew);
       const doc = iframeNew.contentWindow.document;
       doc.open();
@@ -539,9 +538,9 @@ function App() {
             <div
               ref={containerRef}
               style={{
+                position: 'relative',
                 borderBottom: '1px solid #808080',
                 width: '100%',
-                height: '0',
                 paddingTop: `${(1 / aspect) * 100}%`,
               }}
             />
