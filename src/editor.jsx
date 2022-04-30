@@ -265,9 +265,9 @@ function Slider({ iframe, disabled }) {
         ))}
 
       {timeline &&
-        timeline.markers.map((marker) => (
+        timeline.markers.map((marker, i) => (
           <div
-            key={marker}
+            key={i}
             className="unselectable clickthrough"
             style={{
               position: 'absolute',
