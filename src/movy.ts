@@ -16,12 +16,12 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
-import { OutlinePass } from './utils/OutlinePass.js';
 import TextMeshObject from './objects/TextMeshObject';
 import './style/player.css';
 import { toThreeColor } from './utils/color';
 import { GlitchPass } from './utils/GlitchPass';
 import { computeAABB } from './utils/math';
+import { OutlinePass } from './utils/OutlinePass.js';
 import { loadSVG } from './utils/svg';
 import { createTexObject } from './utils/tex';
 import WebmMediaRecorder from './utils/WebmMediaRecorder';
@@ -218,12 +218,12 @@ function initEngine(container?: HTMLElement) {
   }
 
   const scene = new THREE.Scene();
-  const root = new GroupObject();
+  const root = new GroupObject(null);
   root.object3D = new THREE.Group();
   scene.add(root.object3D);
 
   const uiScene = new THREE.Scene();
-  const uiRoot = new GroupObject();
+  const uiRoot = new GroupObject(null);
   uiRoot.object3D = new THREE.Group();
   uiScene.add(uiRoot.object3D);
 
@@ -992,34 +992,31 @@ function addTransformControl(object: THREE.Object3D<THREE.Event>) {
   });
 }
 
+function addObjectToScene(object3D: THREE.Object3D, parentObject3D: THREE.Object3D) {
+  console.assert(object3D);
+  console.assert(parentObject3D);
+
+  parentObject3D.add(object3D);
+
+  if (debug) {
+    addTransformControl(object3D);
+  }
+}
+
 class SceneObject {
   object3D: THREE.Object3D;
+  parent: SceneObject;
   children: SceneObject[] = [];
 
-  protected addObjectToScene(obj: SceneObject, transform: Transform) {
-    if (transform.parent) {
-      transform.parent.object3D.add(obj.object3D);
-    } else {
-      console.assert(obj.object3D);
-      this.object3D.add(obj.object3D);
-    }
-
-    if (debug) {
-      addTransformControl(obj.object3D);
-    }
-  }
-
-  protected addToChildren(obj: SceneObject, parent?: SceneObject) {
-    if (parent) {
-      parent.children.push(obj);
-    } else {
-      this.children.push(obj);
+  constructor(parent: SceneObject) {
+    this.parent = parent;
+    if (this.parent) {
+      this.parent.children.push(this);
     }
   }
 
   private add3DGeometry(params: AddObjectParameters = {}, geometry: THREE.BufferGeometry) {
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = true;
@@ -1047,15 +1044,14 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   _addMesh(mesh: THREE.Mesh, params: AddObjectParameters = {}): SceneObject {
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       addDefaultLights();
@@ -1064,14 +1060,14 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   clone() {
-    const obj = new SceneObject();
+    const obj = new SceneObject(this.parent);
     promise = promise.then(async () => {
       obj.object3D = this.object3D.clone();
       obj.object3D.traverse((node) => {
@@ -1088,23 +1084,21 @@ class SceneObject {
   }
 
   addGroup(params: AddGroupParameters = {}) {
-    const obj = new GroupObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new GroupObject(params.parent || this);
 
     promise = promise.then(() => {
       obj.object3D = new THREE.Group();
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   add3DModel(url: string, params: AddObjectParameters = {}): GeometryObject {
-    const obj = new GeometryObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new GeometryObject(params.parent || this);
 
     promise = promise.then(async () => {
       addDefaultLights();
@@ -1160,15 +1154,14 @@ class SceneObject {
       obj.object3D = group;
       updateTransform(group, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addCircle(params: AddCircleParameters = {}): SceneObject {
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1181,7 +1174,7 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1199,8 +1192,7 @@ class SceneObject {
       p2 = (params as any).to;
     }
 
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     const { lineWidth = DEFAULT_LINE_WIDTH, arrowStart = false, arrowEnd = true } = params;
 
@@ -1219,7 +1211,7 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1372,7 +1364,7 @@ class SceneObject {
       }
 
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1384,8 +1376,7 @@ class SceneObject {
     radius = 1,
     params: AddLineParameters = {}
   ): LineObject {
-    const obj = new LineObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new LineObject(params.parent || this);
 
     promise = promise.then(async () => {
       addDefaultLights();
@@ -1412,7 +1403,7 @@ class SceneObject {
 
       obj.object3D = line;
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1421,8 +1412,7 @@ class SceneObject {
   addGrid(params: AddGridParameters = {}): SceneObject {
     const { gridSize = 10, color } = params;
 
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       obj.object3D = new THREE.GridHelper(
@@ -1434,15 +1424,14 @@ class SceneObject {
       obj.object3D.rotation.x = Math.PI / 2;
 
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addImage(file: string, params: AddTextParameters = {}): SceneObject {
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     const { color, ccw } = params;
 
@@ -1476,7 +1465,7 @@ class SceneObject {
       }
 
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1509,8 +1498,7 @@ class SceneObject {
     positions: [number, number, number][],
     params: AddObjectParameters = {}
   ): GeometryObject {
-    const obj = new GeometryObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new GeometryObject(params.parent || this);
 
     promise = promise.then(async () => {
       const vertices = [].concat.apply([], positions);
@@ -1523,15 +1511,14 @@ class SceneObject {
         ...params,
       });
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addPolyline(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
-    const obj = new LineObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new LineObject(params.parent || this);
 
     promise = promise.then(async () => {
       for (const pt of points) {
@@ -1546,7 +1533,7 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1585,8 +1572,7 @@ class SceneObject {
   addCircleOutline(params: AddCircleOutlineParameters = {}) {
     const { lineWidth = DEFAULT_LINE_WIDTH, color } = params;
 
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1602,7 +1588,7 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1611,8 +1597,7 @@ class SceneObject {
   addRectOutline(params: AddOutlineParameters = {}) {
     const { width = 1, height = 1 } = params;
 
-    const obj = new LineObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new LineObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1632,15 +1617,14 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addRect(params: AddRectParameters = {}): SceneObject {
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1654,7 +1638,7 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1691,8 +1675,7 @@ class SceneObject {
   }
 
   addPolygon(vertices: [number, number][], params: AddPolygonParameters = {}): SceneObject {
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1720,7 +1703,7 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -1737,8 +1720,7 @@ class SceneObject {
   addTriangleOutline(params: AddOutlineParameters = {}) {
     const { lineWidth = DEFAULT_LINE_WIDTH, color } = params;
 
-    const obj = new SceneObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = false;
@@ -1752,15 +1734,14 @@ class SceneObject {
 
       updateTransform(obj.object3D, params);
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addText(text: string, params: AddTextParameters = {}): TextObject {
-    const obj = new TextObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new TextObject(params.parent || this);
 
     promise = promise.then(async () => {
       const material = createMaterial({ ...params, doubleSided: true });
@@ -1775,15 +1756,14 @@ class SceneObject {
 
       obj.object3D = textObject;
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addText3D(text: string, params: AddText3DParameters = {}): TextObject {
-    const obj = new TextObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new TextObject(params.parent || this);
 
     promise = promise.then(async () => {
       const material = createMaterial({
@@ -1803,15 +1783,14 @@ class SceneObject {
 
       obj.object3D = textObject;
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addTextOutline(text: string, params: AddTextOutlineParameters = {}): TextObject {
-    const obj = new TextObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new TextObject(params.parent || this);
 
     promise = promise.then(async () => {
       const material = createMaterial({ ...params, doubleSided: true });
@@ -1828,17 +1807,15 @@ class SceneObject {
 
       obj.object3D = textObject;
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addTex(tex: string, params: AddTextParameters = {}): TexObject {
-    const obj = new TexObject();
+    const obj = new TexObject(params.parent || this);
     obj._initParams = params;
-
-    this.addToChildren(obj, params.parent);
 
     promise = promise.then(async () => {
       const texObject = await createTexObject(tex, {
@@ -1850,15 +1827,14 @@ class SceneObject {
         engine.outlinePass.selectedObjects.push(texObject);
       }
 
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
   }
 
   addFrustum(params: AddFrustumParameters = {}) {
-    const obj = new FrustumObject();
-    this.addToChildren(obj, params.parent);
+    const obj = new FrustumObject(params.parent || this);
 
     promise = promise.then(async () => {
       const { fov = 45, near = 1, far = 5, aspect = 1 } = params;
@@ -1871,7 +1847,7 @@ class SceneObject {
       obj.object3D = group;
 
       updateTransform(obj.object3D, params);
-      this.addObjectToScene(obj, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
     return obj;
@@ -3026,7 +3002,7 @@ class TexObject extends GroupObject {
 
   clone() {
     const superClone = super.clone();
-    const copy = Object.assign(new TexObject(), superClone);
+    const copy = Object.assign(new TexObject((superClone as GroupObject).parent), superClone);
     promise = promise.then(async () => {
       for (const attr in superClone) {
         if (superClone.hasOwnProperty(attr)) {
@@ -3102,7 +3078,7 @@ function defaultSeg({ wireframe }: AddObjectParameters) {
 }
 
 function _addPanoramicSkybox(file: string) {
-  const obj = new SceneObject();
+  const obj = new SceneObject(null);
 
   promise = promise.then(async () => {
     const geometry = new THREE.SphereGeometry(500, 60, 40);
