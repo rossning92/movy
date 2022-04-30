@@ -49,26 +49,32 @@ interface RotateParameters extends AnimationParameters {
     y?: number;
     repeat?: number;
 }
+interface RotateInParameters extends AnimationParameters {
+    axis?: 'x' | 'y' | 'z';
+    rotation?: number;
+}
 declare class SceneObject {
     object3D: THREE.Object3D;
     children: SceneObject[];
     protected addObjectToScene(obj: SceneObject, transform: Transform): void;
+    protected addToChildren(obj: SceneObject, parent?: SceneObject): void;
     private add3DGeometry;
     _addMesh(mesh: THREE.Mesh, params?: AddObjectParameters): SceneObject;
     clone(): SceneObject;
     addGroup(params?: AddGroupParameters): GroupObject;
-    add3DModel(url: string, params?: AddObjectParameters): SceneObject;
+    add3DModel(url: string, params?: AddObjectParameters): GeometryObject;
     addCircle(params?: AddCircleParameters): SceneObject;
     addArrow(p1: [number, number, number?], p2: [number, number, number?], params?: AddArrowParameters): SceneObject;
     addDoubleArrow(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): SceneObject;
     addAxes2D(params?: AddAxes2DParameters): SceneObject;
     addAxes3D(params?: AddAxes3DParameters): SceneObject;
-    addArc(startAngle: number, endAngle: number, radius?: number, params?: AddLineParameters): SceneObject;
+    addArc(startAngle: number, endAngle: number, radius?: number, params?: AddLineParameters): LineObject;
     addGrid(params?: AddGridParameters): SceneObject;
     addImage(file: string, params?: AddTextParameters): SceneObject;
-    addLine(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): SceneObject;
-    verts: THREE.Vector3[];
-    addPolyline(points: [number, number, number?][], params?: AddLineParameters): SceneObject;
+    addLine(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): LineObject;
+    addPoint(position: [number, number, number], params?: AddObjectParameters): GeometryObject;
+    addPoints(positions: [number, number, number][], params?: AddObjectParameters): GeometryObject;
+    addPolyline(points: [number, number, number?][], params?: AddLineParameters): LineObject;
     addPyramid(params?: AddObjectParameters): SceneObject;
     addCube(params?: AddObjectParameters): SceneObject;
     addSphere(params?: AddObjectParameters): SceneObject;
@@ -76,16 +82,18 @@ declare class SceneObject {
     addCylinder(params?: AddObjectParameters): SceneObject;
     addTorus(params?: AddObjectParameters): SceneObject;
     addCircleOutline(params?: AddCircleOutlineParameters): SceneObject;
-    addRectOutline(params?: AddOutlineParameters): SceneObject;
+    addRectOutline(params?: AddOutlineParameters): LineObject;
     addRect(params?: AddRectParameters): SceneObject;
+    setClipRect(params?: AddRectParameters): SceneObject;
     addPolygon(vertices: [number, number][], params?: AddPolygonParameters): SceneObject;
-    addPolygonOutline(vertices: [number, number, number?][], params?: AddPolygonParameters): SceneObject;
+    addPolygonOutline(vertices: [number, number, number?][], params?: AddPolygonParameters): LineObject;
     addTriangle(params?: AddPolygonParameters): SceneObject;
     addTriangleOutline(params?: AddOutlineParameters): SceneObject;
     addText(text: string, params?: AddTextParameters): TextObject;
     addText3D(text: string, params?: AddText3DParameters): TextObject;
     addTextOutline(text: string, params?: AddTextOutlineParameters): TextObject;
     addTex(tex: string, params?: AddTextParameters): TexObject;
+    addFrustum(params?: AddFrustumParameters): FrustumObject;
     moveTo(params?: MoveObjectParameters): this;
     setPos(pos: [number, number, number?], params?: AnimationParameters): this;
     scale(scale: number, params?: AnimationParameters): this;
@@ -129,20 +137,18 @@ declare class SceneObject {
      */
     rotateYTo(degrees: number, params?: AnimationParameters): this;
     spinning({ t, duration, repeat, ease, x, y, }?: RotateParameters): this;
-    rotateIn(params?: AnimationParameters): this;
+    rotateIn(params?: RotateInParameters): this;
     grow(params?: AnimationParameters): this;
     grow2({ t }?: AnimationParameters): this;
     grow3({ t }?: AnimationParameters): this;
     shrink(params?: AnimationParameters): this;
     flying({ t, duration }?: AnimationParameters): this;
     reveal(params?: RevealParameters): this;
+    revealL(params?: RevealParameters): this;
+    revealR(params?: RevealParameters): this;
+    revealU(params?: RevealParameters): this;
+    revealD(params?: RevealParameters): this;
     vertexToAnimate: Map<number, THREE.Vector3>;
-    /**
-     * @deprecated Use `setVert()` instead.
-     */
-    updateVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
-    moveVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
-    setVert(i: number, position: [number, number, number?], t?: number | string): this;
     wipeIn(params?: WipeInParameters): this;
     shake2D({ interval, duration, strength, t }?: Shake2DParameters): this;
     show({ duration, t }?: Shake2DParameters): this;
@@ -170,16 +176,23 @@ interface TypeTextParameters extends AnimationParameters {
     interval?: number;
 }
 declare class TextObject extends GroupObject {
-    /**
-     * @deprecated Use `setText()` instead.
-     */
-    changeText(func: (val: number) => any, { from, to, duration, ease, t }?: ChangeTextParameters): this;
+    changeText(func: (val: number) => any, params?: ChangeTextParameters): this;
     typeText({ t, duration, interval }?: TypeTextParameters): this;
     /**
      * @deprecated Use `setText()` instead.
      */
     updateText(text: string, params?: AnimationParameters): this;
     setText(text: string, t?: number | string): void;
+}
+declare class LineObject extends SceneObject {
+    verts: THREE.Vector3[];
+    /**
+     * @deprecated Use `setVert()` instead.
+     */
+    updateVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
+    moveVert(i: number, position: [number, number, number?], params?: AnimationParameters): this;
+    setVert(i: number, position: [number, number, number?], t?: number | string): this;
+    animateLineDrawing(params?: AnimationParameters): this;
 }
 interface TransformTexParameters extends AnimationParameters {
     type?: 'transform' | 'crossfade';
@@ -188,7 +201,7 @@ interface TransformTexParameters extends AnimationParameters {
 declare class TexObject extends GroupObject {
     _initParams: AddTextParameters;
     transformTexTo(to: string | TexObject | TexObject[], params?: TransformTexParameters): this;
-    transformTexFrom(from: TexObject | TexObject[], params?: AnimationParameters): this;
+    transformTexFrom(from: TexObject | TexObject[], params?: TransformTexParameters): this;
     clone(): TexObject & SceneObject;
     /**
      * @deprecated Use `setTex()` instead.
@@ -242,6 +255,9 @@ interface AddAxes2DParameters extends Transform, BasicMaterial {
     tickIntervalY?: number;
 }
 interface AddAxes3DParameters extends Transform, BasicMaterial {
+    showAxisX?: boolean;
+    showAxisY?: boolean;
+    showAxisZ?: boolean;
     xRange?: [number, number, number?];
     yRange?: [number, number, number?];
     zRange?: [number, number, number?];
@@ -265,11 +281,11 @@ interface Transform {
     parent?: SceneObject;
     anchor?: 'left' | 'right' | 'top' | 'bottom' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
     billboarding?: boolean;
+    autoResize?: boolean;
 }
 interface AddObjectParameters extends Transform, BasicMaterial {
     vertices?: any;
     outline?: any;
-    outlineWidth?: any;
     width?: any;
     height?: any;
     t?: number | string;
@@ -280,7 +296,6 @@ interface AddObjectParameters extends Transform, BasicMaterial {
     fontSize?: any;
     start?: any;
     end?: any;
-    lineWidth?: any;
     gridSize?: any;
     centralAngle?: any;
     letterSpacing?: any;
@@ -293,6 +308,11 @@ interface BasicMaterial {
     wireframe?: boolean;
     lighting?: boolean;
     doubleSided?: boolean;
+    flatShading?: boolean;
+    lineWidth?: number;
+    showPoints?: boolean;
+    pointSize?: number;
+    dashed?: boolean;
 }
 export declare function setActiveLayer(layer: 'ui' | 'main'): void;
 interface AddGroupParameters extends Transform {
@@ -317,12 +337,22 @@ export declare function addCylinder(params?: AddObjectParameters): SceneObject;
 export declare function addGrid(params?: AddGridParameters): SceneObject;
 export declare function addGroup(params?: AddGroupParameters): GroupObject;
 export declare function addImage(file: string, params?: AddTextParameters): SceneObject;
-export declare function addLine(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): SceneObject;
-export declare function addPolyline(points: [number, number, number][], params?: AddObjectParameters): SceneObject;
+export declare function addLine(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): LineObject;
+export declare function addPoint(position: [number, number, number], params?: AddObjectParameters): GeometryObject;
+declare class GeometryObject extends SceneObject {
+    private points;
+    geometry: THREE.BufferGeometry;
+    private init;
+    getVerts(callback: (points: [number, number, number][]) => void): this;
+    moveVerts(positions: [number, number, number][], params?: AnimationParameters): this;
+}
+export declare function addPoints(positions: [number, number, number][], params?: AddObjectParameters): GeometryObject;
+export declare function addPolyline(points: [number, number, number][], params?: AddObjectParameters): LineObject;
 export declare function addPolygonOutline(points: [number, number, number?][], params?: AddObjectParameters): SceneObject;
 export declare function addPyramid(params?: AddObjectParameters): SceneObject;
 export declare function addRect(params?: AddRectParameters): SceneObject;
-export declare function addRectOutline(params?: AddOutlineParameters): SceneObject;
+export declare function setClipRect(params?: AddRectParameters): SceneObject;
+export declare function addRectOutline(params?: AddOutlineParameters): LineObject;
 export declare function addSphere(params?: AddObjectParameters): SceneObject;
 export declare function addText(text: string, params?: AddTextParameters): TextObject;
 export declare function addText3D(text: string, params?: AddText3DParameters): TextObject;
@@ -332,17 +362,31 @@ export declare function addTorus(params?: AddObjectParameters): SceneObject;
 export declare function addTriangle(params?: AddPolygonParameters): SceneObject;
 export declare function addPolygon(vertices: [number, number][], params?: AddPolygonParameters): SceneObject;
 export declare function addTriangleOutline(params?: AddOutlineParameters): SceneObject;
-export declare function add3DModel(url: string, params?: AddObjectParameters): SceneObject;
+export declare function add3DModel(url: string, params?: AddObjectParameters): GeometryObject;
 export declare function addArrow(p1: [number, number, number?], p2: [number, number, number?], params?: AddArrowParameters): SceneObject;
 export declare function addDoubleArrow(p1: [number, number, number?], p2: [number, number, number?], params?: AddLineParameters): SceneObject;
 export declare function addAxes2D(params?: AddAxes2DParameters): SceneObject;
 export declare function addAxes3D(params?: AddAxes3DParameters): SceneObject;
-export declare function addArc(startAngle: number, endAngle: number, radius?: number, params?: AddLineParameters): SceneObject;
+export declare function addArc(startAngle: number, endAngle: number, radius?: number, params?: AddLineParameters): LineObject;
 export declare function moveTo(params?: MoveObjectParameters): GroupObject;
 export declare function usePerspectiveCamera(): void;
 export declare function useOrthographicCamera(): void;
 export declare function addFog(): void;
 export declare function setDefaultDuration(duration: number): void;
+export declare function setDefaultEase(ease: string): void;
+interface AddFrustumParameters extends Transform, BasicMaterial {
+    fov?: number;
+    aspect?: number;
+    near?: number;
+    far?: number;
+}
+declare class FrustumObject extends SceneObject {
+    perspectiveCamera: THREE.PerspectiveCamera;
+    perspectiveCameraHelper: THREE.CameraHelper;
+    changeFov(fov: number, params?: AnimationParameters): void;
+}
+export declare function addFrustum(params?: AddFrustumParameters): FrustumObject;
+export declare function addMarker(name?: string, t?: string | number): void;
 interface DollyZoomParameters extends AnimationParameters {
     fov?: number;
 }

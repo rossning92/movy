@@ -18,6 +18,6 @@ export default class TextMeshObject extends Group {
     constructor(params?: TextMeshObjectParams);
     init(): Promise<void>;
     setText(text: string, forceUpdate?: boolean): void;
-    update(): void;
+    updateText(): void;
 }
 export {};

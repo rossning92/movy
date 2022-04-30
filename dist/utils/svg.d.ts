@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 interface SVGParameters {
     color?: string | number;
     ccw?: boolean;
