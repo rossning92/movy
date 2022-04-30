@@ -532,7 +532,6 @@ function App() {
           <div
             style={{
               position: 'relative',
-              borderRight: '1px solid #808080',
             }}
           >
             <div
