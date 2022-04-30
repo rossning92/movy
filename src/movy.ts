@@ -17,7 +17,6 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
 import { OutlinePass } from './utils/OutlinePass.js';
-import { createEditor } from './editor.jsx';
 import TextMeshObject from './objects/TextMeshObject';
 import './style/player.css';
 import { toThreeColor } from './utils/color';
@@ -86,19 +85,15 @@ const options = {
 
 const seedrandom = require('seedrandom');
 
-let onRenderComplete: () => void;
 let exportFileName: string = undefined;
 
-function render({
+function exportVideo({
   resetTiming = true,
   name = document.title,
-  onComplete,
 }: {
   resetTiming?: boolean;
   name?: string;
-  onComplete?: () => void;
 } = {}) {
-  onRenderComplete = onComplete;
   exportFileName = name;
 
   if (gridHelper !== undefined) {
@@ -175,9 +170,7 @@ function stopRender() {
     requestAnimationFrame(animate);
   }
 
-  if (onRenderComplete) {
-    onRenderComplete();
-  }
+  window.top.postMessage({ type: 'videoExported' }, '*');
 }
 
 function createOrthographicCamera() {
@@ -219,6 +212,8 @@ function initEngine(container?: HTMLElement) {
 
     if (container !== undefined) {
       container.appendChild(renderer.domElement);
+    } else {
+      document.body.appendChild(renderer.domElement);
     }
   }
 
@@ -663,6 +658,25 @@ const startAnimation = () => {
   }
 
   globalTimeline.play(0, false);
+
+  globalTimeline.eventCallback('onUpdate', () => {
+    window.top.postMessage(
+      {
+        type: 'positionChanged',
+        position: globalTimeline.time(),
+        duration: globalTimeline.duration(),
+      },
+      '*'
+    );
+  });
+  window.top.postMessage(
+    {
+      type: 'scriptLoaded',
+      timeline: getTimeline(),
+      aspect: renderTargetWidth / renderTargetHeight,
+    },
+    '*'
+  );
 };
 
 function createArrow2DGeometry(arrowLength: number) {
@@ -3971,30 +3985,20 @@ const api = {
   usePerspectiveCamera,
 };
 
-function runCode(s: string): Promise<void> {
-  initEngine();
+window.addEventListener('message', (event) => {
+  if (typeof event.data !== 'object' || !event.data.type) {
+    return;
+  }
 
-  return promise.then(async () => {
-    // eslint-disable-next-line no-eval
-    ((str: string) => eval(`var mo=this;${str}`)).call(api, s);
-
-    // HACK: find a better solution.
-    for (let i = 0; i < 10; i++) {
-      await promise;
-    }
-
-    startAnimation();
-  });
-}
+  if (event.data.type === 'seek') {
+    seek(event.data.position);
+  } else if (event.data.type === 'exportVideo') {
+    exportVideo({ name: event.data.name });
+  }
+});
 
 function seek(t: number) {
   globalTimeline.seek(t, false);
-}
-
-function addPositionChangedCallback(callback: (pos: number, duration: number) => void): void {
-  globalTimeline.eventCallback('onUpdate', () => {
-    callback(globalTimeline.time(), globalTimeline.duration());
-  });
 }
 
 function getTimeline() {
@@ -4008,17 +4012,19 @@ function getTimeline() {
 }
 
 let promise: Promise<void> = new Promise((resolve, reject) => {
-  setTimeout(() => {
-    createEditor({
-      ...api,
-      render,
-      initEngine,
-      runCode,
-      seek,
-      addPositionChangedCallback,
-      getTimeline,
-    });
-    resolve();
+  resolve();
+});
+
+initEngine();
+
+setTimeout(() => {
+  promise.then(async () => {
+    // HACK: find a better solution.
+    for (let i = 0; i < 10; i++) {
+      await promise;
+    }
+
+    startAnimation();
   });
 });
 

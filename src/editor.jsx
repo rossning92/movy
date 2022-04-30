@@ -198,32 +198,27 @@ function getFileNameWithoutExtension(path) {
   return path.split('/').pop().split('.').shift();
 }
 
-function toHHMMSS(seconds) {
-  function pad(num, size) {
-    let numStr = num.toString();
-    while (numStr.length < size) {
-      numStr = `0${numStr}`;
-    }
-    return numStr;
-  }
-
-  const secs = parseInt(seconds, 10);
-  const hh = pad(Math.floor(secs / 3600), 2);
-  const mm = pad(Math.floor(secs / 60) % 60, 2);
-  const ss = pad(secs % 60, 2);
-  const ms = pad(Math.floor((seconds - secs) * 1000), 3);
-
-  return `${hh}:${mm}:${ss}.${ms}`;
-}
-
-function Slider({ mo, disabled, timeline }) {
+function Slider({ iframe, disabled }) {
   const [position, setPosition] = useState(0);
+  const [timeline, setTimeline] = useState(null);
 
-  useEffect(() => {
-    mo.addPositionChangedCallback((position, duration) => {
-      setPosition(position);
-    });
+  const handleMessage = useCallback((event) => {
+    if (typeof event.data !== 'object' || !event.data.type) {
+      return;
+    }
+
+    if (event.data.type === 'scriptLoaded') {
+      setTimeline(event.data.timeline);
+    } else if (event.data.type === 'positionChanged') {
+      setPosition(event.data.position);
+    }
   }, []);
+  useEffect(() => {
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [handleMessage]);
 
   return (
     <div
@@ -234,9 +229,13 @@ function Slider({ mo, disabled, timeline }) {
           const x = e.nativeEvent.offsetX;
           const width = e.currentTarget.offsetWidth;
           const p = (x / width) * timeline.duration;
-          mo.seek(p);
+
+          if (iframe) {
+            iframe.contentWindow.postMessage({ type: 'seek', position: p }, '*');
+          }
         }
       }}
+      aria-hidden="true"
     >
       <div
         style={{
@@ -266,9 +265,9 @@ function Slider({ mo, disabled, timeline }) {
         ))}
 
       {timeline &&
-        timeline.markers.map((marker, i) => (
+        timeline.markers.map((marker) => (
           <div
-            key={i}
+            key={marker}
             className="unselectable clickthrough"
             style={{
               position: 'absolute',
@@ -305,34 +304,80 @@ function Slider({ mo, disabled, timeline }) {
   );
 }
 
-function App({ mo }) {
-  const rendererRef = useRef(null);
+function App() {
+  const containerRef = useRef(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [code, setCode] = useState('');
+  const [sourceCode, setSourceCode] = useState('');
   const [liveCode, setLiveCode] = useState('');
   const [filePath, setFilePath] = useState(null);
-  const [timeline, setTimeline] = useState(null);
+  const [iframe, setIframe] = useState(null);
+  const [aspect, setAspect] = useState(16 / 9);
+
+  const handleMessage = useCallback((event) => {
+    if (typeof event.data !== 'object' || !event.data.type) {
+      return;
+    }
+
+    if (event.data.type === 'videoExported') {
+      setIsExporting(false);
+    } else if (event.data.type === 'scriptLoaded') {
+      setIsLoading(false);
+      setAspect(event.data.aspect);
+    }
+  }, []);
+  useEffect(() => {
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [handleMessage]);
 
   const uiDisabled = isLoading || isExporting;
   function exportVideo() {
     setIsExporting(true);
-
-    mo.render({
-      onComplete: () => {
-        setIsExporting(false);
-      },
-      name: getFileNameWithoutExtension(filePath) || 'untitled',
-    });
+    if (iframe) {
+      iframe.contentWindow.postMessage(
+        { type: 'exportVideo', name: getFileNameWithoutExtension(filePath) || 'untitled' },
+        '*'
+      );
+    }
   }
 
-  function runCode(s) {
+  function runCode(code) {
     if (!uiDisabled) {
       setIsLoading(true);
-      return mo.runCode(s).finally(() => {
-        setIsLoading(false);
-        setTimeline(mo.getTimeline());
-      });
+
+      if (iframe) {
+        containerRef.current.removeChild(iframe);
+      }
+
+      const iframeNew = document.createElement('iframe');
+      iframeNew.style.border = 'none';
+      iframeNew.style.position = 'absolute';
+      iframeNew.style.top = '0';
+      iframeNew.style.left = '0';
+      iframeNew.style.width = '100%';
+      iframeNew.style.height = '100%';
+      iframeNew.sandbox = 'allow-same-origin allow-scripts';
+      containerRef.current.appendChild(iframeNew);
+      const doc = iframeNew.contentWindow.document;
+      doc.open();
+      doc.write('<html><body>');
+      doc.write(`<script type="importmap">
+      {
+        "imports": {
+          "movy": "/movy.js"
+        }
+      }
+      </script>`);
+      doc.write('<script src="mathjax/tex-svg.js"></script>');
+      doc.write('<script type="module">');
+      doc.write(code.replaceAll('</script>', '<\\/script>'));
+      doc.write('</script></body></html>');
+      doc.close();
+
+      setIframe(iframeNew);
     }
   }
 
@@ -355,11 +400,10 @@ function App({ mo }) {
   function loadAnimation(file) {
     setIsLoading(true);
 
-    return loadFile(file).then((s) => {
-      const importStripped = s.replace(/import \* as mo from ['"]movy['"];?\s+/, '');
+    return loadFile(file).then((code) => {
       setFilePath(file);
-      setCode(importStripped);
-      return runCode(importStripped);
+      setSourceCode(code);
+      return runCode(code);
     });
   }
 
@@ -369,8 +413,6 @@ function App({ mo }) {
       // eslint-disable-next-line no-unused-vars
       const ddm = new PureDropdown(dropdownParents[i]);
     }
-
-    mo.initEngine(rendererRef.current);
 
     const file = getParameterByName('file');
     if (file) {
@@ -495,13 +537,16 @@ function App({ mo }) {
             }}
           >
             <div
+              ref={containerRef}
               style={{
                 borderBottom: '1px solid #808080',
+                width: '100%',
+                height: '0',
+                paddingTop: `${(1 / aspect) * 100}%`,
               }}
-              ref={rendererRef}
             />
-            <Slider mo={mo} disabled={uiDisabled} timeline={timeline} />
-            {isLoading && (
+            <Slider iframe={iframe} disabled={uiDisabled} />
+            {false && (
               <div
                 style={{
                   position: 'absolute',
@@ -533,7 +578,7 @@ function App({ mo }) {
           }}
         >
           <CodeMirror
-            value={code}
+            value={sourceCode}
             theme="dark"
             maxHeight="100%"
             extensions={[javascript()]}
@@ -568,9 +613,9 @@ function App({ mo }) {
 }
 
 // eslint-disable-next-line import/prefer-default-export
-export function createEditor(mo) {
+(function renderEditor() {
   const root = document.createElement('div');
   root.style.height = '100%';
   document.body.appendChild(root);
-  ReactDOM.render(<App mo={mo} />, root);
-}
+  ReactDOM.render(<App />, root);
+})();
