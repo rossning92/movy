@@ -1296,7 +1296,7 @@ class SceneObject {
     return obj;
   }
 
-  addAxes3D(params: AddAxes3DParameters = {}): SceneObject {
+  addAxes3D(params: AddAxes3DParameters = {}): Axes3DObject {
     const {
       showLabels = true,
       xRange = [-4, 4],
@@ -1307,7 +1307,7 @@ class SceneObject {
       showAxisZ = true,
     } = params;
 
-    const obj = this.addGroup(params);
+    const group = this.addGroup(params);
 
     if (showLabels) {
       const labelColors = ['red', 'green', 'blue'];
@@ -1315,7 +1315,7 @@ class SceneObject {
       const showLabel = [showAxisX, showAxisY, showAxisZ];
       for (let i = 0; i < 3; i++) {
         if (showLabel[i]) {
-          obj.addTex(labelNames[i], {
+          group.addTex(labelNames[i], {
             color: labelColors[i],
             x: i === 0 ? xRange[1] + 0.4 : 0,
             y: i === 1 ? yRange[1] + 0.4 : 0,
@@ -1339,7 +1339,7 @@ class SceneObject {
       };
 
       if (showAxisX) {
-        obj.object3D.add(
+        group.object3D.add(
           createArrowLine(new THREE.Vector3(xRange[0], 0, 0), new THREE.Vector3(xRange[1], 0, 0), {
             ...arrowParams,
             color: 'red',
@@ -1347,7 +1347,7 @@ class SceneObject {
         );
       }
       if (showAxisY) {
-        obj.object3D.add(
+        group.object3D.add(
           createArrowLine(new THREE.Vector3(0, yRange[0], 0), new THREE.Vector3(0, yRange[1], 0), {
             ...arrowParams,
             color: 'green',
@@ -1355,7 +1355,7 @@ class SceneObject {
         );
       }
       if (showAxisZ) {
-        obj.object3D.add(
+        group.object3D.add(
           createArrowLine(new THREE.Vector3(0, 0, zRange[0]), new THREE.Vector3(0, 0, zRange[1]), {
             ...arrowParams,
             color: 'blue',
@@ -1363,11 +1363,11 @@ class SceneObject {
         );
       }
 
-      updateTransform(obj.object3D, params);
-      addObjectToScene(obj.object3D, obj.parent.object3D);
+      updateTransform(group.object3D, params);
+      addObjectToScene(group.object3D, group.parent.object3D);
     });
 
-    return obj;
+    return group;
   }
 
   addArc(
@@ -3758,7 +3758,9 @@ export function addAxes2D(params: AddAxes2DParameters = {}): SceneObject {
   return getRoot().addAxes2D(params);
 }
 
-export function addAxes3D(params: AddAxes3DParameters = {}): SceneObject {
+class Axes3DObject extends SceneObject {}
+
+export function addAxes3D(params: AddAxes3DParameters = {}): Axes3DObject {
   return getRoot().addAxes3D(params);
 }
 
