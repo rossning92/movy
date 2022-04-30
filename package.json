@@ -8,7 +8,7 @@
   "main": "dist/movy.js",
   "license": "MIT",
   "dependencies": {
-    "live-server": "^1.2.1",
+    "live-server": "^1.2.2",
     "minimist": "^1.2.5"
   },
   "bin": {
