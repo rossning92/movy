@@ -16,7 +16,7 @@ mo.addText("Hello, Movy!", {
   scale: 0.8,
   color: "yellow",
 }).grow();
-`,
+`
     );
   }
 
@@ -36,8 +36,8 @@ mo.addText("Hello, Movy!", {
           exclude: ['node_modules', '**/node_modules/*'],
         },
         null,
-        2,
-      ),
+        2
+      )
     );
   }
 }
@@ -55,11 +55,14 @@ if (open) {
     open = `/?file=${path.basename(file)}`;
   }
 }
+
 const params = {
   port,
   host: '0.0.0.0',
   root: path.resolve(__dirname, '..', 'dist'),
   open,
   mount: file ? [['/', path.dirname(path.resolve(file))]] : undefined,
+  ignore: argv.hot === false ? '**' : undefined,
 };
+
 liveServer.start(params);
