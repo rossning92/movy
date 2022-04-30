@@ -2606,7 +2606,7 @@ class GroupObject extends SceneObject {
 
   flyIn(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = 'power.in' } = params;
+      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
       const tl = gsap.timeline({
         defaults: {
           duration,
@@ -2615,16 +2615,16 @@ class GroupObject extends SceneObject {
       });
 
       this.object3D.children.forEach((child) => {
-        tl.from(child.rotation, { x: -Math.PI / 2 }, '<0.03');
+        tl.from(child.rotation, { x: -Math.PI / 2 }, `<${duration * 0.1}`);
         tl.from(
           child.position,
           {
-            y: -child.scale.length(),
+            y: -child.scale.length() * 0.5,
             z: -child.scale.length() * 2,
           },
           '<'
         );
-        tl.add(createFadeInAnimation(child, { duration }), '<');
+        tl.add(createFadeInAnimation(child, { duration, ease }), '<');
       });
 
       mainTimeline.add(tl, t);
