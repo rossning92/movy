@@ -2198,7 +2198,7 @@ class SceneObject {
     return this;
   }
 
-  grow2({ t }: AnimationParameters = {}) {
+  grow2({ duration = 0.5, t }: AnimationParameters = {}) {
     promise = promise.then(() => {
       const tl = gsap.timeline();
 
@@ -2214,6 +2214,7 @@ class SceneObject {
           x: 0,
           y: 0,
           z: 0,
+          duration,
           ease: 'elastic.out(1, 0.75)',
           onStart: () => {
             this.object3D.visible = true;
