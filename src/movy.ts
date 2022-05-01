@@ -1856,7 +1856,7 @@ class SceneObject {
       const group = new THREE.Group();
       obj.perspectiveCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
       obj.perspectiveCameraHelper = new THREE.CameraHelper(obj.perspectiveCamera);
-      group.add(obj.perspectiveCamera);
+      // group.add(obj.perspectiveCamera);
       group.add(obj.perspectiveCameraHelper);
       obj.object3D = group;
 
