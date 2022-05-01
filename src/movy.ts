@@ -1008,10 +1008,18 @@ class SceneObject {
   parent: SceneObject;
   children: SceneObject[] = [];
 
-  constructor(parent: SceneObject) {
+  constructor(parent: SceneObject, transform?: Transform) {
     this.parent = parent;
     if (this.parent) {
       this.parent.children.push(this);
+    }
+
+    if (transform !== undefined) {
+      promise = promise.then(() => {
+        this.object3D = new THREE.Group();
+        updateTransform(this.object3D, transform);
+        addObjectToScene(this.object3D, this.parent.object3D);
+      });
     }
   }
 
@@ -1084,17 +1092,7 @@ class SceneObject {
   }
 
   addGroup(params: AddGroupParameters = {}) {
-    const obj = new GroupObject(params.parent || this);
-
-    promise = promise.then(() => {
-      obj.object3D = new THREE.Group();
-
-      updateTransform(obj.object3D, params);
-
-      addObjectToScene(obj.object3D, obj.parent.object3D);
-    });
-
-    return obj;
+    return new GroupObject(params.parent || this, params);
   }
 
   add3DModel(url: string, params: AddObjectParameters = {}): GeometryObject {
