@@ -1332,15 +1332,38 @@ class SceneObject {
       showAxisZ = true,
     } = params;
 
-    const group = this.addGroup(params);
+    const labelColors = ['red', 'green', 'blue'];
+    const labelNames = ['x', 'y', 'z'];
+    const showAxis = [showAxisX, showAxisY, showAxisZ];
+    const arrowLines: { p0: [number, number, number]; p1: [number, number, number] }[] = [
+      {
+        p0: [xRange[0], 0, 0],
+        p1: [xRange[1], 0, 0],
+      },
+      {
+        p0: [0, yRange[0], 0],
+        p1: [0, yRange[1], 0],
+      },
+      {
+        p0: [0, 0, zRange[0]],
+        p1: [0, 0, zRange[1]],
+      },
+    ];
 
-    if (showLabels) {
-      const labelColors = ['red', 'green', 'blue'];
-      const labelNames = ['x', 'y', 'z'];
-      const showLabel = [showAxisX, showAxisY, showAxisZ];
-      for (let i = 0; i < 3; i++) {
-        if (showLabel[i]) {
-          group.addTex(labelNames[i], {
+    const axes3DObject = new Axes3DObject(params.parent || this, params);
+
+    const axisGroups = [];
+    for (let i = 0; i < 3; i++) {
+      const axis = axes3DObject.addGroup();
+      axisGroups.push(axis);
+
+      if (showAxis[i]) {
+        axis.addArrow3D(arrowLines[i].p0, arrowLines[i].p1, {
+          color: labelColors[i],
+        });
+
+        if (showLabels) {
+          axis.addTex(labelNames[i], {
             color: labelColors[i],
             x: i === 0 ? xRange[1] + 0.4 : 0,
             y: i === 1 ? yRange[1] + 0.4 : 0,
@@ -1354,45 +1377,11 @@ class SceneObject {
       }
     }
 
-    promise = promise.then(async () => {
-      const arrowParams = {
-        arrowStart: false,
-        arrowEnd: true,
-        threeDimensional: true,
-        lighting: true,
-        lineWidth: 0.05,
-      };
+    axes3DObject.axisX = axisGroups[0];
+    axes3DObject.axisY = axisGroups[1];
+    axes3DObject.axisZ = axisGroups[2];
 
-      if (showAxisX) {
-        group.object3D.add(
-          createArrowLine(new THREE.Vector3(xRange[0], 0, 0), new THREE.Vector3(xRange[1], 0, 0), {
-            ...arrowParams,
-            color: 'red',
-          })
-        );
-      }
-      if (showAxisY) {
-        group.object3D.add(
-          createArrowLine(new THREE.Vector3(0, yRange[0], 0), new THREE.Vector3(0, yRange[1], 0), {
-            ...arrowParams,
-            color: 'green',
-          })
-        );
-      }
-      if (showAxisZ) {
-        group.object3D.add(
-          createArrowLine(new THREE.Vector3(0, 0, zRange[0]), new THREE.Vector3(0, 0, zRange[1]), {
-            ...arrowParams,
-            color: 'blue',
-          })
-        );
-      }
-
-      updateTransform(group.object3D, params);
-      addObjectToScene(group.object3D, group.parent.object3D);
-    });
-
-    return group;
+    return axes3DObject;
   }
 
   addArc(
@@ -3791,7 +3780,11 @@ export function addAxes2D(params: AddAxes2DParameters = {}): SceneObject {
   return getRoot().addAxes2D(params);
 }
 
-class Axes3DObject extends SceneObject {}
+class Axes3DObject extends SceneObject {
+  axisX: SceneObject;
+  axisY: SceneObject;
+  axisZ: SceneObject;
+}
 
 export function addAxes3D(params: AddAxes3DParameters = {}): Axes3DObject {
   return getRoot().addAxes3D(params);
