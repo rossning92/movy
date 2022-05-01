@@ -1215,6 +1215,33 @@ class SceneObject {
     return obj;
   }
 
+  addArrow3D(
+    p1: [number, number, number?],
+    p2: [number, number, number?],
+    params: AddArrowParameters = {}
+  ): SceneObject {
+    const obj = new SceneObject(params.parent || this);
+
+    promise = promise.then(async () => {
+      const { lineWidth = 0.05, color } = params;
+
+      obj.object3D = createArrowLine(toThreeVector3(p1), toThreeVector3(p2), {
+        arrowStart: false,
+        arrowEnd: true,
+        threeDimensional: true,
+        lighting: true,
+        lineWidth,
+        color,
+      });
+
+      updateTransform(obj.object3D, params);
+
+      addObjectToScene(obj.object3D, obj.parent.object3D);
+    });
+
+    return obj;
+  }
+
   addDoubleArrow(
     p1: [number, number, number?],
     p2: [number, number, number?],
@@ -3742,6 +3769,14 @@ export function addArrow(
   params: AddArrowParameters = {}
 ): SceneObject {
   return getRoot().addArrow(p1, p2, params);
+}
+
+export function addArrow3D(
+  p1: [number, number, number?],
+  p2: [number, number, number?],
+  params: AddArrowParameters = {}
+): SceneObject {
+  return getRoot().addArrow3D(p1, p2, params);
 }
 
 export function addDoubleArrow(
