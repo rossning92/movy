@@ -1133,6 +1133,9 @@ class SceneObject {
             child.parent.add(createPoints(child.geometry, params));
             child.removeFromParent();
           } else {
+            if (params.lighting !== undefined) {
+              child.material = createMaterial(params);
+            }
             if (params.wireframe) {
               child.material.wireframe = true;
             }
