@@ -3785,6 +3785,13 @@ class Axes3DObject extends SceneObject {
   axisX: SceneObject;
   axisY: SceneObject;
   axisZ: SceneObject;
+
+  animateCreation(params: AnimationParameters = {}) {
+    const { t, ease = 'power2.out' } = params;
+    this.axisX.grow2({ t, duration: 1.5, ease });
+    this.axisY.grow2({ t: `<${0.5 / 3}`, duration: 1.5, ease });
+    this.axisZ.grow2({ t: `<${0.5 / 3}`, duration: 1.5, ease });
+  }
 }
 
 export function addAxes3D(params: AddAxes3DParameters = {}): Axes3DObject {
