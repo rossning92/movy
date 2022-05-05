@@ -2608,6 +2608,10 @@ class GroupObject extends SceneObject {
         },
       });
 
+      if (this.object3D instanceof TextMeshObject) {
+        this.object3D.createSeperateMaterials();
+      }
+
       this.object3D.children.forEach((child) => {
         tl.from(child.rotation, { x: -Math.PI / 2 }, `<${duration * 0.1}`);
         tl.from(

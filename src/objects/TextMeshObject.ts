@@ -62,6 +62,7 @@ export default class TextMeshObject extends Group {
   shouldUpdate = true;
   fonts: Font[];
   text: string;
+  material: Material;
 
   constructor(params: TextMeshObjectParams = {}) {
     super();
@@ -77,6 +78,21 @@ export default class TextMeshObject extends Group {
       text3D: false,
       ...params,
     };
+
+    if (this.initParams.material) {
+      this.material = this.initParams.material.clone();
+    } else {
+      this.material = new MeshBasicMaterial({
+        color: this.initParams.color,
+        side: DoubleSide,
+      });
+    }
+  }
+
+  createSeperateMaterials() {
+    for (const child of this.children) {
+      (child as THREE.Mesh).material = this.material.clone();
+    }
   }
 
   async init() {
@@ -168,16 +184,7 @@ export default class TextMeshObject extends Group {
 
           geometries.push(geometry);
 
-          let material;
-          if (this.initParams.material) {
-            material = this.initParams.material.clone();
-          } else {
-            material = new MeshBasicMaterial({
-              color: this.initParams.color,
-              side: DoubleSide,
-            });
-          }
-          const mesh = new Mesh(geometry, material);
+          const mesh = new Mesh(geometry, this.material);
 
           const letterWidth = ha;
           const xMid = 0.5 * letterWidth;
