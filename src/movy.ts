@@ -3752,10 +3752,6 @@ export function addTriangleOutline(params: AddOutlineParameters = {}): SceneObje
   return getRoot().addTriangleOutline(params);
 }
 
-function _addMesh(mesh: THREE.Mesh, params: AddObjectParameters = {}): SceneObject {
-  return getRoot()._addMesh(mesh, params);
-}
-
 export function add3DModel(url: string, params: AddObjectParameters = {}): GeometryObject {
   return getRoot().add3DModel(url, params);
 }
