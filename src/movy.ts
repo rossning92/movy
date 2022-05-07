@@ -16,6 +16,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
+import { radToDeg } from 'three/src/math/MathUtils';
 import TextMeshObject from './objects/TextMeshObject';
 import './style/player.css';
 import { toThreeColor } from './utils/color';
@@ -862,7 +863,7 @@ function createTransformAnimation({
   sx?: number;
   sy?: number;
   sz?: number;
-  position?: [number, number] | [number, number, number];
+  position?: [number, number, number?];
   scale?: number;
   object3d: THREE.Object3D;
   duration?: number;
@@ -1185,7 +1186,7 @@ class SceneObject {
     p1: [number, number, number?],
     p2: [number, number, number?],
     params: AddArrowParameters = {}
-  ): SceneObject {
+  ): ArrowObject {
     // For back compat
     if (!Array.isArray(p1)) {
       params = p1;
@@ -1193,29 +1194,68 @@ class SceneObject {
       p2 = (params as any).to;
     }
 
-    const obj = new SceneObject(params.parent || this);
+    const { arrowStart = false, arrowEnd = true, lineWidth = DEFAULT_LINE_WIDTH, color } = params;
+    const arrowLength = lineWidth * 10;
 
-    const { lineWidth = DEFAULT_LINE_WIDTH, arrowStart = false, arrowEnd = true } = params;
+    let from = toThreeVector3(p1);
+    let to = toThreeVector3(p2);
 
-    promise = promise.then(async () => {
-      addDefaultLights();
+    const dir = new THREE.Vector3();
+    dir.subVectors(to, from);
+    const length = dir.length();
+    dir.normalize();
 
-      if (params.lighting === undefined) params.lighting = false;
+    const center = new THREE.Vector3();
+    center.addVectors(from, to).multiplyScalar(0.5);
 
-      obj.object3D = createArrowLine(toThreeVector3(p1), toThreeVector3(p2), {
-        arrowStart,
-        arrowEnd,
-        lineWidth,
-        color: params.color,
-        threeDimensional: true,
-      });
+    from.sub(center);
+    to.sub(center);
+    if (arrowEnd) {
+      to = dir.clone();
+      to.multiplyScalar(0.5 * (length - arrowLength));
+    }
+    if (arrowStart) {
+      from = dir.clone();
+      from.multiplyScalar(-0.5 * (length - arrowLength));
+    }
 
-      updateTransform(obj.object3D, params);
-
-      addObjectToScene(obj.object3D, obj.parent.object3D);
+    const arrowObject = new ArrowObject(params.parent || this, {
+      ...params,
+      position: [center.x, center.y, center.z],
     });
 
-    return obj;
+    // Create line
+    arrowObject.line = arrowObject.addLine([from.x, from.y, from.z], [to.x, to.y, to.z], params);
+
+    {
+      // Create arrows
+      for (let i = 0; i < 2; i++) {
+        if (i === 0 && !arrowStart) continue;
+        if (i === 1 && !arrowEnd) continue;
+
+        const quat = new THREE.Quaternion();
+        quat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), i === 1 ? dir : dir.clone().negate());
+        const eular = new THREE.Euler();
+        eular.setFromQuaternion(quat, 'XYZ');
+
+        const cone = arrowObject.addCone({
+          scale: arrowLength,
+          position: i === 0 ? [from.x, from.y, from.z] : [to.x, to.y, to.z],
+          rx: radToDeg(eular.x),
+          ry: radToDeg(eular.y),
+          rz: radToDeg(eular.z),
+          lighting: false,
+          color,
+        });
+        if (i === 0) {
+          arrowObject.arrowStart = cone;
+        } else {
+          arrowObject.arrowEnd = cone;
+        }
+      }
+    }
+
+    return arrowObject;
   }
 
   addArrow3D(
@@ -1571,8 +1611,9 @@ class SceneObject {
     return this.add3DGeometry(params, geometry);
   }
 
-  addCone(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.ConeGeometry(0.5, 1.0, defaultSeg(params), defaultSeg(params));
+  addCone(params: AddConeParameters = {}): SceneObject {
+    const { radius = 0.5 } = params;
+    const geometry = new THREE.ConeGeometry(radius, 1.0, defaultSeg(params), defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
@@ -2816,6 +2857,24 @@ class LineObject extends SceneObject {
   }
 }
 
+class ArrowObject extends SceneObject {
+  line: LineObject;
+  arrowStart: SceneObject;
+  arrowEnd: SceneObject;
+
+  animateLineDrawing(params: AnimationParameters = {}) {
+    const { t, duration = engine.defaultDuration } = params;
+    this.line.animateLineDrawing({ t, duration, ease: 'power2.inOut' });
+    if (this.arrowEnd) {
+      this.arrowEnd.grow({
+        t: `>-${duration * 0.5}`,
+        duration: duration * 0.5,
+        ease: 'power2.out',
+      });
+    }
+  }
+}
+
 interface TransformTexParameters extends AnimationParameters {
   type?: 'transform' | 'crossfade';
   reverse?: boolean;
@@ -3181,7 +3240,7 @@ interface Transform {
   sx?: number;
   sy?: number;
   sz?: number;
-  position?: [number, number] | [number, number, number];
+  position?: [number, number, number?];
   scale?: number;
   parent?: SceneObject;
   anchor?:
@@ -3215,6 +3274,10 @@ interface AddObjectParameters extends Transform, BasicMaterial {
   letterSpacing?: any;
   duration?: any;
   type?: any;
+}
+
+interface AddConeParameters extends AddObjectParameters {
+  radius?: number;
 }
 
 interface BasicMaterial {
@@ -3579,7 +3642,7 @@ export function addCircleOutline(params: AddCircleOutlineParameters = {}): Scene
   return getRoot().addCircleOutline(params);
 }
 
-export function addCone(params: AddObjectParameters = {}): SceneObject {
+export function addCone(params: AddConeParameters = {}): SceneObject {
   return getRoot().addCone(params);
 }
 
@@ -3760,7 +3823,7 @@ export function addArrow(
   p1: [number, number, number?],
   p2: [number, number, number?],
   params: AddArrowParameters = {}
-): SceneObject {
+): ArrowObject {
   return getRoot().addArrow(p1, p2, params);
 }
 
