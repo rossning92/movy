@@ -544,7 +544,7 @@ function App() {
               }}
             />
             <Slider iframe={iframe} disabled={uiDisabled} />
-            {false && (
+            {isLoading && (
               <div
                 style={{
                   position: 'absolute',
@@ -557,10 +557,9 @@ function App() {
                   justifyContent: 'center',
                   alignItems: 'center',
                   background: '#000',
-                  border: '4px solid #808080',
                 }}
               >
-                <div style={{ fontSize: '2em' }}>LOADING</div>
+                (loading...)
               </div>
             )}
           </div>
