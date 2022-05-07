@@ -406,6 +406,23 @@ function App() {
     });
   }
 
+  function reloadAnimation() {
+    const file = getParameterByName('file');
+    if (file) {
+      loadAnimation(file);
+    } else {
+      loadAnimation('examples/hello-movy.js');
+    }
+  }
+
+  const handlePopState = useCallback(() => {
+    reloadAnimation();
+  });
+  useEffect(() => {
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [handlePopState]);
+
   useEffect(() => {
     const dropdownParents = document.querySelectorAll('.pure-menu-has-children');
     for (let i = 0; i < dropdownParents.length; i += 1) {
@@ -413,12 +430,7 @@ function App() {
       const ddm = new PureDropdown(dropdownParents[i]);
     }
 
-    const file = getParameterByName('file');
-    if (file) {
-      loadAnimation(file);
-    } else {
-      loadAnimation('examples/hello-movy.js');
-    }
+    reloadAnimation();
   }, []);
 
   return (
@@ -445,9 +457,9 @@ function App() {
                     className="pure-menu-link"
                     onClick={(e) => {
                       e.preventDefault();
-                      window.history.pushState(null, '', `?file=${file}`);
                       if (!uiDisabled) {
-                        loadAnimation(`${file}`);
+                        window.history.pushState(null, '', `?file=${file}`);
+                        reloadAnimation();
                       }
                     }}
                   >
