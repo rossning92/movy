@@ -1813,6 +1813,10 @@ class SceneObject {
       textObject.setText(text, true);
 
       obj.object3D = textObject;
+      if (engine.outlinePass) {
+        engine.outlinePass.selectedObjects.push(textObject);
+      }
+
       updateTransform(obj.object3D, params);
       addObjectToScene(obj.object3D, obj.parent.object3D);
     });
@@ -2872,6 +2876,7 @@ class ArrowObject extends SceneObject {
         ease: 'power2.out',
       });
     }
+    return this;
   }
 }
 
