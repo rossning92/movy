@@ -56,12 +56,19 @@ if (open) {
   }
 }
 
+let mount;
+if (file) {
+  mount = [['/', path.dirname(path.resolve(file))]];
+  if (argv.content) {
+    mount.push(['/', path.resolve(argv.content)]);
+  }
+}
 const params = {
   port,
   host: '0.0.0.0',
   root: path.resolve(__dirname, '..', 'dist'),
   open,
-  mount: file ? [['/', path.dirname(path.resolve(file))]] : undefined,
+  mount,
   ignore: argv.hot === false ? '**' : undefined,
 };
 
