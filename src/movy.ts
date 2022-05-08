@@ -952,7 +952,7 @@ function createLineMaterial(color?: string | number, lineWidth?: number, dashed?
     linewidth: lineWidth,
     worldUnits: false,
     alphaToCoverage: false, // TODO: this will cause artifact during fadeIn and fadeOut
-    dashed,
+    dashed: dashed || false,
     dashSize: lineWidth * 2,
     gapSize: lineWidth * 2,
     resolution: new THREE.Vector2(renderTargetWidth, renderTargetHeight),
