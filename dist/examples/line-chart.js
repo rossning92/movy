@@ -36,7 +36,10 @@ function addLineChart({
   ];
 
   mo.cameraMoveTo({
-    x: sizeX / 2, y: sizeY / 2, z: 10, duration: 0,
+    x: sizeX / 2,
+    y: sizeY / 2,
+    z: 10,
+    duration: 0,
   });
   mo.cameraMoveTo({ z: 8, t: '<', duration: 2 });
 
@@ -86,12 +89,12 @@ function addLineChart({
     t: '<0.1',
   });
 
-  for (let i = 0; i < data.length - 1; i++) {
-    mo.addLine(transform(data[i]), transform(data[i + 1]), {
-      lineWidth: 0.02,
-      color: 'green',
-    }).fadeIn({
-      t: '<0.02',
-    });
-  }
+  mo.addPolyline(data.map(transform), {
+    lineWidth: 0.05,
+    color: 'green',
+  }).animateLineDrawing({
+    t: '<',
+    ease: 'power2.inOut',
+    duration: 3,
+  });
 }
