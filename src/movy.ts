@@ -1361,6 +1361,10 @@ class SceneObject {
       lineWidth: DEFAULT_LINE_WIDTH,
     });
 
+    promise = promise.then(async () => {
+      updateTransform(obj.object3D, params);
+    });
+
     return obj;
   }
 
@@ -3256,7 +3260,8 @@ interface Transform {
     | 'topLeft'
     | 'topRight'
     | 'bottomLeft'
-    | 'bottomRight';
+    | 'bottomRight'
+    | [number, number, number?];
   billboarding?: boolean;
   autoResize?: boolean;
 }
@@ -3366,45 +3371,51 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   }
 
   if (transform.anchor !== undefined) {
-    console.assert(obj.children.length > 0);
-
-    const aabb = computeAABB(obj);
-    const size = aabb.getSize(new THREE.Vector3());
-    if (transform.anchor === 'left') {
-      for (const child of obj.children) {
-        child.translateX(size.x / 2);
-      }
-    } else if (transform.anchor === 'right') {
-      for (const child of obj.children) {
-        child.translateX(-size.x / 2);
-      }
-    } else if (transform.anchor === 'top') {
-      for (const child of obj.children) {
-        child.translateY(-size.y / 2);
-      }
-    } else if (transform.anchor === 'bottom') {
-      for (const child of obj.children) {
-        child.translateY(size.y / 2);
-      }
-    } else if (transform.anchor === 'topLeft') {
-      for (const child of obj.children) {
-        child.translateX(size.x / 2);
-        child.translateY(-size.y / 2);
-      }
-    } else if (transform.anchor === 'topRight') {
-      for (const child of obj.children) {
-        child.translateX(-size.x / 2);
-        child.translateY(-size.y / 2);
-      }
-    } else if (transform.anchor === 'bottomLeft') {
-      for (const child of obj.children) {
-        child.translateX(size.x / 2);
-        child.translateY(size.y / 2);
-      }
-    } else if (transform.anchor === 'bottomRight') {
-      for (const child of obj.children) {
-        child.translateX(-size.x / 2);
-        child.translateY(size.y / 2);
+    if (obj.children.length > 0) {
+      const aabb = computeAABB(obj);
+      const size = aabb.getSize(new THREE.Vector3());
+      if (transform.anchor === 'left') {
+        for (const child of obj.children) {
+          child.translateX(size.x / 2);
+        }
+      } else if (transform.anchor === 'right') {
+        for (const child of obj.children) {
+          child.translateX(-size.x / 2);
+        }
+      } else if (transform.anchor === 'top') {
+        for (const child of obj.children) {
+          child.translateY(-size.y / 2);
+        }
+      } else if (transform.anchor === 'bottom') {
+        for (const child of obj.children) {
+          child.translateY(size.y / 2);
+        }
+      } else if (transform.anchor === 'topLeft') {
+        for (const child of obj.children) {
+          child.translateX(size.x / 2);
+          child.translateY(-size.y / 2);
+        }
+      } else if (transform.anchor === 'topRight') {
+        for (const child of obj.children) {
+          child.translateX(-size.x / 2);
+          child.translateY(-size.y / 2);
+        }
+      } else if (transform.anchor === 'bottomLeft') {
+        for (const child of obj.children) {
+          child.translateX(size.x / 2);
+          child.translateY(size.y / 2);
+        }
+      } else if (transform.anchor === 'bottomRight') {
+        for (const child of obj.children) {
+          child.translateX(-size.x / 2);
+          child.translateY(size.y / 2);
+        }
+      } else if (Array.isArray(transform.anchor)) {
+        for (const child of obj.children) {
+          child.position.sub(toThreeVector3(transform.anchor));
+        }
+      } else {
+        console.error(`invalid anchor parameter: ${transform.anchor}`);
       }
     }
   }
