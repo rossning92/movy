@@ -3855,10 +3855,10 @@ class Axes3DObject extends SceneObject {
   axisZ: SceneObject;
 
   animateCreation(params: AnimationParameters = {}) {
-    const { t, ease = 'power2.out' } = params;
-    this.axisX.grow2({ t, duration: 1.5, ease });
-    this.axisY.grow2({ t: `<${0.5 / 3}`, duration: 1.5, ease });
-    this.axisZ.grow2({ t: `<${0.5 / 3}`, duration: 1.5, ease });
+    const { t, ease = engine.defaultEase } = params;
+    this.axisX.fadeIn({ t, duration: 1.5, ease });
+    this.axisY.fadeIn({ t: `<0.25`, duration: 1.5, ease });
+    this.axisZ.fadeIn({ t: `<0.25`, duration: 1.5, ease });
   }
 }
 
