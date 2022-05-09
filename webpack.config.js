@@ -3,8 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 
 function generateConfig({ name, entry, plugins = [], outputModule = false } = {}) {
-  const out = {
-    mode: 'development',
+  return {
     entry,
     resolve: {
       extensions: ['.js', '.ts', '.json'],
@@ -50,7 +49,6 @@ function generateConfig({ name, entry, plugins = [], outputModule = false } = {}
       ],
     },
   };
-  return out;
 }
 
 module.exports = [
@@ -64,6 +62,7 @@ module.exports = [
           {
             from: 'node_modules/mathjax/es5',
             to: 'mathjax',
+            info: { minimized: true },
           },
         ],
       }),
