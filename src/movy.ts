@@ -1547,8 +1547,8 @@ class SceneObject {
     return this.addPolyline([p1, p2], params);
   }
 
-  addPoint(position: [number, number, number], params: AddObjectParameters = {}): GeometryObject {
-    return addPoints([position], params);
+  addPoint(params: AddObjectParameters = {}): GeometryObject {
+    return addPoints([[0, 0, 0]], params);
   }
 
   addPoints(
@@ -3679,11 +3679,8 @@ export function addLine(
   return getRoot().addLine(p1, p2, params);
 }
 
-export function addPoint(
-  position: [number, number, number],
-  params: AddObjectParameters = {}
-): GeometryObject {
-  return getRoot().addPoint(position, params);
+export function addPoint(params: AddObjectParameters = {}): GeometryObject {
+  return getRoot().addPoint(params);
 }
 
 class GeometryObject extends SceneObject {
