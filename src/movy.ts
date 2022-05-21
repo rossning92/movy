@@ -2090,7 +2090,7 @@ class SceneObject {
 
   changeColor(
     color: string | number,
-    { duration = 0.25, ease = 'power1.inOut', t }: AnimationParameters = {}
+    { duration = engine.defaultDuration, ease = 'power1.inOut', t }: AnimationParameters = {}
   ) {
     promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { duration, ease } });
