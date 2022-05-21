@@ -38,6 +38,7 @@ gsap.ticker.remove(gsap.updateRoot);
 
 let renderTargetWidth = 1920;
 let renderTargetHeight = 1080;
+let framerate = 30;
 const viewportHeight = 10;
 let motionBlurSamples = 1;
 const globalTimeline = gsap.timeline({ paused: true, onComplete: stopRender });
@@ -80,7 +81,6 @@ globalTimeline.add(mainTimeline, '0');
 
 const options = {
   format: 'webm',
-  framerate: 30,
   timeline: 0,
 };
 
@@ -109,14 +109,14 @@ function exportVideo({
 
   if (options.format == 'webm-fast') {
     if (!recorder) {
-      recorder = new WebmMediaRecorder({ name, framerate: options.framerate });
+      recorder = new WebmMediaRecorder({ name, framerate: framerate });
     }
     recorder.start();
   } else {
     capturer = new CCapture({
       verbose: true,
       display: false,
-      framerate: options.framerate,
+      framerate: framerate,
       motionBlurFrames: motionBlurSamples,
       quality: 100,
       format: options.format,
@@ -3554,6 +3554,10 @@ export function enableMotionBlur({ samples = 16 } = {}) {
 export function setResolution(w: number, h: number) {
   renderTargetWidth = w;
   renderTargetHeight = h;
+}
+
+export function setFPS(fps: number) {
+  framerate = fps;
 }
 
 export function setBackgroundColor(color: number | string) {
