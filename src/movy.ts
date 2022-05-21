@@ -1582,11 +1582,15 @@ class SceneObject {
     const obj = new LineObject(params.parent || this);
 
     promise = promise.then(async () => {
-      for (const pt of points) {
-        const x = pt[0];
-        const y = pt[1];
-        const z = pt.length <= 2 ? 0 : pt[2];
-        obj.verts.push(new THREE.Vector3(x, y, z));
+      const vec3d = points.map((pt) => new THREE.Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
+
+      if (vec3d.length === 2) {
+        obj.verts = vec3d;
+      } else if (false && vec3d.length >= 3) {
+        const curve = new THREE.CatmullRomCurve3(vec3d);
+        obj.verts = curve.getPoints(50);
+      } else {
+        obj.verts = vec3d;
       }
 
       const line = new Line_(obj.verts, params);
