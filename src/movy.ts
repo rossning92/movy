@@ -2715,22 +2715,6 @@ class GroupObject extends SceneObject {
   }
 }
 
-function addCustomAnimation(tl: gsap.core.Timeline, callback: (t: number) => void) {
-  const data = { val: 0 };
-  tl.fromTo(
-    data,
-    { val: 0 },
-    {
-      val: 1,
-      ease: 'linear',
-      onUpdate: () => {
-        callback(data.val);
-      },
-    },
-    '<'
-  );
-}
-
 interface ChangeTextParameters extends AnimationParameters {
   from?: number;
   to?: number;
