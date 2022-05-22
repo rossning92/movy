@@ -2123,11 +2123,9 @@ class SceneObject {
     return this;
   }
 
-  changeColor(
-    color: string | number,
-    { duration = engine.defaultDuration, ease = 'power1.inOut', t }: AnimationParameters = {}
-  ) {
+  changeColor(color: string | number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
+      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const materials = getAllMaterials(this.object3D);
