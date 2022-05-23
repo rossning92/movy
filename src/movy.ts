@@ -47,7 +47,7 @@ import {
   Vector3,
   VideoTexture,
   WebGLMultisampleRenderTarget,
-  WebGLRenderer,
+  WebGLRenderer
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
@@ -2879,7 +2879,7 @@ class LineObject extends SceneObject {
     return this.moveVert(i, position, { t, duration: 0 });
   }
 
-  animateLineDrawing(params: AnimationParameters = {}) {
+  drawLine(params: AnimationParameters = {}) {
     promise = promise.then(() => {
       const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
@@ -2918,9 +2918,9 @@ class ArrowObject extends SceneObject {
   arrowStart: SceneObject;
   arrowEnd: SceneObject;
 
-  animateLineDrawing(params: AnimationParameters = {}) {
+  drawLine(params: AnimationParameters = {}) {
     const { t, duration = app.defaultDuration } = params;
-    this.line.animateLineDrawing({ t, duration, ease: 'power2.inOut' });
+    this.line.drawLine({ t, duration, ease: 'power2.inOut' });
     if (this.arrowEnd) {
       this.arrowEnd.grow({
         t: `>-${duration * 0.5}`,

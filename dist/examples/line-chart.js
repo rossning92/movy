@@ -92,7 +92,7 @@ function addLineChart({
   mo.addPolyline(data.map(transform), {
     lineWidth: 0.05,
     color: 'green',
-  }).animateLineDrawing({
+  }).drawLine({
     t: '<',
     ease: 'power2.inOut',
     duration: 3,
