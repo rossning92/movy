@@ -19,15 +19,15 @@ for (let i = 1; i < gridSize[1]; i++) {
       color: prime ? 'black' : 'white',
     });
 
-    group.addRectOutline({ position: pos, lineWidth: 0.05 });
+    group.addRectOutline({ position: pos, lineWidth: 0.02 });
 
     if (prime) {
       group
         .addRect({
           position: [pos[0], pos[1], -0.1],
-          color: '#EDCF23',
+          color: 'white',
         })
-        .grow2({
+        .fadeIn({
           t: '<0.1',
         });
     }
