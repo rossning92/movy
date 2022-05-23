@@ -25,6 +25,7 @@ import { computeAABB } from './utils/math';
 import { OutlinePass } from './utils/OutlinePass.js';
 import { loadSVG } from './utils/svg';
 import { createTexObject } from './utils/tex';
+import { createVideoElement } from './utils/video';
 import WebmMediaRecorder from './utils/WebmMediaRecorder';
 
 const debug = false;
@@ -1491,7 +1492,7 @@ class SceneObject {
     return obj;
   }
 
-  addImage(file: string, params: AddTextParameters = {}): SceneObject {
+  addImage(file: string, params: AddObjectParameters = {}): SceneObject {
     const obj = new SceneObject(params.parent || this);
 
     const { color, ccw } = params;
@@ -1524,6 +1525,36 @@ class SceneObject {
         const mesh = new THREE.Mesh(geometry, material);
         obj.object3D = mesh;
       }
+
+      updateTransform(obj.object3D, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
+    });
+
+    return obj;
+  }
+
+  addVideo(file: string, params: AddObjectParameters = {}): SceneObject {
+    const obj = new SceneObject(params.parent || this);
+
+    promise = promise.then(async () => {
+      const video = await createVideoElement(file);
+      const texture = new THREE.VideoTexture(video);
+      texture.encoding = THREE.sRGBEncoding;
+      const material = createMaterial(params);
+
+      if (!(material instanceof THREE.MeshBasicMaterial)) {
+        throw 'invalid material type';
+      }
+      material.map = texture;
+
+      const aspect = video.videoWidth / video.videoHeight;
+      console.log(aspect);
+      const geometry = new THREE.PlaneBufferGeometry(
+        aspect > 1 ? aspect : 1,
+        aspect > 1 ? 1 : 1 / aspect
+      );
+      const mesh = new THREE.Mesh(geometry, material);
+      obj.object3D = mesh;
 
       updateTransform(obj.object3D, params);
       addObjectToScene(obj.object3D, obj.parent.object3D);
@@ -3686,8 +3717,12 @@ export function addGroup(params: AddGroupParameters = {}): GroupObject {
   return getRoot().addGroup(params);
 }
 
-export function addImage(file: string, params: AddTextParameters = {}): SceneObject {
+export function addImage(file: string, params: AddObjectParameters = {}): SceneObject {
   return getRoot().addImage(file, params);
+}
+
+export function addVideo(file: string, params: AddObjectParameters = {}): SceneObject {
+  return getRoot().addVideo(file, params);
 }
 
 export function addLine(
