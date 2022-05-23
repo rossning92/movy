@@ -1,8 +1,54 @@
 const CCapture = require('ccapture.js-npmfixed');
 import * as Diff from 'diff';
 import gsap from 'gsap';
-import * as THREE from 'three';
-import { PerspectiveCamera } from 'three';
+import {
+  BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
+  Camera,
+  CameraHelper,
+  CatmullRomCurve3,
+  CircleGeometry,
+  Color,
+  ConeGeometry,
+  CylinderGeometry,
+  DirectionalLight,
+  DoubleSide,
+  EllipseCurve,
+  Euler,
+  Event,
+  Float32BufferAttribute,
+  FogExp2,
+  FrontSide,
+  GridHelper,
+  Group,
+  HemisphereLight,
+  Material,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  Object3D,
+  OrthographicCamera,
+  PerspectiveCamera,
+  Plane,
+  PlaneBufferGeometry,
+  PlaneGeometry,
+  Points,
+  PointsMaterial,
+  Quaternion,
+  Raycaster,
+  Scene,
+  SphereGeometry,
+  sRGBEncoding,
+  Texture,
+  TextureLoader,
+  TorusGeometry,
+  Vector2,
+  Vector3,
+  VideoTexture,
+  WebGLMultisampleRenderTarget,
+  WebGLRenderer,
+} from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -46,31 +92,36 @@ const globalTimeline = gsap.timeline({ paused: true, onComplete: stopRender });
 const mainTimeline = gsap.timeline();
 
 let capturer: any;
-let renderer: THREE.WebGLRenderer;
+let renderer: WebGLRenderer;
 
-interface Engine {
-  activeLayer?: string;
+interface MovyApp {
+  defaultDuration: number;
+  defaultEase: string;
+
+  activeLayer: string;
+  composer: EffectComposer;
+  lightGroup?: Group;
+
+  scene: Scene;
+  root: GroupObject;
+  mainCamera: Camera;
+
+  uiScene: Scene;
+  uiRoot: GroupObject;
+  uiCamera: Camera;
+
+  renderTarget: WebGLMultisampleRenderTarget;
+  rng: any;
+
   bloomPass?: UnrealBloomPass;
-  composer?: EffectComposer;
   fxaaPass?: ShaderPass;
   glitchPass?: any;
-  lightGroup?: THREE.Group;
-  mainCamera?: THREE.Camera;
-  renderTarget?: THREE.WebGLMultisampleRenderTarget;
-  rng?: any;
-  root?: GroupObject;
-  scene?: THREE.Scene;
-  uiCamera?: THREE.Camera;
-  uiRoot?: GroupObject;
-  uiScene?: THREE.Scene;
-  defaultDuration?: number;
-  defaultEase?: string;
   outlinePass?: any;
 }
 
-let engine: Engine = {};
+let app: MovyApp;
 
-let gridHelper: THREE.GridHelper;
+let gridHelper: GridHelper;
 const backgroundAlpha = 1.0;
 
 let lastTimestamp: number;
@@ -177,7 +228,7 @@ function stopRender() {
 
 function createOrthographicCamera() {
   const aspect = renderTargetWidth / renderTargetHeight;
-  const camera = new THREE.OrthographicCamera(
+  const camera = new OrthographicCamera(
     (viewportHeight * aspect) / -2,
     (viewportHeight * aspect) / 2,
     viewportHeight / 2,
@@ -190,21 +241,21 @@ function createOrthographicCamera() {
   return camera;
 }
 
-function createPerspectiveCamera(): THREE.Camera {
+function createPerspectiveCamera(): Camera {
   // This will ensure the size of 10 in the vertical direction.
-  const camera = new THREE.PerspectiveCamera(60, renderTargetWidth / renderTargetHeight, 0.1, 5000);
+  const camera = new PerspectiveCamera(60, renderTargetWidth / renderTargetHeight, 0.1, 5000);
   camera.position.set(0, 0, 8.66);
-  camera.lookAt(new THREE.Vector3(0, 0, 0));
+  camera.lookAt(new Vector3(0, 0, 0));
   return camera;
 }
 
-function initEngine(container?: HTMLElement) {
+function createMovyApp(container?: HTMLElement): MovyApp {
   mainTimeline.clear();
 
   // Create renderer
   if (renderer === undefined) {
     console.log('new webgl renderer');
-    renderer = new THREE.WebGLRenderer({
+    renderer = new WebGLRenderer({
       alpha: true,
       antialias: true,
     });
@@ -219,27 +270,24 @@ function initEngine(container?: HTMLElement) {
     }
   }
 
-  const scene = new THREE.Scene();
+  const scene = new Scene();
   const root = new GroupObject(null);
-  root.object3D = new THREE.Group();
+  root.object3D = new Group();
   scene.add(root.object3D);
 
-  const uiScene = new THREE.Scene();
+  const uiScene = new Scene();
   const uiRoot = new GroupObject(null);
-  uiRoot.object3D = new THREE.Group();
+  uiRoot.object3D = new Group();
   uiScene.add(uiRoot.object3D);
 
-  scene.background = new THREE.Color(0);
+  scene.background = new Color(0);
 
   const mainCamera = createOrthographicCamera();
   const uiCamera = createOrthographicCamera();
 
   // Create multi-sample render target in order to reduce aliasing (better
   // quality than FXAA).
-  const renderTarget = new THREE.WebGLMultisampleRenderTarget(
-    renderTargetWidth,
-    renderTargetHeight
-  );
+  const renderTarget = new WebGLMultisampleRenderTarget(renderTargetWidth, renderTargetHeight);
   renderTarget.samples = 8; // TODO: don't hardcode
 
   const composer = new EffectComposer(renderer, renderTarget);
@@ -249,7 +297,7 @@ function initEngine(container?: HTMLElement) {
   // copy pass to resolve MSAA samples.
   composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
 
-  engine = {
+  app = {
     activeLayer: 'main',
     composer,
     glitchPass: undefined,
@@ -266,23 +314,25 @@ function initEngine(container?: HTMLElement) {
   };
 
   if (0) {
-    engine.outlinePass = new OutlinePass(
-      new THREE.Vector2(renderTargetWidth, renderTargetHeight),
+    app.outlinePass = new OutlinePass(
+      new Vector2(renderTargetWidth, renderTargetHeight),
       scene,
       mainCamera
     );
-    engine.outlinePass.edgeStrength = 10;
-    engine.outlinePass.edgeGlow = 0;
-    engine.outlinePass.edgeThickness = 1;
-    engine.outlinePass.pulsePeriod = 0;
-    engine.outlinePass.visibleEdgeColor.set('#ffffff');
-    engine.outlinePass.hiddenEdgeColor.set('#ffffff');
-    composer.addPass(engine.outlinePass);
+    app.outlinePass.edgeStrength = 10;
+    app.outlinePass.edgeGlow = 0;
+    app.outlinePass.edgeThickness = 1;
+    app.outlinePass.pulsePeriod = 0;
+    app.outlinePass.visibleEdgeColor.set('#ffffff');
+    app.outlinePass.hiddenEdgeColor.set('#ffffff');
+    composer.addPass(app.outlinePass);
   }
 
   promise = new Promise((resolve, reject) => {
     resolve();
   });
+
+  return app;
 }
 
 function animate() {
@@ -309,8 +359,8 @@ function animate() {
 
   gsap.updateRoot(timeElapsed);
 
-  if (engine.scene) {
-    engine.scene.traverse((child: any) => {
+  if (app.scene) {
+    app.scene.traverse((child: any) => {
       if (child instanceof TextMeshObject) {
         child.updateText();
       }
@@ -322,28 +372,28 @@ function animate() {
 
       if (child.billboarding) {
         const quat = child.quaternion;
-        quat.copy(engine.mainCamera.quaternion);
+        quat.copy(app.mainCamera.quaternion);
         child.traverseAncestors((o: any) => {
           quat.multiply(o.quaternion.clone().invert());
         });
       }
     });
 
-    renderer.setRenderTarget(engine.renderTarget);
+    renderer.setRenderTarget(app.renderTarget);
 
     // Render scene
-    renderer.render(engine.scene, engine.mainCamera);
+    renderer.render(app.scene, app.mainCamera);
 
     // Render UI on top of the scene
     renderer.autoClearColor = false;
-    renderer.render(engine.uiScene, engine.uiCamera);
+    renderer.render(app.uiScene, app.uiCamera);
     renderer.autoClearColor = true;
 
     renderer.setRenderTarget(null);
 
     // Post processing
-    engine.composer.readBuffer = engine.renderTarget;
-    engine.composer.render();
+    app.composer.readBuffer = app.renderTarget;
+    app.composer.render();
   }
 
   if (capturer) (capturer as any).capture(renderer.domElement);
@@ -357,14 +407,7 @@ interface MoveCameraParameters extends Transform, AnimationParameters {
 
 export function cameraMoveTo(params: MoveCameraParameters = {}) {
   promise = promise.then(() => {
-    const {
-      t,
-      lookAt,
-      duration = engine.defaultDuration,
-      ease = engine.defaultEase,
-      fov,
-      zoom,
-    } = params;
+    const { t, lookAt, duration = app.defaultDuration, ease = app.defaultEase, fov, zoom } = params;
 
     const tl = gsap.timeline({
       defaults: {
@@ -374,13 +417,13 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
       onUpdate: () => {
         // Keep looking at the target while camera is moving.
         if (lookAt) {
-          engine.mainCamera.lookAt(toThreeVector3(lookAt));
+          app.mainCamera.lookAt(toThreeVector3(lookAt));
         }
       },
     });
 
-    if (engine.mainCamera instanceof THREE.PerspectiveCamera) {
-      const perspectiveCamera = engine.mainCamera as THREE.PerspectiveCamera;
+    if (app.mainCamera instanceof PerspectiveCamera) {
+      const perspectiveCamera = app.mainCamera as PerspectiveCamera;
 
       // Animate FoV
       if (fov !== undefined) {
@@ -400,7 +443,7 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
     tl.add(
       createTransformAnimation({
         ...params,
-        object3d: engine.mainCamera,
+        object3d: app.mainCamera,
         duration,
         ease,
       }),
@@ -409,11 +452,11 @@ export function cameraMoveTo(params: MoveCameraParameters = {}) {
 
     if (zoom !== undefined) {
       tl.to(
-        engine.mainCamera,
+        app.mainCamera,
         {
           zoom,
           onUpdate: () => {
-            (engine.mainCamera as any).updateProjectionMatrix();
+            (app.mainCamera as any).updateProjectionMatrix();
           },
         },
         '<'
@@ -438,7 +481,7 @@ export function randomInt(min: number, max: number) {
 }
 
 function createLine3D(
-  points: THREE.Vector3[],
+  points: Vector3[],
   {
     color,
     lineWidth = 0.1,
@@ -448,29 +491,29 @@ function createLine3D(
   }
 ) {
   if (points.length === 0) {
-    points.push(new THREE.Vector3(-1.73, -1, 0));
-    points.push(new THREE.Vector3(1.73, -1, 0));
-    points.push(new THREE.Vector3(0, 2, 0));
+    points.push(new Vector3(-1.73, -1, 0));
+    points.push(new Vector3(1.73, -1, 0));
+    points.push(new Vector3(0, 2, 0));
     points.push(points[0]);
   }
 
-  const lineColor = new THREE.Color(0xffffff);
+  const lineColor = new Color(0xffffff);
   const style = SVGLoader.getStrokeStyle(lineWidth, lineColor.getStyle(), 'miter', 'butt', 4);
   // style.strokeLineJoin = "round";
   const geometry = SVGLoader.pointsToStroke(points, style, 12, 0.001);
 
   const material = createMaterial({ color, doubleSided: true });
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new Mesh(geometry, material);
   return mesh;
 }
 
-function getAllMaterials(object3d: THREE.Object3D): THREE.Material[] {
-  const materials = new Set<THREE.Material>();
+function getAllMaterials(object3d: Object3D): Material[] {
+  const materials = new Set<Material>();
 
-  const getMaterialsRecursive = (object3d: THREE.Object3D) => {
-    const mesh = object3d as THREE.Mesh;
+  const getMaterialsRecursive = (object3d: Object3D) => {
+    const mesh = object3d as Mesh;
     if (mesh && mesh.material) {
-      materials.add(mesh.material as THREE.Material);
+      materials.add(mesh.material as Material);
     }
 
     if (object3d.children) {
@@ -484,10 +527,7 @@ function getAllMaterials(object3d: THREE.Object3D): THREE.Material[] {
   return Array.from(materials);
 }
 
-function createFadeInAnimation(
-  object3d: THREE.Object3D,
-  { duration, ease }: AnimationParameters = {}
-) {
+function createFadeInAnimation(object3d: Object3D, { duration, ease }: AnimationParameters = {}) {
   const tl = gsap.timeline();
 
   // Set initial visibility to false.
@@ -513,10 +553,10 @@ function createFadeInAnimation(
 }
 
 function createOpacityAnimation(
-  obj: THREE.Object3D,
+  obj: Object3D,
   {
-    duration = engine.defaultDuration,
-    ease = engine.defaultEase,
+    duration = app.defaultDuration,
+    ease = app.defaultEase,
     opacity = 0,
   }: { duration?: number; ease?: string; opacity?: number } = {}
 ): gsap.core.Timeline {
@@ -542,25 +582,25 @@ function createOpacityAnimation(
 }
 
 function addDefaultLights() {
-  if (engine.lightGroup === undefined) {
-    const lightGroup = new THREE.Group();
+  if (app.lightGroup === undefined) {
+    const lightGroup = new Group();
 
     // Create directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    const directionalLight = new DirectionalLight(0xffffff, 0.7);
     directionalLight.position.set(0.3, 1, 0.5);
     lightGroup.add(directionalLight);
 
     // Create ambient light
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f3f3f, 0.3);
+    const hemiLight = new HemisphereLight(0xffffff, 0x3f3f3f, 0.3);
     lightGroup.add(hemiLight);
 
-    engine.lightGroup = lightGroup;
-    engine.scene.add(lightGroup);
+    app.lightGroup = lightGroup;
+    app.scene.add(lightGroup);
   }
 }
 
 function createExplosionAnimation(
-  objectGroup: THREE.Object3D,
+  objectGroup: Object3D,
   {
     ease = 'expo.out',
     duration = 2,
@@ -582,18 +622,18 @@ function createExplosionAnimation(
 
   let delay = 0;
   objectGroup.children.forEach((child, i) => {
-    const r = minRadius + (maxRadius - minRadius) * engine.rng();
-    const theta = engine.rng() * 2 * Math.PI;
+    const r = minRadius + (maxRadius - minRadius) * app.rng();
+    const theta = app.rng() * 2 * Math.PI;
     const x = r * Math.cos(theta);
     const y = r * Math.sin(theta);
     child.position.z += 0.01 * i; // z-fighting
 
     tl.fromTo(child.position, { x: 0, y: 0 }, { x, y }, delay);
 
-    const rotation = minRotation + engine.rng() * (maxRotation - minRotation);
+    const rotation = minRotation + app.rng() * (maxRotation - minRotation);
     tl.fromTo(child.rotation, { z: 0 }, { z: rotation }, delay);
 
-    const targetScale = child.scale.setScalar(minScale + (maxScale - minScale) * engine.rng());
+    const targetScale = child.scale.setScalar(minScale + (maxScale - minScale) * app.rng());
     tl.fromTo(
       child.scale,
       { x: 0.001, y: 0.001, z: 0.001 },
@@ -609,18 +649,18 @@ function createExplosionAnimation(
 
 export function addGlitch({ duration = 0.2, t }: AnimationParameters = {}) {
   promise = promise.then(() => {
-    if (engine.glitchPass === undefined) {
-      engine.glitchPass = new GlitchPass();
+    if (app.glitchPass === undefined) {
+      app.glitchPass = new GlitchPass();
     }
 
-    if (engine.composer.passes.indexOf(engine.glitchPass) === -1) {
-      engine.composer.insertPass(engine.glitchPass, 0);
+    if (app.composer.passes.indexOf(app.glitchPass) === -1) {
+      app.composer.insertPass(app.glitchPass, 0);
       console.log('add glitch pass');
     }
 
     const tl = gsap.timeline();
-    tl.set(engine.glitchPass, { factor: 1 });
-    tl.set(engine.glitchPass, { factor: 0 }, `<${duration}`);
+    tl.set(app.glitchPass, { factor: 1 });
+    tl.set(app.glitchPass, { factor: 0 }, `<${duration}`);
     mainTimeline.add(tl, t);
   });
 }
@@ -649,14 +689,9 @@ const startAnimation = () => {
     const colorCenterLine = '#008800';
     const colorGrid = '#888888';
 
-    gridHelper = new THREE.GridHelper(
-      size,
-      divisions,
-      new THREE.Color(colorCenterLine),
-      new THREE.Color(colorGrid)
-    );
+    gridHelper = new GridHelper(size, divisions, new Color(colorCenterLine), new Color(colorGrid));
     gridHelper.rotation.x = Math.PI / 2;
-    engine.scene.add(gridHelper);
+    app.scene.add(gridHelper);
   }
 
   globalTimeline.play(0, false);
@@ -682,11 +717,11 @@ const startAnimation = () => {
 };
 
 function createArrow2DGeometry(arrowLength: number) {
-  const geometry = new THREE.BufferGeometry();
+  const geometry = new BufferGeometry();
   geometry.setAttribute(
     'position',
     // prettier-ignore
-    new THREE.BufferAttribute(new Float32Array([
+    new BufferAttribute(new Float32Array([
       -0.5 * arrowLength, -0.5 * arrowLength, 0,
       0.5 * arrowLength, -0.5 * arrowLength, 0,
       0, 0.5 * arrowLength, 0,
@@ -702,11 +737,7 @@ interface CreateArrowLineParameters extends BasicMaterial {
   threeDimensional?: boolean;
 }
 
-function createArrowLine(
-  from: THREE.Vector3,
-  to: THREE.Vector3,
-  params: CreateArrowLineParameters = {}
-) {
+function createArrowLine(from: Vector3, to: Vector3, params: CreateArrowLineParameters = {}) {
   const {
     lineWidth = DEFAULT_LINE_WIDTH,
     arrowEnd = true,
@@ -716,18 +747,18 @@ function createArrowLine(
 
   const material = createMaterial({ ...params, doubleSided: true });
 
-  const direction = new THREE.Vector3();
+  const direction = new Vector3();
   direction.subVectors(to, from);
   const halfLength = direction.length() * 0.5;
   direction.subVectors(to, from).normalize();
 
-  const center = new THREE.Vector3();
+  const center = new Vector3();
   center.addVectors(from, to).multiplyScalar(0.5);
 
-  const quaternion = new THREE.Quaternion(); // create one and reuse it
-  quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+  const quaternion = new Quaternion(); // create one and reuse it
+  quaternion.setFromUnitVectors(new Vector3(0, 1, 0), direction);
 
-  const group = new THREE.Group();
+  const group = new Group();
 
   let length = halfLength * 2;
   const arrowLength = lineWidth * 10;
@@ -745,10 +776,10 @@ function createArrowLine(
     }
 
     const geometry = !threeDimensional
-      ? new THREE.PlaneGeometry(lineWidth, length)
-      : new THREE.CylinderGeometry(lineWidth / 2, lineWidth / 2, length, 16);
+      ? new PlaneGeometry(lineWidth, length)
+      : new CylinderGeometry(lineWidth / 2, lineWidth / 2, length, 16);
 
-    const line = new THREE.Mesh(geometry, material);
+    const line = new Mesh(geometry, material);
     line.position.copy(direction.clone().multiplyScalar(offset));
     line.setRotationFromQuaternion(quaternion);
 
@@ -762,10 +793,10 @@ function createArrowLine(
 
     const geometry = !threeDimensional
       ? createArrow2DGeometry(arrowLength)
-      : new THREE.ConeGeometry(arrowLength * 0.5, arrowLength, 32);
+      : new ConeGeometry(arrowLength * 0.5, arrowLength, 32);
     geometry.translate(0, -arrowLength / 2, 0);
 
-    const arrow = new THREE.Mesh(geometry, material);
+    const arrow = new Mesh(geometry, material);
     arrow.setRotationFromQuaternion(quaternion);
     arrow.position.copy(i === 0 ? from : to);
     arrow.position.sub(center);
@@ -778,9 +809,9 @@ function createArrowLine(
   return group;
 }
 
-async function loadTexture(url: string): Promise<THREE.Texture> {
+async function loadTexture(url: string): Promise<Texture> {
   return new Promise((resolve, reject) => {
-    new THREE.TextureLoader().load(
+    new TextureLoader().load(
       url,
       (texture) => {
         resolve(texture);
@@ -866,7 +897,7 @@ function createTransformAnimation({
   sz?: number;
   position?: [number, number, number?];
   scale?: number;
-  object3d: THREE.Object3D;
+  object3d: Object3D;
   duration?: number;
   ease?: string;
 }) {
@@ -909,8 +940,8 @@ function createTransformAnimation({
   return tl;
 }
 
-function convertScreenToWorld(object3d: THREE.Object3D, v: number) {
-  const worldScale = new THREE.Vector3();
+function convertScreenToWorld(object3d: Object3D, v: number) {
+  const worldScale = new Vector3();
   object3d.getWorldScale(worldScale);
   return ((v * worldScale.length()) / 10) * 0.5 * renderTargetHeight;
 }
@@ -919,7 +950,7 @@ class Line_ extends Line2 {
   lineWidth: number;
 
   constructor(
-    verts: THREE.Vector3[],
+    verts: Vector3[],
     {
       lineWidth,
       color,
@@ -956,12 +987,12 @@ function createLineMaterial(color?: string | number, lineWidth?: number, dashed?
     dashed: dashed || false,
     dashSize: lineWidth * 2,
     gapSize: lineWidth * 2,
-    resolution: new THREE.Vector2(renderTargetWidth, renderTargetHeight),
+    resolution: new Vector2(renderTargetWidth, renderTargetHeight),
   });
   return material;
 }
 
-function updateLinePoints(verts: THREE.Vector3[], geometry: LineGeometry, progress = 1) {
+function updateLinePoints(verts: Vector3[], geometry: LineGeometry, progress = 1) {
   const points = [];
   const division = (verts.length - 1) * 1;
   for (let i = 0; i < verts.length; i++) {
@@ -969,7 +1000,7 @@ function updateLinePoints(verts: THREE.Vector3[], geometry: LineGeometry, progre
       points.push(verts[i]);
     } else {
       const k = Math.floor(progress * division);
-      const point = new THREE.Vector3();
+      const point = new Vector3();
       point.lerpVectors(verts[k], verts[k + 1], progress * division - k);
       points.push(point);
     }
@@ -983,10 +1014,10 @@ function updateLinePoints(verts: THREE.Vector3[], geometry: LineGeometry, progre
   geometry.setPositions(vertexBuffer);
 }
 
-function addTransformControl(object: THREE.Object3D<THREE.Event>) {
-  const control = new TransformControls(engine.mainCamera, renderer.domElement);
+function addTransformControl(object: Object3D<Event>) {
+  const control = new TransformControls(app.mainCamera, renderer.domElement);
   control.attach(object);
-  engine.scene.add(control);
+  app.scene.add(control);
   control.addEventListener('mouseUp', () => {
     const p = object.position;
     const clipboard = `x: ${p.x.toFixed(4)}, y: ${p.y.toFixed(4)}, z: ${p.z.toFixed(4)}`;
@@ -994,7 +1025,7 @@ function addTransformControl(object: THREE.Object3D<THREE.Event>) {
   });
 }
 
-function addObjectToScene(object3D: THREE.Object3D, parentObject3D: THREE.Object3D) {
+function addObjectToScene(object3D: Object3D, parentObject3D: Object3D) {
   console.assert(object3D);
   console.assert(parentObject3D);
 
@@ -1006,7 +1037,7 @@ function addObjectToScene(object3D: THREE.Object3D, parentObject3D: THREE.Object
 }
 
 class SceneObject {
-  object3D: THREE.Object3D;
+  object3D: Object3D;
   parent: SceneObject;
   children: SceneObject[] = [];
 
@@ -1018,20 +1049,20 @@ class SceneObject {
 
     if (transform !== undefined) {
       promise = promise.then(() => {
-        this.object3D = new THREE.Group();
+        this.object3D = new Group();
         updateTransform(this.object3D, transform);
         addObjectToScene(this.object3D, this.parent.object3D);
       });
     }
   }
 
-  private add3DGeometry(params: AddObjectParameters = {}, geometry: THREE.BufferGeometry) {
+  private add3DGeometry(params: AddObjectParameters = {}, geometry: BufferGeometry) {
     const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
       if (params.lighting === undefined) params.lighting = true;
 
-      obj.object3D = new THREE.Group();
+      obj.object3D = new Group();
 
       if (params.showPoints) {
         obj.object3D.add(createPoints(geometry, params));
@@ -1040,7 +1071,7 @@ class SceneObject {
           geometry = new WireframeGeometry2(geometry);
         }
         const material = createMaterial(params);
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new Mesh(geometry, material);
         if (params.wireframe && params.lineWidth) {
           mesh.onBeforeRender = () => {
             (mesh.material as LineMaterial).linewidth = convertScreenToWorld(
@@ -1060,7 +1091,7 @@ class SceneObject {
     return obj;
   }
 
-  _addMesh(mesh: THREE.Mesh, params: AddObjectParameters = {}): SceneObject {
+  _addMesh(mesh: Mesh, params: AddObjectParameters = {}): SceneObject {
     const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
@@ -1081,7 +1112,7 @@ class SceneObject {
     promise = promise.then(async () => {
       obj.object3D = this.object3D.clone();
       obj.object3D.traverse((node) => {
-        const mesh = node as THREE.Mesh;
+        const mesh = node as Mesh;
         if (mesh.isMesh) {
           mesh.material = Array.isArray(mesh.material)
             ? mesh.material.map((material) => material.clone())
@@ -1103,7 +1134,7 @@ class SceneObject {
     promise = promise.then(async () => {
       addDefaultLights();
 
-      let object: THREE.Object3D;
+      let object: Object3D;
       if (url.endsWith('.obj')) {
         object = await loadObj(url);
       } else if (url.endsWith('.gltf')) {
@@ -1114,22 +1145,22 @@ class SceneObject {
       if (autoResize) {
         const aabb = computeAABB(object);
 
-        const size = new THREE.Vector3();
+        const size = new Vector3();
         aabb.getSize(size);
         const length = Math.max(size.x, size.y, size.z);
         object.scale.divideScalar(length);
 
-        const center = new THREE.Vector3();
+        const center = new Vector3();
         aabb.getCenter(center);
         center.divideScalar(length);
         object.position.sub(center);
       }
 
-      const group = new THREE.Group();
+      const group = new Group();
       group.add(object);
 
-      object.traverse((child: THREE.Object3D) => {
-        if (child instanceof THREE.Mesh) {
+      object.traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
           obj.geometry = child.geometry;
           if (params.showPoints) {
             child.parent.add(createPoints(child.geometry, params));
@@ -1148,7 +1179,7 @@ class SceneObject {
               child.material.opacity = params.opacity;
             }
             if (params.doubleSided !== undefined) {
-              child.material.side = params.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+              child.material.side = params.doubleSided ? DoubleSide : FrontSide;
             }
           }
         }
@@ -1170,10 +1201,10 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = false;
       const material = createMaterial({ ...params, doubleSided: true });
 
-      const geometry = new THREE.CircleGeometry(params.radius || 0.5, 128);
+      const geometry = new CircleGeometry(params.radius || 0.5, 128);
 
-      obj.object3D = new THREE.Group();
-      obj.object3D.add(new THREE.Mesh(geometry, material));
+      obj.object3D = new Group();
+      obj.object3D.add(new Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -1201,12 +1232,12 @@ class SceneObject {
     let from = toThreeVector3(p1);
     let to = toThreeVector3(p2);
 
-    const dir = new THREE.Vector3();
+    const dir = new Vector3();
     dir.subVectors(to, from);
     const length = dir.length();
     dir.normalize();
 
-    const center = new THREE.Vector3();
+    const center = new Vector3();
     center.addVectors(from, to).multiplyScalar(0.5);
 
     from.sub(center);
@@ -1234,9 +1265,9 @@ class SceneObject {
         if (i === 0 && !arrowStart) continue;
         if (i === 1 && !arrowEnd) continue;
 
-        const quat = new THREE.Quaternion();
-        quat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), i === 1 ? dir : dir.clone().negate());
-        const eular = new THREE.Euler();
+        const quat = new Quaternion();
+        quat.setFromUnitVectors(new Vector3(0, 1, 0), i === 1 ? dir : dir.clone().negate());
+        const eular = new Euler();
         eular.setFromQuaternion(quat, 'XYZ');
 
         const cone = arrowObject.addCone({
@@ -1445,7 +1476,7 @@ class SceneObject {
 
       if (params.lighting === undefined) params.lighting = false;
 
-      const curve = new THREE.EllipseCurve(
+      const curve = new EllipseCurve(
         0,
         0,
         radius,
@@ -1458,7 +1489,7 @@ class SceneObject {
 
       const points2d = curve.getSpacedPoints(64);
       for (const pt of points2d) {
-        obj.verts.push(new THREE.Vector3(pt.x, pt.y, 0));
+        obj.verts.push(new Vector3(pt.x, pt.y, 0));
       }
       obj.verts.reverse();
       const line = new Line_(obj.verts, params);
@@ -1477,7 +1508,7 @@ class SceneObject {
     const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
-      obj.object3D = new THREE.GridHelper(
+      obj.object3D = new GridHelper(
         gridSize,
         gridSize,
         color !== undefined ? toThreeColor(color) : 0x00ff00,
@@ -1506,23 +1537,23 @@ class SceneObject {
         });
       } else {
         const texture = await loadTexture(file);
-        texture.encoding = THREE.sRGBEncoding;
+        texture.encoding = sRGBEncoding;
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-        const material = new THREE.MeshBasicMaterial({
+        const material = new MeshBasicMaterial({
           map: texture,
-          side: THREE.DoubleSide,
+          side: DoubleSide,
           transparent: true,
           opacity: params.opacity || 1.0,
           color: toThreeColor(color),
         });
 
         const aspect = texture.image.width / texture.image.height;
-        const geometry = new THREE.PlaneBufferGeometry(
+        const geometry = new PlaneBufferGeometry(
           aspect > 1 ? aspect : 1,
           aspect > 1 ? 1 : 1 / aspect
         );
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new Mesh(geometry, material);
         obj.object3D = mesh;
       }
 
@@ -1538,22 +1569,22 @@ class SceneObject {
 
     promise = promise.then(async () => {
       const video = await createVideoElement(file);
-      const texture = new THREE.VideoTexture(video);
-      texture.encoding = THREE.sRGBEncoding;
+      const texture = new VideoTexture(video);
+      texture.encoding = sRGBEncoding;
       const material = createMaterial(params);
 
-      if (!(material instanceof THREE.MeshBasicMaterial)) {
+      if (!(material instanceof MeshBasicMaterial)) {
         throw 'invalid material type';
       }
       material.map = texture;
 
       const aspect = video.videoWidth / video.videoHeight;
       console.log(aspect);
-      const geometry = new THREE.PlaneBufferGeometry(
+      const geometry = new PlaneBufferGeometry(
         aspect > 1 ? aspect : 1,
         aspect > 1 ? 1 : 1 / aspect
       );
-      const mesh = new THREE.Mesh(geometry, material);
+      const mesh = new Mesh(geometry, material);
       obj.object3D = mesh;
 
       updateTransform(obj.object3D, params);
@@ -1594,8 +1625,8 @@ class SceneObject {
 
     promise = promise.then(async () => {
       const vertices = [].concat.apply([], positions);
-      obj.geometry = new THREE.BufferGeometry();
-      obj.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      obj.geometry = new BufferGeometry();
+      obj.geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
 
       obj.object3D = createPoints(obj.geometry, params);
 
@@ -1613,12 +1644,12 @@ class SceneObject {
     const obj = new LineObject(params.parent || this);
 
     promise = promise.then(async () => {
-      const vec3d = points.map((pt) => new THREE.Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
+      const vec3d = points.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
 
       if (vec3d.length === 2) {
         obj.verts = vec3d;
       } else if (false && vec3d.length >= 3) {
-        const curve = new THREE.CatmullRomCurve3(vec3d);
+        const curve = new CatmullRomCurve3(vec3d);
         obj.verts = curve.getPoints(50);
       } else {
         obj.verts = vec3d;
@@ -1636,33 +1667,33 @@ class SceneObject {
   }
 
   addPyramid(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.ConeGeometry(0.5, 1.0, 4, 1);
+    const geometry = new ConeGeometry(0.5, 1.0, 4, 1);
     return this.add3DGeometry({ ...params, flatShading: true }, geometry);
   }
 
   addCube(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const geometry = new BoxGeometry(1, 1, 1);
     return this.add3DGeometry(params, geometry);
   }
 
   addSphere(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.SphereGeometry(0.5, defaultSeg(params), defaultSeg(params));
+    const geometry = new SphereGeometry(0.5, defaultSeg(params), defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
   addCone(params: AddConeParameters = {}): SceneObject {
     const { radius = 0.5 } = params;
-    const geometry = new THREE.ConeGeometry(radius, 1.0, defaultSeg(params), defaultSeg(params));
+    const geometry = new ConeGeometry(radius, 1.0, defaultSeg(params), defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
   addCylinder(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, defaultSeg(params));
+    const geometry = new CylinderGeometry(0.5, 0.5, 1, defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
   addTorus(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new THREE.TorusGeometry(0.375, 0.125, defaultSeg(params), defaultSeg(params));
+    const geometry = new TorusGeometry(0.375, 0.125, defaultSeg(params), defaultSeg(params));
     return this.add3DGeometry(params, geometry);
   }
 
@@ -1677,7 +1708,7 @@ class SceneObject {
         sides: 128,
         radius: params.radius || 0.5,
       });
-      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], 0));
+      const v3d = verts.map((v) => new Vector3(v[0], v[1], 0));
       obj.object3D = createLine3D(v3d.concat(v3d[0]), {
         lineWidth,
         color,
@@ -1702,11 +1733,11 @@ class SceneObject {
       const halfWidth = width * 0.5;
       const halfHeight = height * 0.5;
       obj.verts.push(
-        new THREE.Vector3(-halfWidth, -halfHeight, 0),
-        new THREE.Vector3(-halfWidth, halfHeight, 0),
-        new THREE.Vector3(halfWidth, halfHeight, 0),
-        new THREE.Vector3(halfWidth, -halfHeight, 0),
-        new THREE.Vector3(-halfWidth, -halfHeight, 0)
+        new Vector3(-halfWidth, -halfHeight, 0),
+        new Vector3(-halfWidth, halfHeight, 0),
+        new Vector3(halfWidth, halfHeight, 0),
+        new Vector3(halfWidth, -halfHeight, 0),
+        new Vector3(-halfWidth, -halfHeight, 0)
       );
 
       const line = new Line_(obj.verts, params);
@@ -1728,10 +1759,10 @@ class SceneObject {
       const material = createMaterial({ ...params, doubleSided: true });
 
       const { width = 1, height = 1 } = params;
-      const geometry = new THREE.PlaneGeometry(width, height);
+      const geometry = new PlaneGeometry(width, height);
 
-      obj.object3D = new THREE.Group();
-      obj.object3D.add(new THREE.Mesh(geometry, material));
+      obj.object3D = new Group();
+      obj.object3D.add(new Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -1746,10 +1777,10 @@ class SceneObject {
       const { width = 1, height = 1 } = params;
 
       const clippingPlanes = [
-        new THREE.Plane(new THREE.Vector3(1, 0, 0), 1),
-        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1),
-        new THREE.Plane(new THREE.Vector3(0, 1, 0), 1),
-        new THREE.Plane(new THREE.Vector3(0, -1, 0), 1),
+        new Plane(new Vector3(1, 0, 0), 1),
+        new Plane(new Vector3(-1, 0, 0), 1),
+        new Plane(new Vector3(0, 1, 0), 1),
+        new Plane(new Vector3(0, -1, 0), 1),
       ];
 
       (this.object3D as any).onUpdate = () => {
@@ -1757,9 +1788,9 @@ class SceneObject {
           material.clippingPlanes = clippingPlanes;
         });
 
-        const worldPosition = new THREE.Vector3();
+        const worldPosition = new Vector3();
         this.object3D.getWorldPosition(worldPosition);
-        const worldScale = new THREE.Vector3();
+        const worldScale = new Vector3();
         this.object3D.getWorldScale(worldScale);
 
         clippingPlanes[0].constant = -worldPosition.x + 0.5 * worldScale.x * width;
@@ -1790,13 +1821,13 @@ class SceneObject {
         indices.push(0, i + 1, i + 2);
       }
 
-      const geometry = new THREE.BufferGeometry();
+      const geometry = new BufferGeometry();
       geometry.setIndex(indices);
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
       geometry.computeVertexNormals();
 
-      obj.object3D = new THREE.Group();
-      obj.object3D.add(new THREE.Mesh(geometry, material));
+      obj.object3D = new Group();
+      obj.object3D.add(new Mesh(geometry, material));
 
       updateTransform(obj.object3D, params);
 
@@ -1823,7 +1854,7 @@ class SceneObject {
       if (params.lighting === undefined) params.lighting = false;
 
       const verts = getPolygonVertices();
-      const v3d = verts.map((v) => new THREE.Vector3(v[0], v[1], 0));
+      const v3d = verts.map((v) => new Vector3(v[0], v[1], 0));
       obj.object3D = createLine3D(v3d.concat(v3d[0]), {
         lineWidth,
         color,
@@ -1852,8 +1883,8 @@ class SceneObject {
       textObject.setText(text, true);
 
       obj.object3D = textObject;
-      if (engine.outlinePass) {
-        engine.outlinePass.selectedObjects.push(textObject);
+      if (app.outlinePass) {
+        app.outlinePass.selectedObjects.push(textObject);
       }
 
       updateTransform(obj.object3D, params);
@@ -1924,8 +1955,8 @@ class SceneObject {
       });
       updateTransform(texObject, params);
       obj.object3D = texObject;
-      if (engine.outlinePass) {
-        engine.outlinePass.selectedObjects.push(texObject);
+      if (app.outlinePass) {
+        app.outlinePass.selectedObjects.push(texObject);
       }
 
       addObjectToScene(obj.object3D, obj.parent.object3D);
@@ -1940,9 +1971,9 @@ class SceneObject {
     promise = promise.then(async () => {
       const { fov = 45, near = 1, far = 5, aspect = 1 } = params;
 
-      const group = new THREE.Group();
-      obj.perspectiveCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-      obj.perspectiveCameraHelper = new THREE.CameraHelper(obj.perspectiveCamera);
+      const group = new Group();
+      obj.perspectiveCamera = new PerspectiveCamera(fov, aspect, near, far);
+      obj.perspectiveCameraHelper = new CameraHelper(obj.perspectiveCamera);
       // group.add(obj.perspectiveCamera);
       group.add(obj.perspectiveCameraHelper);
       obj.object3D = group;
@@ -1956,7 +1987,7 @@ class SceneObject {
 
   moveTo(params: MoveObjectParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -1995,7 +2026,7 @@ class SceneObject {
 
   scale(scale: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -2028,7 +2059,7 @@ class SceneObject {
 
   scaleX(sx: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -2045,7 +2076,7 @@ class SceneObject {
 
   scaleY(sy: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -2062,7 +2093,7 @@ class SceneObject {
 
   scaleZ(sz: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
       const tl = gsap.timeline({
         defaults: {
@@ -2100,7 +2131,7 @@ class SceneObject {
 
   fadeIn(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
       const tl = createFadeInAnimation(this.object3D, { duration, ease });
       mainTimeline.add(tl, t);
     });
@@ -2116,7 +2147,7 @@ class SceneObject {
 
   changeOpacity(opacity: number, params: FadeObjectParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
       const tl = createOpacityAnimation(this.object3D, { duration, ease, opacity });
       mainTimeline.add(tl, t);
     });
@@ -2125,7 +2156,7 @@ class SceneObject {
 
   changeColor(color: string | number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       const materials = getAllMaterials(this.object3D);
@@ -2151,7 +2182,7 @@ class SceneObject {
 
   rotate(r: [number?, number?, number?], params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
       const tl = gsap.timeline({ defaults: { duration, ease } });
 
       if (r[0] !== undefined) {
@@ -2229,8 +2260,8 @@ class SceneObject {
     promise = promise.then(() => {
       const {
         t,
-        duration = engine.defaultDuration,
-        ease = engine.defaultEase,
+        duration = app.defaultDuration,
+        ease = app.defaultEase,
         axis = 'z',
         rotation = 360,
       } = params;
@@ -2262,7 +2293,7 @@ class SceneObject {
 
   grow(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, ease = engine.defaultEase, duration = engine.defaultDuration } = params;
+      const { t, ease = app.defaultEase, duration = app.defaultDuration } = params;
       this.object3D.visible = false;
 
       const tl = gsap.timeline();
@@ -2332,7 +2363,7 @@ class SceneObject {
 
   shrink(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, ease = engine.defaultEase, duration = engine.defaultDuration } = params;
+      const { t, ease = app.defaultEase, duration = app.defaultDuration } = params;
 
       const tl = gsap.timeline();
       tl.to(
@@ -2363,12 +2394,12 @@ class SceneObject {
         tl.fromTo(
           x.position,
           {
-            x: engine.rng() * WIDTH - WIDTH / 2,
-            y: engine.rng() * HEIGHT - HEIGHT / 2,
+            x: app.rng() * WIDTH - WIDTH / 2,
+            y: app.rng() * HEIGHT - HEIGHT / 2,
           },
           {
-            x: engine.rng() * WIDTH - WIDTH / 2,
-            y: engine.rng() * HEIGHT - HEIGHT / 2,
+            x: app.rng() * WIDTH - WIDTH / 2,
+            y: app.rng() * HEIGHT - HEIGHT / 2,
             duration,
             ease: 'none',
           },
@@ -2386,11 +2417,11 @@ class SceneObject {
       const {
         direction = 'up',
         t,
-        duration = engine.defaultDuration,
-        ease = engine.defaultEase,
+        duration = app.defaultDuration,
+        ease = app.defaultEase,
       } = params;
       const object3d = this.object3D;
-      const clippingPlanes: THREE.Plane[] = [];
+      const clippingPlanes: Plane[] = [];
       const bbox = computeAABB(object3d);
       const materials = getAllMaterials(object3d);
 
@@ -2426,16 +2457,16 @@ class SceneObject {
       const pos = object3d.position.clone();
       object3d.localToWorld(pos);
       if (direction === 'right') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -bbox.min.x));
+        clippingPlanes.push(new Plane(new Vector3(1, 0, 0), -bbox.min.x));
         pos.x -= bbox.max.x - bbox.min.x;
       } else if (direction === 'left') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), bbox.max.x));
+        clippingPlanes.push(new Plane(new Vector3(-1, 0, 0), bbox.max.x));
         pos.x += bbox.max.x - bbox.min.x;
       } else if (direction === 'up') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -bbox.min.y));
+        clippingPlanes.push(new Plane(new Vector3(0, 1, 0), -bbox.min.y));
         pos.y -= bbox.max.y - bbox.min.y;
       } else if (direction === 'down') {
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, -1, 0), bbox.max.y));
+        clippingPlanes.push(new Plane(new Vector3(0, -1, 0), bbox.max.y));
         pos.y += bbox.max.y - bbox.min.y;
       }
       object3d.worldToLocal(pos);
@@ -2478,15 +2509,15 @@ class SceneObject {
     return this.reveal({ ...params, direction: 'down' });
   }
 
-  vertexToAnimate = new Map<number, THREE.Vector3>();
+  vertexToAnimate = new Map<number, Vector3>();
 
   wipeIn(params: WipeInParameters = {}) {
     promise = promise.then(() => {
       const {
         direction = 'right',
         t,
-        duration = engine.defaultDuration,
-        ease = engine.defaultEase,
+        duration = app.defaultDuration,
+        ease = app.defaultEase,
       } = params;
       this.object3D.visible = false;
 
@@ -2497,15 +2528,15 @@ class SceneObject {
         defaults: { duration, ease },
       });
 
-      let clipPlane: THREE.Plane;
+      let clipPlane: Plane;
       if (direction === 'right') {
-        clipPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0));
+        clipPlane = new Plane(new Vector3(-1, 0, 0));
       } else if (direction === 'left') {
-        clipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0));
+        clipPlane = new Plane(new Vector3(1, 0, 0));
       } else if (direction === 'up') {
-        clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0));
+        clipPlane = new Plane(new Vector3(0, -1, 0));
       } else if (direction === 'down') {
-        clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0));
+        clipPlane = new Plane(new Vector3(0, 1, 0));
       }
 
       tl.set(this.object3D, {
@@ -2545,7 +2576,7 @@ class SceneObject {
 
   shake2D({ interval = 0.01, duration = 0.2, strength = 0.2, t }: Shake2DParameters = {}) {
     function R(max: number, min: number) {
-      return engine.rng() * (max - min) + min;
+      return app.rng() * (max - min) + min;
     }
 
     promise = promise.then(() => {
@@ -2642,7 +2673,7 @@ class GroupObject extends SceneObject {
 
   implode2D(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration } = params;
+      const { t, duration = app.defaultDuration } = params;
       const tl = gsap.timeline({
         defaults: {
           duration,
@@ -2682,7 +2713,7 @@ class GroupObject extends SceneObject {
 
   flyIn(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
       const tl = gsap.timeline({
         defaults: {
           duration,
@@ -2728,8 +2759,8 @@ class TextObject extends GroupObject {
       const {
         from = 0,
         to = 1,
-        duration = engine.defaultDuration,
-        ease = engine.defaultEase,
+        duration = app.defaultDuration,
+        ease = app.defaultEase,
         t,
       } = params;
 
@@ -2797,7 +2828,7 @@ class TextObject extends GroupObject {
 }
 
 class LineObject extends SceneObject {
-  verts: THREE.Vector3[] = [];
+  verts: Vector3[] = [];
 
   /**
    * @deprecated Use `setVert()` instead.
@@ -2809,7 +2840,7 @@ class LineObject extends SceneObject {
 
   moveVert(i: number, position: [number, number, number?], params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
       if (this.object3D.type == 'Line2') {
         console.assert(this.verts.length > 0);
         const line = this.object3D as Line2;
@@ -2850,7 +2881,7 @@ class LineObject extends SceneObject {
 
   animateLineDrawing(params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { t, duration = engine.defaultDuration, ease = engine.defaultEase } = params;
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
       const animParams = {
         progress: 0,
@@ -2888,7 +2919,7 @@ class ArrowObject extends SceneObject {
   arrowEnd: SceneObject;
 
   animateLineDrawing(params: AnimationParameters = {}) {
-    const { t, duration = engine.defaultDuration } = params;
+    const { t, duration = app.defaultDuration } = params;
     this.line.animateLineDrawing({ t, duration, ease: 'power2.inOut' });
     if (this.arrowEnd) {
       this.arrowEnd.grow({
@@ -2907,11 +2938,11 @@ interface TransformTexParameters extends AnimationParameters {
 }
 
 function createTextTransformAnimation(
-  from: THREE.Object3D[],
-  to: THREE.Object3D[],
+  from: Object3D[],
+  to: Object3D[],
   params: TransformTexParameters = {}
 ) {
-  const { duration = 1, t, ease = engine.defaultEase, type = 'transform' } = params;
+  const { duration = 1, t, ease = app.defaultEase, type = 'transform' } = params;
 
   if (type === 'transform') {
     const tl = gsap.timeline({ defaults: { ease, duration } });
@@ -2922,7 +2953,7 @@ function createTextTransformAnimation(
       tl.set(o, { visible: true }, '<');
       tl.set(o.children, { visible: true }, '<');
       o.updateWorldMatrix(true, true);
-      console.assert(o instanceof THREE.Group);
+      console.assert(o instanceof Group);
       for (const c of o.children) {
         fromTexObjects.push(c);
       }
@@ -2936,7 +2967,7 @@ function createTextTransformAnimation(
         c.visible = false;
       }
       o.updateWorldMatrix(true, true);
-      console.assert(o instanceof THREE.Group);
+      console.assert(o instanceof Group);
       for (const c of o.children) {
         toTexObjects.push(c);
       }
@@ -2975,8 +3006,8 @@ function createTextTransformAnimation(
         const c1 = fromTexObjects[i];
         const c2 = toTexObjects[j];
 
-        const posInSrcTexObject = new THREE.Vector3();
-        const scaleInSrcTexObject = new THREE.Vector3();
+        const posInSrcTexObject = new Vector3();
+        const scaleInSrcTexObject = new Vector3();
         tl.set(
           {},
           {
@@ -2985,7 +3016,7 @@ function createTextTransformAnimation(
               c1.parent.worldToLocal(posInSrcTexObject);
 
               c2.getWorldScale(scaleInSrcTexObject);
-              scaleInSrcTexObject.divide(c1.parent.getWorldScale(new THREE.Vector3()));
+              scaleInSrcTexObject.divide(c1.parent.getWorldScale(new Vector3()));
             },
           },
           0
@@ -3057,7 +3088,7 @@ class TexObject extends GroupObject {
         this.object3D.parent.add(dstTexObject);
         const srcTexObject = this.object3D;
 
-        const { duration = 1, ease = engine.defaultEase } = params;
+        const { duration = 1, ease = app.defaultEase } = params;
         const tl = gsap.timeline({ defaults: { ease, duration } });
         tl.set(
           {},
@@ -3188,15 +3219,15 @@ function _addPanoramicSkybox(file: string) {
   const obj = new SceneObject(null);
 
   promise = promise.then(async () => {
-    const geometry = new THREE.SphereGeometry(500, 60, 40);
+    const geometry = new SphereGeometry(500, 60, 40);
     // invert the geometry on the x-axis so that all of the faces point inward
     geometry.scale(-1, 1, 1);
 
-    const texture = new THREE.TextureLoader().load(file);
-    texture.encoding = THREE.sRGBEncoding;
-    const material = new THREE.MeshBasicMaterial({ map: texture });
-    const skySphere = new THREE.Mesh(geometry, material);
-    engine.scene.add(skySphere);
+    const texture = new TextureLoader().load(file);
+    texture.encoding = sRGBEncoding;
+    const material = new MeshBasicMaterial({ map: texture });
+    const skySphere = new Mesh(geometry, material);
+    app.scene.add(skySphere);
 
     obj.object3D = skySphere;
   });
@@ -3238,17 +3269,17 @@ interface AddGridParameters extends Transform, BasicMaterial {
 
 function toThreeVector3(v?: { x?: number; y?: number; z?: number } | [number, number, number?]) {
   if (v === undefined) {
-    return new THREE.Vector3(0, 0, 0);
+    return new Vector3(0, 0, 0);
   }
   if (Array.isArray(v)) {
     if (v.length == 2) {
-      return new THREE.Vector3(v[0], v[1]);
+      return new Vector3(v[0], v[1]);
     }
     if (v.length == 3) {
-      return new THREE.Vector3(v[0], v[1], v[2]);
+      return new Vector3(v[0], v[1], v[2]);
     }
   } else {
-    return new THREE.Vector3(
+    return new Vector3(
       v.x === undefined ? 0 : v.x,
       v.y === undefined ? 0 : v.y,
       v.z === undefined ? 0 : v.z
@@ -3320,10 +3351,10 @@ interface BasicMaterial {
   dashed?: boolean;
 }
 
-function createPoints(geometry: THREE.BufferGeometry, params: BasicMaterial = {}) {
-  const points = new THREE.Points(geometry, createMaterial({ ...params, showPoints: true }));
+function createPoints(geometry: BufferGeometry, params: BasicMaterial = {}) {
+  const points = new Points(geometry, createMaterial({ ...params, showPoints: true }));
   points.onBeforeRender = () => {
-    (points.material as THREE.PointsMaterial).size = convertScreenToWorld(
+    (points.material as PointsMaterial).size = convertScreenToWorld(
       points,
       params.pointSize || DEFAULT_POINT_SIZE
     );
@@ -3332,16 +3363,16 @@ function createPoints(geometry: THREE.BufferGeometry, params: BasicMaterial = {}
 }
 
 function createMaterial(params: BasicMaterial = {}) {
-  const side = params.doubleSided === undefined ? THREE.FrontSide : THREE.DoubleSide;
+  const side = params.doubleSided === undefined ? FrontSide : DoubleSide;
 
   if (params.showPoints) {
-    return new THREE.PointsMaterial({ color: toThreeColor(params.color) });
+    return new PointsMaterial({ color: toThreeColor(params.color) });
   }
   if (params.wireframe) {
     if (params.lineWidth) {
       return createLineMaterial(params.color, params.lineWidth, params.dashed);
     } else {
-      return new THREE.MeshBasicMaterial({
+      return new MeshBasicMaterial({
         side,
         color: toThreeColor(params.color),
         wireframe: true,
@@ -3351,7 +3382,7 @@ function createMaterial(params: BasicMaterial = {}) {
   if (params.lighting) {
     addDefaultLights();
 
-    return new THREE.MeshStandardMaterial({
+    return new MeshStandardMaterial({
       side,
       color: toThreeColor(params.color),
       roughness: 0.5,
@@ -3360,7 +3391,7 @@ function createMaterial(params: BasicMaterial = {}) {
       flatShading: params.flatShading,
     });
   }
-  return new THREE.MeshBasicMaterial({
+  return new MeshBasicMaterial({
     side,
     color: toThreeColor(params.color),
     transparent: params.opacity !== undefined && params.opacity < 1.0,
@@ -3373,7 +3404,7 @@ function fixRotation(rotation: number) {
   return Math.abs(rotation) >= 10 ? rotation * DEG2RAD : rotation;
 }
 
-function updateTransform(obj: THREE.Object3D, transform: Transform) {
+function updateTransform(obj: Object3D, transform: Transform) {
   // Position
   if (transform.position !== undefined) {
     obj.position.copy(toThreeVector3(transform.position));
@@ -3390,7 +3421,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
   if (transform.anchor !== undefined) {
     if (obj.children.length > 0) {
       const aabb = computeAABB(obj);
-      const size = aabb.getSize(new THREE.Vector3());
+      const size = aabb.getSize(new Vector3());
       if (transform.anchor === 'left') {
         for (const child of obj.children) {
           child.translateX(size.x / 2);
@@ -3470,7 +3501,7 @@ function updateTransform(obj: THREE.Object3D, transform: Transform) {
 }
 
 export function setActiveLayer(layer: 'ui' | 'main') {
-  engine.activeLayer = layer;
+  app.activeLayer = layer;
 }
 
 interface AddGroupParameters extends Transform {}
@@ -3541,11 +3572,11 @@ export function getQueryString(url: string = undefined) {
 }
 
 export function setSeed(val: any) {
-  engine.rng = seedrandom(val);
+  app.rng = seedrandom(val);
 }
 
 export function random(min = 0, max = 1) {
-  return min + engine.rng() * (max - min);
+  return min + app.rng() * (max - min);
 }
 
 function getGridPosition({ rows = 1, cols = 1, width = 25, height = 14 } = {}) {
@@ -3558,7 +3589,7 @@ function getGridPosition({ rows = 1, cols = 1, width = 25, height = 14 } = {}) {
   const results = [];
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
-      results.push(new THREE.Vector3(j * gapX + startX, -(i * gapY + startY), 0));
+      results.push(new Vector3(j * gapX + startX, -(i * gapY + startY), 0));
     }
   }
   return results;
@@ -3579,7 +3610,7 @@ export function setFPS(fps: number) {
 
 export function setBackgroundColor(color: number | string) {
   promise = promise.then(() => {
-    engine.scene.background = toThreeColor(color);
+    app.scene.background = toThreeColor(color);
   });
 }
 
@@ -3613,30 +3644,30 @@ export function pause(duration: number | string) {
 
 export function enableBloom() {
   promise = promise.then(() => {
-    if (!engine.composer.passes.includes(engine.bloomPass)) {
-      engine.bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(renderTargetWidth, renderTargetHeight),
+    if (!app.composer.passes.includes(app.bloomPass)) {
+      app.bloomPass = new UnrealBloomPass(
+        new Vector2(renderTargetWidth, renderTargetHeight),
         0.5, // Strength
         0.4, // radius
         0.85 // threshold
       );
-      engine.composer.addPass(engine.bloomPass);
+      app.composer.addPass(app.bloomPass);
 
       // TODO: find a better way to remove the aliasing introduced in BloomPass.
-      engine.fxaaPass = new ShaderPass(FXAAShader);
+      app.fxaaPass = new ShaderPass(FXAAShader);
       const ratio = renderer.getPixelRatio();
-      engine.fxaaPass.uniforms.resolution.value.x = 1 / (renderTargetWidth * ratio);
-      engine.fxaaPass.uniforms.resolution.value.y = 1 / (renderTargetHeight * ratio);
-      engine.composer.addPass(engine.fxaaPass);
+      app.fxaaPass.uniforms.resolution.value.x = 1 / (renderTargetWidth * ratio);
+      app.fxaaPass.uniforms.resolution.value.y = 1 / (renderTargetHeight * ratio);
+      app.composer.addPass(app.fxaaPass);
     }
   });
 }
 
-function _setCamera(cam: THREE.Camera) {
-  engine.mainCamera = cam;
+function _setCamera(cam: Camera) {
+  app.mainCamera = cam;
 }
 
-async function loadObj(url: string): Promise<THREE.Group> {
+async function loadObj(url: string): Promise<Group> {
   return new Promise((resolve, reject) => {
     const loader = new OBJLoader();
 
@@ -3662,10 +3693,10 @@ function _animateTo(targets: gsap.TweenTarget, vars: gsap.TweenVars, t?: gsap.Po
 }
 
 function getRoot(): GroupObject {
-  if (engine.activeLayer === 'ui') {
-    return engine.uiRoot;
-  } else if (engine.activeLayer === 'main') {
-    return engine.root;
+  if (app.activeLayer === 'ui') {
+    return app.uiRoot;
+  } else if (app.activeLayer === 'main') {
+    return app.root;
   } else {
     throw new Error('Invalid active layer');
   }
@@ -3721,7 +3752,7 @@ export function addPoint(params: AddObjectParameters = {}): GeometryObject {
 
 class GeometryObject extends SceneObject {
   private points: [number, number, number][];
-  geometry: THREE.BufferGeometry;
+  geometry: BufferGeometry;
 
   private init() {
     console.assert(this.geometry);
@@ -3748,7 +3779,7 @@ class GeometryObject extends SceneObject {
       const srcPoints = this.points;
       console.assert(srcPoints.length === positions.length);
 
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
       const data = { progress: 0 };
       mainTimeline.to(
         data,
@@ -3765,7 +3796,7 @@ class GeometryObject extends SceneObject {
                 srcPoints[i][2] + (positions[i][2] - srcPoints[i][2]) * data.progress
               );
             }
-            this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            this.geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
           },
         },
         t
@@ -3891,7 +3922,7 @@ class Axes3DObject extends SceneObject {
   axisZ: SceneObject;
 
   animateCreation(params: AnimationParameters = {}) {
-    const { t, ease = engine.defaultEase } = params;
+    const { t, ease = app.defaultEase } = params;
     this.axisX.fadeIn({ t, duration: 1.5, ease });
     this.axisY.fadeIn({ t: `<0.25`, duration: 1.5, ease });
     this.axisZ.fadeIn({ t: `<0.25`, duration: 1.5, ease });
@@ -3916,28 +3947,28 @@ export function moveTo(params: MoveObjectParameters = {}) {
 }
 
 export function usePerspectiveCamera() {
-  engine.mainCamera = createPerspectiveCamera();
+  app.mainCamera = createPerspectiveCamera();
 }
 
 export function useOrthographicCamera() {
-  engine.mainCamera = createOrthographicCamera();
+  app.mainCamera = createOrthographicCamera();
 }
 
 export function addFog() {
   promise = promise.then(() => {
-    engine.scene.fog = new THREE.FogExp2(0x0, 0.03);
+    app.scene.fog = new FogExp2(0x0, 0.03);
   });
 }
 
 export function setDefaultDuration(duration: number) {
   promise = promise.then(() => {
-    engine.defaultDuration = duration;
+    app.defaultDuration = duration;
   });
 }
 
 export function setDefaultEase(ease: string) {
   promise = promise.then(() => {
-    engine.defaultEase = ease;
+    app.defaultEase = ease;
   });
 }
 
@@ -3949,12 +3980,12 @@ interface AddFrustumParameters extends Transform, BasicMaterial {
 }
 
 class FrustumObject extends SceneObject {
-  perspectiveCamera: THREE.PerspectiveCamera;
-  perspectiveCameraHelper: THREE.CameraHelper;
+  perspectiveCamera: PerspectiveCamera;
+  perspectiveCameraHelper: CameraHelper;
 
   changeFov(fov: number, params: AnimationParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, t } = params;
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
       mainTimeline.to(
         this.perspectiveCamera,
         {
@@ -3985,7 +4016,7 @@ export function addMarker(name: string = undefined, t: string | number = undefin
 
 const gltfLoader = new GLTFLoader();
 
-function loadGLTF(url: string): Promise<THREE.Object3D> {
+function loadGLTF(url: string): Promise<Object3D> {
   return new Promise((resolve, reject) => {
     gltfLoader.load(
       url,
@@ -4008,9 +4039,9 @@ interface DollyZoomParameters extends AnimationParameters {
 class CameraObject {
   dollyZoom(params: DollyZoomParameters = {}) {
     promise = promise.then(() => {
-      const { duration = engine.defaultDuration, ease = engine.defaultEase, fov = 60, t } = params;
+      const { duration = app.defaultDuration, ease = app.defaultEase, fov = 60, t } = params;
 
-      const cam = engine.mainCamera as PerspectiveCamera;
+      const cam = app.mainCamera as PerspectiveCamera;
       const halfViewportHeight = viewportHeight * 0.5;
 
       mainTimeline.to(
@@ -4022,7 +4053,7 @@ class CameraObject {
           ease,
           onUpdate: () => {
             const dist = (1 / Math.tan(cam.fov * 0.5 * DEG2RAD)) * halfViewportHeight;
-            const dir = new THREE.Vector3();
+            const dir = new Vector3();
             cam.getWorldDirection(dir);
             dir.multiplyScalar(-dist);
             cam.position.copy(dir);
@@ -4069,7 +4100,7 @@ let promise: Promise<void> = new Promise((resolve, reject) => {
   resolve();
 });
 
-initEngine();
+app = createMovyApp();
 
 setTimeout(() => {
   promise.then(async () => {
@@ -4083,21 +4114,21 @@ setTimeout(() => {
 });
 
 // Raycast z plane at mouse click, then copy the intersection to clipboard.
-const raycaster = new THREE.Raycaster();
-const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const raycaster = new Raycaster();
+const planeZ = new Plane(new Vector3(0, 0, 1), 0);
 
 function onMouseMove(event: MouseEvent) {
   if (renderer === undefined) return;
 
   const bounds = renderer.domElement.getBoundingClientRect();
 
-  const mouse = new THREE.Vector2(
+  const mouse = new Vector2(
     ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1,
     -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1
   );
 
-  raycaster.setFromCamera(mouse, engine.mainCamera);
-  const target = new THREE.Vector3();
+  raycaster.setFromCamera(mouse, app.mainCamera);
+  const target = new Vector3();
   raycaster.ray.intersectPlane(planeZ, target);
 
   // Copy to clipboard
