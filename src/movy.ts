@@ -47,7 +47,7 @@ import {
   Vector3,
   VideoTexture,
   WebGLMultisampleRenderTarget,
-  WebGLRenderer
+  WebGLRenderer,
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
@@ -4007,10 +4007,25 @@ export function addFrustum(params: AddFrustumParameters = {}): FrustumObject {
   return getRoot().addFrustum(params);
 }
 
+function getNextAvailableName(usedNames: string[], name: string) {
+  const set = new Set<string>(usedNames);
+  if (!set.has(name)) {
+    return name;
+  }
+  let i = 2;
+  while (set.has(`${name}${i}`)) {
+    i++;
+  }
+  return `${name}${i}`;
+}
+
 export function addMarker(name: string = undefined, t: string | number = undefined) {
   promise = promise.then(() => {
-    const numMarkers = Object.keys(mainTimeline.labels).length;
-    mainTimeline.addLabel(name ? name : `m${numMarkers + 1}`, t);
+    if (!name) {
+      name = 'm';
+    }
+    name = getNextAvailableName(Object.keys(mainTimeline.labels), name);
+    mainTimeline.addLabel(name, t);
   });
 }
 
