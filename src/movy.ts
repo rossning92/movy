@@ -2807,12 +2807,13 @@ class TextObject extends GroupObject {
    * @deprecated Use `setText()` instead.
    */
   updateText(text: string, params: AnimationParameters = {}) {
-    this.setText(text, params.t);
+    this.setText(text, params);
     return this;
   }
 
-  setText(text: string, t?: number | string) {
+  setText(text: string, params: AnimationParameters = {}) {
     promise = promise.then(async () => {
+      const { t, duration = 0.001 } = params;
       mainTimeline.set(
         {},
         {
@@ -2820,6 +2821,7 @@ class TextObject extends GroupObject {
             const textMesh = this.object3D as TextMeshObject;
             textMesh.setText(text);
           },
+          duration,
         },
         t
       );
