@@ -1,15 +1,15 @@
 import {
+  BufferGeometry,
   Color,
   DoubleSide,
+  ExtrudeGeometry,
+  Font,
   FontLoader,
+  Group,
+  Material,
   Mesh,
   MeshBasicMaterial,
-  Group,
   ShapeBufferGeometry,
-  Font,
-  Material,
-  ExtrudeGeometry,
-  BufferGeometry,
   Vector3,
 } from 'three';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
@@ -86,12 +86,6 @@ export default class TextMeshObject extends Group {
         color: this.initParams.color,
         side: DoubleSide,
       });
-    }
-  }
-
-  createSeperateMaterials() {
-    for (const child of this.children) {
-      (child as THREE.Mesh).material = this.material.clone();
     }
   }
 
@@ -184,7 +178,9 @@ export default class TextMeshObject extends Group {
 
           geometries.push(geometry);
 
-          const mesh = new Mesh(geometry, this.material);
+          // Always create a separate material for each letter
+          const mesh = new Mesh(geometry, this.material.clone());
+          mesh.name = char;
 
           const letterWidth = ha;
           const xMid = 0.5 * letterWidth;

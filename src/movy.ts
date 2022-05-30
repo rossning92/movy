@@ -538,13 +538,12 @@ function createFadeInAnimation(object3d: Object3D, { duration, ease }: Animation
   const materials = getAllMaterials(object3d);
   for (const material of materials) {
     tl.set(material, { transparent: true }, '<');
-    tl.from(
+    tl.fromTo(
       material,
       {
         opacity: 0,
-        duration,
-        ease,
       },
+      { opacity: 1, duration, ease },
       '<'
     );
   }
@@ -2721,10 +2720,6 @@ class GroupObject extends SceneObject {
         },
       });
 
-      if (this.object3D instanceof TextMeshObject) {
-        this.object3D.createSeperateMaterials();
-      }
-
       this.object3D.children.forEach((child) => {
         tl.from(child.rotation, { x: -Math.PI / 2 }, `<${duration * 0.1}`);
         tl.from(
@@ -2800,6 +2795,26 @@ class TextObject extends GroupObject {
 
       mainTimeline.add(tl, t);
     });
+    return this;
+  }
+
+  transformText(to: string, params: TransformTexParameters = {}) {
+    promise = promise.then(async () => {
+      const dstTexObject = this.object3D.clone(true);
+      await (dstTexObject as TextMeshObject).init();
+      (dstTexObject as TextMeshObject).setText(to, true);
+
+      this.object3D.parent.add(dstTexObject);
+      const srcTexObject = this.object3D;
+
+      mainTimeline.add(
+        createTextTransformAnimation([srcTexObject], [dstTexObject], params),
+        params.t
+      );
+
+      this.object3D = dstTexObject;
+    });
+
     return this;
   }
 
@@ -2944,7 +2959,7 @@ function createTextTransformAnimation(
   to: Object3D[],
   params: TransformTexParameters = {}
 ) {
-  const { duration = 1, t, ease = app.defaultEase, type = 'transform' } = params;
+  const { duration = 1, ease = app.defaultEase, type = 'transform' } = params;
 
   if (type === 'transform') {
     const tl = gsap.timeline({ defaults: { ease, duration } });
