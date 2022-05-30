@@ -64,6 +64,15 @@ module.exports = [
             to: 'mathjax',
             info: { minimized: true },
           },
+          {
+            from: 'assets',
+            info: { minimized: true },
+          },
+          {
+            from: 'src/examples',
+            to: 'examples',
+            info: { minimized: true },
+          },
         ],
       }),
       new HtmlWebpackPlugin({
