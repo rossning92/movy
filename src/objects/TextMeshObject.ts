@@ -58,41 +58,53 @@ interface TextMeshObjectParams {
 }
 
 export default class TextMeshObject extends Group {
-  initParams: TextMeshObjectParams;
-  shouldUpdate = true;
+  centerTextVertically: boolean;
+  color: Color;
+  font: string;
   fonts: Font[];
-  text: string;
+  fontSize: number;
+  letterSpacing: number;
   material: Material;
+  shouldUpdate = true;
+  stroke: boolean;
+  strokeWidth: number;
+  text: string;
+  text3D: boolean;
 
-  constructor(params: TextMeshObjectParams = {}) {
+  constructor({
+    centerTextVertically = false,
+    color = new Color(0xffffff),
+    font = 'en,zh',
+    fontSize = 1.0,
+    letterSpacing = 0,
+    stroke = false,
+    strokeWidth = 0.02,
+    text3D = false,
+    material,
+  }: TextMeshObjectParams = {}) {
     super();
 
-    this.initParams = {
-      centerTextVertically: false,
-      color: new Color(0xffffff),
-      font: 'en,zh',
-      fontSize: 1.0,
-      letterSpacing: 0,
-      stroke: false,
-      strokeWidth: 0.02,
-      text3D: false,
-      ...params,
-    };
+    this.centerTextVertically = centerTextVertically;
+    this.color = color;
+    this.font = font;
+    this.fontSize = fontSize;
+    this.letterSpacing = letterSpacing;
+    this.stroke = stroke;
+    this.strokeWidth = strokeWidth;
+    this.text3D = text3D;
 
-    if (this.initParams.material) {
-      this.material = this.initParams.material.clone();
+    if (material) {
+      this.material = material.clone();
     } else {
       this.material = new MeshBasicMaterial({
-        color: this.initParams.color,
+        color,
         side: DoubleSide,
       });
     }
   }
 
   async init() {
-    this.fonts = await Promise.all(
-      this.initParams.font.split(',').map((fontName) => preloadFont(fontName))
-    );
+    this.fonts = await Promise.all(this.font.split(',').map((fontName) => preloadFont(fontName)));
   }
 
   setText(text: string, forceUpdate = false) {
@@ -115,7 +127,7 @@ export default class TextMeshObject extends Group {
       const geometries: ShapeBufferGeometry[] = [];
       for (const [i, char] of [...this.text].entries()) {
         if (char === ' ') {
-          totalWidth += this.initParams.fontSize * 0.5;
+          totalWidth += this.fontSize * 0.5;
         } else {
           let font: Font;
           let glyph: any;
@@ -131,21 +143,21 @@ export default class TextMeshObject extends Group {
 
           const fontData = font.data as any;
           const resolution = fontData.resolution;
-          const ha = (glyph.ha / resolution) * this.initParams.fontSize;
+          const ha = (glyph.ha / resolution) * this.fontSize;
 
-          const shapes = font.generateShapes(char, this.initParams.fontSize);
+          const shapes = font.generateShapes(char, this.fontSize);
 
           let geometry;
-          if (this.initParams.text3D) {
+          if (this.text3D) {
             const extrudeSettings = {
-              depth: this.initParams.fontSize * 0.2,
+              depth: this.fontSize * 0.2,
               bevelEnabled: false,
             };
             geometry = new ExtrudeGeometry(shapes, extrudeSettings);
-          } else if (this.initParams.stroke) {
+          } else if (this.stroke) {
             const style = SVGLoader.getStrokeStyle(
-              this.initParams.strokeWidth,
-              this.initParams.color.getStyle() // color in CSS context style
+              this.strokeWidth,
+              this.color.getStyle() // color in CSS context style
             );
             // Add shape.holes to shapes
             const holeShapes = [];
@@ -186,16 +198,13 @@ export default class TextMeshObject extends Group {
           const xMid = 0.5 * letterWidth;
           geometry.translate(
             -0.5 * (geometry.boundingBox.min.x + geometry.boundingBox.max.x),
-            -0.5 * this.initParams.fontSize,
+            -0.5 * this.fontSize,
             0
           );
 
           letterPosX.push(totalWidth + xMid);
           totalWidth +=
-            letterWidth +
-            (i < this.text.length - 1
-              ? this.initParams.letterSpacing * this.initParams.fontSize
-              : 0);
+            letterWidth + (i < this.text.length - 1 ? this.letterSpacing * this.fontSize : 0);
           minY = Math.min(minY, geometry.boundingBox.min.y);
           maxY = Math.max(maxY, geometry.boundingBox.max.y);
 
@@ -205,7 +214,7 @@ export default class TextMeshObject extends Group {
 
       // Center text geometry vertically
       const deltaY = (maxY + minY) * 0.5;
-      if (this.initParams.centerTextVertically) {
+      if (this.centerTextVertically) {
         for (const geometry of geometries) {
           geometry.translate(0, -deltaY, 0);
         }
