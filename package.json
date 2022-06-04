@@ -15,7 +15,7 @@
     "movy": "bin/movy.js"
   },
   "scripts": {
-    "dev": "webpack --watch --mode=development",
+    "dev": "concurrently \"webpack --watch --mode=development\" \"node bin/movy.js\"",
     "build": "webpack --mode=production",
     "lint": "eslint --ext .js bin/ src/editor.jsx webpack.config.js --fix"
   },
@@ -36,6 +36,7 @@
     "babel-loader": "^8.2.3",
     "babel-plugin-react-html-attrs": "^3.0.5",
     "ccapture.js-npmfixed": "^1.1.0",
+    "concurrently": "^7.2.1",
     "copy-webpack-plugin": "^10.2.4",
     "css-loader": "^6.5.1",
     "diff": "^5.0.0",
