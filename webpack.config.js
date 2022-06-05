@@ -1,6 +1,24 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const fs = require('fs');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require('path');
+const webpack = require('webpack');
+
+const examples = (() => {
+  const out = [];
+  const root = path.resolve(__dirname, 'src');
+  (function getExamples(d) {
+    fs.readdirSync(`${root}/${d}`).forEach((file) => {
+      const filePath = `${d}/${file}`;
+      if (file.endsWith('.js')) {
+        out.push(filePath);
+      } else if (fs.statSync(`${root}/${filePath}`).isDirectory()) {
+        getExamples(`${filePath}`);
+      }
+    });
+  })('examples');
+  return out;
+})();
 
 function generateConfig({ name, entry, plugins = [], outputModule = false } = {}) {
   return {
@@ -57,6 +75,9 @@ module.exports = [
     name: 'editor',
     entry: './src/editor.jsx',
     plugins: [
+      new webpack.DefinePlugin({
+        examples: JSON.stringify(examples),
+      }),
       new CopyPlugin({
         patterns: [
           {

@@ -1487,7 +1487,7 @@ class SceneObject {
         0
       );
 
-      const points2d = curve.getSpacedPoints(64);
+      const points2d = curve.getSpacedPoints(64).reverse();
       for (const pt of points2d) {
         obj.verts.push(new Vector3(pt.x, pt.y, 0));
       }

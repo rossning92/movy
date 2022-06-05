@@ -1,34 +1,11 @@
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
-import 'purecss/build/pure.css';
 import 'purecss/build/grids-responsive.css';
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import 'purecss/build/pure.css';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import './style/editor.css';
 import './style/scrollbar.css';
-
-const examples = [
-  'examples/2d-geometry.js',
-  'examples/3d-geometry.js',
-  'examples/axes-2d.js',
-  'examples/demo.js',
-  'examples/eases.js',
-  'examples/fonts.js',
-  'examples/formula-transform-2.js',
-  'examples/formula-transform.js',
-  'examples/hello-movy.js',
-  'examples/line-chart.js',
-  'examples/matrix.js',
-  'examples/movy-logo.js',
-  'examples/prime-numbers.js',
-  'examples/progress-bar.js',
-  'examples/rasterization.js',
-  'examples/scaling.js',
-  'examples/symmetric-crypto.js',
-  'examples/text-3d.js',
-  'examples/text-outline.js',
-  'examples/camera/dolly-zoom.js',
-];
 
 function loadFile(file) {
   return new Promise((resolve, reject) => {
