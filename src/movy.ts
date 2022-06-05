@@ -2936,8 +2936,8 @@ class ArrowObject extends SceneObject {
     this.line.drawLine({ t, duration, ease: 'power2.inOut' });
     if (this.arrowEnd) {
       this.arrowEnd.grow({
-        t: `>-${duration * 0.5}`,
-        duration: duration * 0.5,
+        t: `>-0.25`,
+        duration: 0.25,
         ease: 'power2.out',
       });
     }
