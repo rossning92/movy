@@ -1503,17 +1503,12 @@ class SceneObject {
   }
 
   addGrid(params: AddGridParameters = {}): SceneObject {
-    const { gridSize = 10, color } = params;
+    const { gridSize = 10, color = '#606060' } = params;
 
     const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
-      obj.object3D = new GridHelper(
-        gridSize,
-        gridSize,
-        color !== undefined ? toThreeColor(color) : 0x00ff00,
-        color !== undefined ? toThreeColor(color) : 0xc0c0c0
-      );
+      obj.object3D = new GridHelper(gridSize, gridSize, toThreeColor(color), toThreeColor(color));
       obj.object3D.rotation.x = Math.PI / 2;
 
       updateTransform(obj.object3D, params);
