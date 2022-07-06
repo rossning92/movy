@@ -2742,6 +2742,8 @@ interface ChangeTextParameters extends AnimationParameters {
 
 interface TypeTextParameters extends AnimationParameters {
   interval?: number;
+  cursorBlinkSpeed?: number;
+  cursorBlinkCount?: number;
 }
 
 class TextObject extends GroupObject {
@@ -2773,21 +2775,46 @@ class TextObject extends GroupObject {
     return this;
   }
 
-  typeText({ t, duration, interval = 0.1 }: TypeTextParameters = {}) {
+  typeText({
+    t,
+    duration,
+    interval = 0.1,
+    cursorBlinkSpeed = 1,
+    cursorBlinkCount = 3,
+  }: TypeTextParameters = {}) {
     promise = promise.then(() => {
-      const textObject = this.object3D as any;
+      const textObject = this.object3D as TextMeshObject;
+
+      const material = createMaterial({ color: 'white', doubleSided: true });
+      const geometry = new PlaneGeometry(0.5, 1);
+      const cursor = new Mesh(geometry, material);
+      cursor.visible = false;
 
       if (duration !== undefined) {
         interval = duration / textObject.children.length;
       }
 
-      const tl = gsap.timeline({
-        defaults: { duration: interval, ease: 'steps(1)' },
+      const tl = gsap.timeline();
+      tl.set(cursor, { visible: true });
+
+      textObject.children.forEach((letter) => {
+        letter.visible = false;
+        tl.set(letter, { visible: true }, `<${interval}`);
+        tl.set(cursor.position, {
+          x: letter.position.x + 1 + textObject.letterSpacing,
+          y: letter.position.y,
+          z: letter.position.z,
+        });
       });
 
-      textObject.children.forEach((letter: any) => {
-        tl.fromTo(letter, { visible: false }, { visible: true });
-      });
+      const blinkDuration = (1 / cursorBlinkSpeed) * 0.5;
+      for (let i = 0; i < cursorBlinkCount - 1; i++) {
+        tl.set(cursor, { visible: false }, `<${blinkDuration}`);
+        tl.set(cursor, { visible: true }, `<${blinkDuration}`);
+      }
+      tl.set(cursor, { visible: false }, `<${blinkDuration}`);
+      tl.set({}, {}, `<${blinkDuration}`);
+      textObject.add(cursor);
 
       mainTimeline.add(tl, t);
     });
