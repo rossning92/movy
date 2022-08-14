@@ -7,7 +7,6 @@ import {
   BufferGeometry,
   Camera,
   CameraHelper,
-  CatmullRomCurve3,
   CircleGeometry,
   Color,
   ConeGeometry,
@@ -35,6 +34,7 @@ import {
   PlaneGeometry,
   Points,
   PointsMaterial,
+  QuadraticBezierCurve3,
   Quaternion,
   Raycaster,
   Scene,
@@ -1640,21 +1640,32 @@ class SceneObject {
 
     promise = promise.then(async () => {
       const vec3d = points.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
+      obj.verts = vec3d;
+      const line = new Line_(obj.verts, params);
+      obj.object3D = line;
+      updateTransform(obj.object3D, params);
+      addObjectToScene(obj.object3D, obj.parent.object3D);
+    });
 
-      if (vec3d.length === 2) {
-        obj.verts = vec3d;
-      } else if (false && vec3d.length >= 3) {
-        const curve = new CatmullRomCurve3(vec3d);
-        obj.verts = curve.getPoints(50);
+    return obj;
+  }
+
+  addCurve(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
+    const obj = new LineObject(params.parent || this);
+
+    promise = promise.then(async () => {
+      const vec3d = points.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
+
+      if (vec3d.length === 3) {
+        const curve = new QuadraticBezierCurve3(vec3d[0], vec3d[1], vec3d[2]);
+        obj.verts = curve.getPoints(64);
       } else {
-        obj.verts = vec3d;
+        throw 'the number of points must be 3';
       }
 
       const line = new Line_(obj.verts, params);
       obj.object3D = line;
-
       updateTransform(obj.object3D, params);
-
       addObjectToScene(obj.object3D, obj.parent.object3D);
     });
 
