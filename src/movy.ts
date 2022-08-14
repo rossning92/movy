@@ -2988,13 +2988,12 @@ class ArrowObject extends SceneObject {
   arrowEnd: SceneObject;
 
   drawLine(params: AnimationParameters = {}) {
-    const { t, duration = app.defaultDuration } = params;
-    this.line.drawLine({ t, duration, ease: 'power2.inOut' });
+    const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
+    this.line.drawLine({ t, duration: duration * 0.8, ease });
     if (this.arrowEnd) {
-      this.arrowEnd.grow({
-        t: `>-0.25`,
-        duration: 0.25,
-        ease: 'power2.out',
+      this.arrowEnd.fadeIn({
+        t: '>',
+        duration: duration * 0.2,
       });
     }
     return this;
