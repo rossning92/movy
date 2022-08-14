@@ -1589,23 +1589,41 @@ class SceneObject {
     return obj;
   }
 
+  addLine(points: [number, number, number?][], params: AddLineParameters): LineObject;
+
+  /**
+   * @deprecated
+   */
   addLine(
     p1: [number, number, number?],
     p2: [number, number, number?],
-    params: AddLineParameters = {}
+    params: AddLineParameters
+  ): LineObject;
+
+  addLine(
+    arg1: [number, number, number?] | [number, number, number?][],
+    arg2: [number, number, number?] | AddLineParameters,
+    arg3?: AddLineParameters
   ): LineObject {
     // For back compat
-    if (!Array.isArray(p1)) {
-      params = p1;
-
+    if (!Array.isArray(arg1)) {
+      const params = arg1;
       const { from } = params as any;
       const { to } = params as any;
-
-      p1 = Array.isArray(from) ? (from as [number, number, number?]) : [from.x, from.y, from.z];
-      p2 = Array.isArray(to) ? (to as [number, number, number?]) : [to.x, to.y, to.z];
+      const p1: [number, number, number?] = Array.isArray(from)
+        ? (from as [number, number, number?])
+        : [from.x, from.y, from.z];
+      const p2: [number, number, number?] = Array.isArray(to)
+        ? (to as [number, number, number?])
+        : [to.x, to.y, to.z];
+      return this.addPolyline([p1, p2], arg1);
+    } else {
+      if (Array.isArray(arg2)) {
+        return this.addPolyline([arg1 as [number, number, number?], arg2], arg3);
+      } else {
+        return this.addPolyline(arg1 as [number, number, number?][], arg2);
+      }
     }
-
-    return this.addPolyline([p1, p2], params);
   }
 
   addPoint(params: AddObjectParameters = {}): GeometryObject {
@@ -3789,12 +3807,27 @@ export function addVideo(file: string, params: AddObjectParameters = {}): SceneO
   return getRoot().addVideo(file, params);
 }
 
+export function addLine(points: [number, number, number?][], params: AddLineParameters): LineObject;
+
+/**
+ * @deprecated
+ */
 export function addLine(
   p1: [number, number, number?],
   p2: [number, number, number?],
-  params: AddLineParameters = {}
+  params: AddLineParameters
+): LineObject;
+
+export function addLine(
+  arg1: [number, number, number?] | [number, number, number?][],
+  arg2: [number, number, number?] | AddLineParameters,
+  arg3?: AddLineParameters
 ): LineObject {
-  return getRoot().addLine(p1, p2, params);
+  if (Array.isArray(arg2)) {
+    return getRoot().addLine([arg1 as [number, number, number?], arg2], arg3);
+  } else {
+    return getRoot().addLine(arg1 as [number, number, number?][], arg2);
+  }
 }
 
 export function addPoint(params: AddObjectParameters = {}): GeometryObject {
