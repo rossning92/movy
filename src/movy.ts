@@ -1273,9 +1273,9 @@ class SceneObject {
         const cone = arrowObject.addCone({
           scale: arrowLength,
           position: i === 0 ? [from.x, from.y, from.z] : [to.x, to.y, to.z],
-          rx: radToDeg(eular.x),
-          ry: radToDeg(eular.y),
-          rz: radToDeg(eular.z),
+          rx: radToDeg(eular.x) + 360,
+          ry: radToDeg(eular.y) + 360,
+          rz: radToDeg(eular.z) + 360,
           lighting: false,
           color,
         });
