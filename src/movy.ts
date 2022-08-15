@@ -716,15 +716,15 @@ const startAnimation = () => {
   );
 };
 
-function createArrow2DGeometry(arrowLength: number) {
+function createArrow2DGeometry(arrowSize: number) {
   const geometry = new BufferGeometry();
   geometry.setAttribute(
     'position',
     // prettier-ignore
     new BufferAttribute(new Float32Array([
-      -0.5 * arrowLength, -0.5 * arrowLength, 0,
-      0.5 * arrowLength, -0.5 * arrowLength, 0,
-      0, 0.5 * arrowLength, 0,
+      -0.5 * arrowSize, -0.5 * arrowSize, 0,
+      0.5 * arrowSize, -0.5 * arrowSize, 0,
+      0, 0.5 * arrowSize, 0,
     ]), 3)
   );
   geometry.computeVertexNormals();
@@ -761,18 +761,18 @@ function createArrowLine(from: Vector3, to: Vector3, params: CreateArrowLinePara
   const group = new Group();
 
   let length = halfLength * 2;
-  const arrowLength = lineWidth * 10;
+  const arrowSize = lineWidth * 10;
   let offset = 0;
 
   {
     // Create line
     if (arrowEnd) {
-      length -= arrowLength;
-      offset -= 0.5 * arrowLength;
+      length -= arrowSize;
+      offset -= 0.5 * arrowSize;
     }
     if (arrowStart) {
-      length -= arrowLength;
-      offset += 0.5 * arrowLength;
+      length -= arrowSize;
+      offset += 0.5 * arrowSize;
     }
 
     const geometry = !threeDimensional
@@ -792,9 +792,9 @@ function createArrowLine(from: Vector3, to: Vector3, params: CreateArrowLinePara
     if (i === 1 && !arrowEnd) continue;
 
     const geometry = !threeDimensional
-      ? createArrow2DGeometry(arrowLength)
-      : new ConeGeometry(arrowLength * 0.5, arrowLength, 32);
-    geometry.translate(0, -arrowLength / 2, 0);
+      ? createArrow2DGeometry(arrowSize)
+      : new ConeGeometry(arrowSize * 0.5, arrowSize, 32);
+    geometry.translate(0, -arrowSize * 0.5, 0);
 
     const arrow = new Mesh(geometry, material);
     arrow.setRotationFromQuaternion(quaternion);
@@ -1218,7 +1218,7 @@ class SceneObject {
     p1: [number, number, number?],
     p2: [number, number, number?],
     params: AddArrowParameters = {}
-  ): ArrowObject {
+  ): LineObject {
     // For back compat
     if (!Array.isArray(p1)) {
       params = p1;
@@ -1226,68 +1226,7 @@ class SceneObject {
       p2 = (params as any).to;
     }
 
-    const { arrowStart = false, arrowEnd = true, lineWidth = DEFAULT_LINE_WIDTH, color } = params;
-    const arrowLength = lineWidth * 10;
-
-    let from = toThreeVector3(p1);
-    let to = toThreeVector3(p2);
-
-    const dir = new Vector3();
-    dir.subVectors(to, from);
-    const length = dir.length();
-    dir.normalize();
-
-    const center = new Vector3();
-    center.addVectors(from, to).multiplyScalar(0.5);
-
-    from.sub(center);
-    to.sub(center);
-    if (arrowEnd) {
-      to = dir.clone();
-      to.multiplyScalar(0.5 * (length - arrowLength));
-    }
-    if (arrowStart) {
-      from = dir.clone();
-      from.multiplyScalar(-0.5 * (length - arrowLength));
-    }
-
-    const arrowObject = new ArrowObject(params.parent || this, {
-      ...params,
-      position: [center.x, center.y, center.z],
-    });
-
-    // Create line
-    arrowObject.line = arrowObject.addLine([from.x, from.y, from.z], [to.x, to.y, to.z], params);
-
-    {
-      // Create arrows
-      for (let i = 0; i < 2; i++) {
-        if (i === 0 && !arrowStart) continue;
-        if (i === 1 && !arrowEnd) continue;
-
-        const quat = new Quaternion();
-        quat.setFromUnitVectors(new Vector3(0, 1, 0), i === 1 ? dir : dir.clone().negate());
-        const eular = new Euler();
-        eular.setFromQuaternion(quat, 'XYZ');
-
-        const cone = arrowObject.addCone({
-          scale: arrowLength,
-          position: i === 0 ? [from.x, from.y, from.z] : [to.x, to.y, to.z],
-          rx: radToDeg(eular.x) + 360,
-          ry: radToDeg(eular.y) + 360,
-          rz: radToDeg(eular.z) + 360,
-          lighting: false,
-          color,
-        });
-        if (i === 0) {
-          arrowObject.arrowStart = cone;
-        } else {
-          arrowObject.arrowEnd = cone;
-        }
-      }
-    }
-
-    return arrowObject;
+    return this.addPolyline([p1, p2], { ...params, arrowEnd: true });
   }
 
   addArrow3D(
@@ -1350,9 +1289,15 @@ class SceneObject {
       for (let i = 0; i <= numTicksX; i++) {
         const x = xRange[0] + i * tickIntervalX;
         if (x !== 0) {
-          obj.addLine([x, -stickLength * 0.5], [x, stickLength * 0.5], {
-            lineWidth: DEFAULT_LINE_WIDTH,
-          });
+          obj.addLine(
+            [
+              [x, -stickLength * 0.5],
+              [x, stickLength * 0.5],
+            ],
+            {
+              lineWidth: DEFAULT_LINE_WIDTH,
+            }
+          );
           if (showTickLabels) {
             obj.addText(`${x}`, {
               x,
@@ -1370,9 +1315,15 @@ class SceneObject {
       for (let i = 0; i <= numTicksY; i++) {
         const y = yRange[0] + i * tickIntervalY;
         if (y !== 0) {
-          obj.addLine([-stickLength * 0.5, y], [stickLength * 0.5, y], {
-            lineWidth: DEFAULT_LINE_WIDTH,
-          });
+          obj.addLine(
+            [
+              [-stickLength * 0.5, y],
+              [stickLength * 0.5, y],
+            ],
+            {
+              lineWidth: DEFAULT_LINE_WIDTH,
+            }
+          );
           if (showTickLabels) {
             obj.addText(`${y}`, {
               x: -stickLabelSpacing,
@@ -1654,6 +1605,27 @@ class SceneObject {
   }
 
   addPolyline(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
+    const { arrowEnd = false, lineWidth = DEFAULT_LINE_WIDTH, color } = params;
+
+    const arrowSize = params.arrowSize !== undefined ? params.arrowSize : lineWidth * 10;
+
+    let from = toThreeVector3(points[points.length - 2]);
+    let to = toThreeVector3(points[points.length - 1]);
+
+    const dir = new Vector3();
+    dir.subVectors(to, from);
+    dir.normalize();
+
+    if (arrowEnd) {
+      to.sub(dir.clone().multiplyScalar(0.5 * arrowSize));
+
+      const to2 = to.clone();
+      to2.sub(dir.clone().multiplyScalar(0.5 * arrowSize));
+      points[points.length - 1][0] = to2.x;
+      points[points.length - 1][1] = to2.y;
+      points[points.length - 1][2] = to2.z;
+    }
+
     const obj = new LineObject(params.parent || this);
 
     promise = promise.then(async () => {
@@ -1664,6 +1636,24 @@ class SceneObject {
       updateTransform(obj.object3D, params);
       addObjectToScene(obj.object3D, obj.parent.object3D);
     });
+
+    // Create arrow
+    if (arrowEnd) {
+      const quat = new Quaternion();
+      quat.setFromUnitVectors(new Vector3(0, 1, 0), dir);
+      const eular = new Euler();
+      eular.setFromQuaternion(quat, 'XYZ');
+
+      obj.arrowEnd = obj.addCone({
+        scale: arrowSize,
+        position: [to.x, to.y, to.z],
+        rx: radToDeg(eular.x) + 360,
+        ry: radToDeg(eular.y) + 360,
+        rz: radToDeg(eular.z) + 360,
+        lighting: false,
+        color,
+      });
+    }
 
     return obj;
   }
@@ -2898,6 +2888,7 @@ class TextObject extends GroupObject {
 
 class LineObject extends SceneObject {
   verts: Vector3[] = [];
+  arrowEnd: SceneObject;
 
   /**
    * @deprecated Use `setVert()` instead.
@@ -2949,9 +2940,9 @@ class LineObject extends SceneObject {
   }
 
   drawLine(params: AnimationParameters = {}) {
-    promise = promise.then(() => {
-      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
+    const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
 
+    promise = promise.then(() => {
       const animParams = {
         progress: 0,
       };
@@ -2978,24 +2969,15 @@ class LineObject extends SceneObject {
       );
       mainTimeline.add(tl, t);
     });
-    return this;
-  }
-}
 
-class ArrowObject extends SceneObject {
-  line: LineObject;
-  arrowStart: SceneObject;
-  arrowEnd: SceneObject;
-
-  drawLine(params: AnimationParameters = {}) {
-    const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
-    this.line.drawLine({ t, duration: duration * 0.8, ease });
     if (this.arrowEnd) {
       this.arrowEnd.fadeIn({
         t: '>',
-        duration: duration * 0.2,
+        duration: 0.25,
+        ease: 'linear',
       });
     }
+
     return this;
   }
 }
@@ -3305,12 +3287,12 @@ function _addPanoramicSkybox(file: string) {
 
 interface AddLineParameters extends Transform, BasicMaterial {
   lineWidth?: number;
-}
-
-interface AddArrowParameters extends AddLineParameters {
   arrowStart?: boolean;
   arrowEnd?: boolean;
+  arrowSize?: number;
 }
+
+interface AddArrowParameters extends AddLineParameters {}
 
 interface AddAxes2DParameters extends Transform, BasicMaterial {
   xRange?: [number, number, number?];
@@ -3975,7 +3957,7 @@ export function addArrow(
   p1: [number, number, number?],
   p2: [number, number, number?],
   params: AddArrowParameters = {}
-): ArrowObject {
+): LineObject {
   return getRoot().addArrow(p1, p2, params);
 }
 
