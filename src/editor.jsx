@@ -1,7 +1,8 @@
 import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
-import 'purecss/build/grids-responsive.css';
 import 'purecss/build/pure.css';
+// grids-responsive.css must come after pure.css
+import 'purecss/build/grids-responsive.css';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import './style/editor.css';
