@@ -39,7 +39,6 @@ function generateConfig({ name, entry, plugins = [], outputModule = false } = {}
         type: outputModule ? 'module' : 'umd',
       },
       umdNamedDefine: true,
-      publicPath: '/',
     },
     module: {
       rules: [

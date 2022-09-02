@@ -206,14 +206,16 @@ function App() {
       iframeNew.style.left = '0';
       iframeNew.style.width = '100%';
       iframeNew.style.height = '100%';
+      iframeNew.src = document.URL;
       containerRef.current.appendChild(iframeNew);
+
       const doc = iframeNew.contentWindow.document;
       doc.open();
       doc.write('<html><body>');
       doc.write(`<script type="importmap">
       {
         "imports": {
-          "movy": "/movy.js"
+          "movy": "./movy.js"
         }
       }
       </script>`);
