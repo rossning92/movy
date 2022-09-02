@@ -47,7 +47,7 @@ import {
   Vector3,
   VideoTexture,
   WebGLMultisampleRenderTarget,
-  WebGLRenderer,
+  WebGLRenderer
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
@@ -193,7 +193,12 @@ function downloadObjectAsJson(exportObj: any, exportName: string) {
   downloadAnchorNode.remove();
 }
 
-function getMarkers() {
+export interface Marker {
+  name: string;
+  time: number;
+}
+
+function getMarkers(): Marker[] {
   return Object.keys(mainTimeline.labels).map((name) => ({
     name,
     time: mainTimeline.labels[name],
@@ -4166,7 +4171,15 @@ function seek(t: number) {
   globalTimeline.seek(t, false);
 }
 
-function getTimeline() {
+export interface Timeline {
+  animations: {
+    t: number;
+  }[];
+  markers: Marker[];
+  duration: number;
+}
+
+function getTimeline(): Timeline {
   return {
     animations: mainTimeline.getChildren().map((child) => {
       return { t: child.startTime() };

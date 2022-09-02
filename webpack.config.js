@@ -5,19 +5,18 @@ const path = require('path');
 const webpack = require('webpack');
 
 const examples = (() => {
-  const out = [];
-  const root = path.resolve(__dirname, 'src');
-  (function getExamples(d) {
-    fs.readdirSync(`${root}/${d}`).forEach((file) => {
-      const filePath = `${d}/${file}`;
-      if (file.endsWith('.js')) {
-        out.push(filePath);
-      } else if (fs.statSync(`${root}/${filePath}`).isDirectory()) {
-        getExamples(`${filePath}`);
+  const base = path.resolve(__dirname, 'src');
+  return (function traverse(d) {
+    const children = [];
+    fs.readdirSync(`${base}/${d}`).forEach((f) => {
+      if (f.endsWith('.js')) {
+        children.push({ name: f, children: [], path: `${d}/${f}` });
+      } else if (fs.statSync(`${base}/${d}/${f}`).isDirectory()) {
+        children.push({ name: f, children: traverse(`${d}/${f}`) });
       }
     });
+    return children;
   })('examples');
-  return out;
 })();
 
 function generateConfig({ name, entry, plugins = [], outputModule = false } = {}) {
@@ -73,7 +72,7 @@ module.exports = [
   generateConfig({ name: 'movy', entry: './src/movy.ts', outputModule: true }),
   generateConfig({
     name: 'editor',
-    entry: './src/editor.jsx',
+    entry: './src/editor.tsx',
     plugins: [
       new webpack.DefinePlugin({
         examples: JSON.stringify(examples),

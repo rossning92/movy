@@ -2,13 +2,22 @@ import { javascript } from '@codemirror/lang-javascript';
 import CodeMirror from '@uiw/react-codemirror';
 import 'purecss/build/pure.css';
 // grids-responsive.css must come after pure.css
+import { Timeline } from 'movy';
 import 'purecss/build/grids-responsive.css';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
+import * as React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import * as ReactDOM from 'react-dom';
 import './style/editor.css';
 import './style/scrollbar.css';
 
-function loadFile(file) {
+interface ExampleMenuItem {
+  children?: ExampleMenuItem[];
+  name: string;
+  path: string;
+}
+declare const examples: ExampleMenuItem[];
+
+function loadFile(file: string) {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open('GET', file, true);
@@ -24,7 +33,7 @@ function loadFile(file) {
   });
 }
 
-function getParameterByName(name) {
+function getParameterByName(name: string) {
   const regex = new RegExp(`[?&]${name}(=([^&#]*)|&|#|$)`);
   const results = regex.exec(window.location.href);
   if (!results || !results[2]) return undefined;
@@ -32,155 +41,15 @@ function getParameterByName(name) {
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
 
-function PureDropdown(dropdownParent) {
-  const PREFIX = 'pure-';
-  const ACTIVE_CLASS_NAME = `${PREFIX}menu-active`;
-  const ARIA_ROLE = 'role';
-  const ARIA_HIDDEN = 'aria-hidden';
-  const MENU_OPEN = 0;
-  const MENU_CLOSED = 1;
-  const MENU_ACTIVE_SELECTOR = '.pure-menu-active';
-  const MENU_LINK_SELECTOR = '.pure-menu-link';
-  const MENU_SELECTOR = '.pure-menu-children';
-  const DISMISS_EVENT =
-    window.hasOwnProperty && Object.prototype.hasOwnProperty.call(window, 'ontouchstart')
-      ? 'touchstart'
-      : 'mousedown';
-  const ARROW_KEYS_ENABLED = true;
-  const ddm = this; // drop down menu
-
-  this.state = MENU_CLOSED;
-
-  this.show = () => {
-    if (this.state !== MENU_OPEN) {
-      this.dropdownParent.classList.add(ACTIVE_CLASS_NAME);
-      this.menu.setAttribute(ARIA_HIDDEN, false);
-      this.state = MENU_OPEN;
-    }
-  };
-
-  this.hide = () => {
-    if (this.state !== MENU_CLOSED) {
-      this.dropdownParent.classList.remove(ACTIVE_CLASS_NAME);
-      this.menu.setAttribute(ARIA_HIDDEN, true);
-      this.link.focus();
-      this.state = MENU_CLOSED;
-    }
-  };
-
-  this.toggle = () => {
-    this[this.state === MENU_CLOSED ? 'show' : 'hide']();
-  };
-
-  this.halt = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
-  this.dropdownParent = dropdownParent;
-  this.link = this.dropdownParent.querySelector(MENU_LINK_SELECTOR);
-  this.menu = this.dropdownParent.querySelector(MENU_SELECTOR);
-  this.firstMenuLink = this.menu.querySelector(MENU_LINK_SELECTOR);
-
-  // Set ARIA attributes
-  this.link.setAttribute('aria-haspopup', 'true');
-  this.menu.setAttribute(ARIA_ROLE, 'menu');
-  this.menu.setAttribute('aria-labelledby', this.link.getAttribute('id'));
-  this.menu.setAttribute('aria-hidden', 'true');
-  [].forEach.call(this.menu.querySelectorAll('li'), (el) => {
-    el.setAttribute(ARIA_ROLE, 'presentation');
-  });
-  [].forEach.call(this.menu.querySelectorAll('a'), (el) => {
-    el.setAttribute(ARIA_ROLE, 'menuitem');
-  });
-
-  // Toggle on click
-  this.link.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    ddm.toggle();
-  });
-
-  // Keyboard navigation
-  document.addEventListener('keydown', (e) => {
-    let previousSibling;
-    let nextSibling;
-    let previousLink;
-    let nextLink;
-
-    // if the menu isn't active, ignore
-    if (ddm.state !== MENU_OPEN) {
-      return;
-    }
-
-    // if the menu is the parent of an open, active submenu, ignore
-    if (ddm.menu.querySelector(MENU_ACTIVE_SELECTOR)) {
-      return;
-    }
-
-    const currentLink = ddm.menu.querySelector(':focus');
-
-    // Dismiss an open menu on ESC
-    if (e.keyCode === 27) {
-      /* Esc */
-      ddm.halt(e);
-      ddm.hide();
-    } else if (ARROW_KEYS_ENABLED && e.keyCode === 40) {
-      // Go to the next link on down arrow
-      /* Down arrow */
-      ddm.halt(e);
-      // get the nextSibling (an LI) of the current link's LI
-      nextSibling = currentLink ? currentLink.parentNode.nextSibling : null;
-      // if the nextSibling is a text node (not an element), go to the next one
-      while (nextSibling && nextSibling.nodeType !== 1) {
-        nextSibling = nextSibling.nextSibling;
-      }
-      nextLink = nextSibling ? nextSibling.querySelector('.pure-menu-link') : null;
-      // if there is no currently focused link, focus the first one
-      if (!currentLink) {
-        ddm.menu.querySelector('.pure-menu-link').focus();
-      } else if (nextLink) {
-        nextLink.focus();
-      }
-    } else if (ARROW_KEYS_ENABLED && e.keyCode === 38) {
-      // Go to the previous link on up arrow
-      /* Up arrow */
-      ddm.halt(e);
-      // get the currently focused link
-      previousSibling = currentLink ? currentLink.parentNode.previousSibling : null;
-      while (previousSibling && previousSibling.nodeType !== 1) {
-        previousSibling = previousSibling.previousSibling;
-      }
-      previousLink = previousSibling ? previousSibling.querySelector('.pure-menu-link') : null;
-      // if there is no currently focused link, focus the last link
-      if (!currentLink) {
-        ddm.menu.querySelector('.pure-menu-item:last-child .pure-menu-link').focus();
-      } else if (previousLink) {
-        // else if there is a previous item, go to the previous item
-        previousLink.focus();
-      }
-    }
-  });
-
-  // Dismiss an open menu on outside event
-  document.addEventListener(DISMISS_EVENT, (e) => {
-    const { target } = e;
-    if (target !== ddm.link && !ddm.menu.contains(target)) {
-      ddm.hide();
-      ddm.link.blur();
-    }
-  });
-}
-
-function getFileNameWithoutExtension(path) {
+function getFileNameWithoutExtension(path: string) {
   return path.split('/').pop().split('.').shift();
 }
 
-function Slider({ iframe, disabled }) {
+function Slider({ iframe, disabled }: { iframe: HTMLIFrameElement; disabled: boolean }) {
   const [position, setPosition] = useState(0);
-  const [timeline, setTimeline] = useState(null);
+  const [timeline, setTimeline] = useState<Timeline>(null);
 
-  const handleMessage = useCallback((event) => {
+  const handleMessage = useCallback((event: MessageEvent) => {
     if (typeof event.data !== 'object' || !event.data.type) {
       return;
     }
@@ -224,7 +93,7 @@ function Slider({ iframe, disabled }) {
       />
 
       {timeline &&
-        timeline.animations.map((anim, i) => (
+        timeline.animations.map((anim, i: number) => (
           <div
             key={i}
             className="unselectable clickthrough"
@@ -289,10 +158,10 @@ function App() {
   const [sourceCode, setSourceCode] = useState('');
   const [liveCode, setLiveCode] = useState('');
   const [filePath, setFilePath] = useState(null);
-  const [iframe, setIframe] = useState(null);
+  const [iframe, setIframe] = useState<HTMLIFrameElement>(null);
   const [aspect, setAspect] = useState(16 / 9);
 
-  const handleMessage = useCallback((event) => {
+  const handleMessage = useCallback((event: MessageEvent) => {
     if (typeof event.data !== 'object' || !event.data.type) {
       return;
     }
@@ -322,7 +191,7 @@ function App() {
     }
   }
 
-  function runCode(code) {
+  function runCode(code: string) {
     if (!uiDisabled) {
       setIsLoading(true);
 
@@ -350,7 +219,7 @@ function App() {
       </script>`);
       doc.write('<script src="mathjax/tex-svg.js"></script>');
       doc.write('<script type="module">');
-      doc.write(code.replaceAll('</script>', '<\\/script>'));
+      doc.write(code.replace(/<\/script>/g, '<\\/script>'));
       doc.write('</script></body></html>');
       doc.close();
 
@@ -358,7 +227,7 @@ function App() {
     }
   }
 
-  const onKeyDown = useCallback((e) => {
+  const onKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.ctrlKey) {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -368,16 +237,16 @@ function App() {
         exportVideo();
       }
     }
-  });
+  }, []);
   useEffect(() => {
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [onKeyDown]);
 
-  function loadAnimation(file) {
+  function loadAnimation(file: string) {
     setIsLoading(true);
 
-    return loadFile(file).then((code) => {
+    return loadFile(file).then((code: string) => {
       setFilePath(file);
       setSourceCode(code);
       return runCode(code);
@@ -395,60 +264,69 @@ function App() {
 
   const handlePopState = useCallback(() => {
     reloadAnimation();
-  });
+  }, []);
   useEffect(() => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [handlePopState]);
 
   useEffect(() => {
-    const dropdownParents = document.querySelectorAll('.pure-menu-has-children');
-    for (let i = 0; i < dropdownParents.length; i += 1) {
-      // eslint-disable-next-line no-unused-vars
-      const ddm = new PureDropdown(dropdownParents[i]);
-    }
-
     reloadAnimation();
   }, []);
 
+  function generateMenuItem(item: ExampleMenuItem) {
+    return item.children.length == 0 ? (
+      <li className="pure-menu-item" key={item.name}>
+        <a
+          href="#"
+          className="pure-menu-link"
+          onClick={(e) => {
+            e.preventDefault();
+            if (!uiDisabled) {
+              window.history.pushState(null, '', `?file=${item.path}`);
+              reloadAnimation();
+            }
+          }}
+        >
+          {item.name}
+        </a>
+      </li>
+    ) : (
+      <li className="pure-menu-item pure-menu-has-children pure-menu-allow-hover" key={item.name}>
+        <a href="#" className="pure-menu-link">
+          {item.name}
+        </a>
+        <ul className="pure-menu-children">
+          {item.children.map((item) => generateMenuItem(item))}
+        </ul>
+      </li>
+    );
+  }
+
   return (
-    <div style={{ height: '100%' }}>
+    <div>
       <div
-        className="pure-menu pure-menu-horizontal"
         style={{
           position: 'fixed',
           zIndex: '10',
           background: 'black',
           borderBottom: '1px solid #808080',
+          left: 0,
+          right: 0,
         }}
       >
-        <ul className="pure-menu-list">
-          <li className="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
-            <a href="#noop" className="pure-menu-link">
-              Examples
-            </a>
-            <ul className="pure-menu-children">
-              {examples.map((file) => (
-                <li className="pure-menu-item" key={file}>
-                  <a
-                    href="#noop"
-                    className="pure-menu-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (!uiDisabled) {
-                        window.history.pushState(null, '', `?file=${file}`);
-                        reloadAnimation();
-                      }
-                    }}
-                  >
-                    {file}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </li>
+        <div className="pure-menu" style={{ float: 'left' }}>
+          <ul className="pure-menu-list">
+            <li className="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+              <a href="#" className="pure-menu-link">
+                Examples
+              </a>
+              <ul className="pure-menu-children">
+                {examples.map((item) => generateMenuItem(item))}
+              </ul>
+            </li>
 
-          {/* <li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
+            {/* <li class="pure-menu-item pure-menu-has-children pure-menu-allow-hover">
             <a href="#" class="pure-menu-link">
               webm
             </a>
@@ -487,26 +365,24 @@ function App() {
               </li>
             </ul>
           </li> */}
-        </ul>
-        <ul className="pure-menu-list" style={{ float: 'right' }}>
-          <li className="pure-menu-item">
-            <button
-              type="button"
-              className={`pure-button${uiDisabled ? ' pure-button-disabled' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                exportVideo();
-              }}
-              style={{
-                background: 'rgb(202, 60, 60)',
-                color: 'white',
-                textShadow: '0 1px 1px rgba(0, 0, 0, 0.2)',
-              }}
-            >
-              {isExporting ? 'Exporting' : 'EXPORT (ctrl-m)'}
-            </button>
-          </li>
-        </ul>
+          </ul>
+        </div>
+        <button
+          type="button"
+          className={`pure-button${uiDisabled ? ' pure-button-disabled' : ''}`}
+          onClick={(e) => {
+            e.preventDefault();
+            exportVideo();
+          }}
+          style={{
+            background: 'rgb(202, 60, 60)',
+            color: 'white',
+            float: 'right',
+            textShadow: '0 1px 1px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          {isExporting ? 'Exporting' : 'EXPORT (ctrl-m)'}
+        </button>
       </div>
 
       <div
@@ -569,7 +445,7 @@ function App() {
             theme="dark"
             maxHeight="100%"
             extensions={[javascript()]}
-            onChange={(value) => {
+            onChange={(value: string) => {
               setLiveCode(value);
             }}
           />
@@ -577,7 +453,6 @@ function App() {
           <button
             type="button"
             className={`pure-button${uiDisabled ? ' pure-button-disabled' : ''}`}
-            href="#"
             onClick={(e) => {
               e.preventDefault();
               runCode(liveCode);
