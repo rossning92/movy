@@ -321,7 +321,7 @@ function App() {
       <div
         style={{
           position: 'fixed',
-          zIndex: '10',
+          zIndex: 10,
           background: 'black',
           borderBottom: '1px solid #808080',
           left: 0,
@@ -430,7 +430,7 @@ function App() {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  zIndex: 11,
+                  zIndex: 5,
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
