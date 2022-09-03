@@ -69,7 +69,12 @@ function Slider({ iframe, disabled }: { iframe: HTMLIFrameElement; disabled: boo
 
   return (
     <div
-      style={{ height: '24px', position: 'relative', overflow: 'hidden' }}
+      style={{
+        height: '24px',
+        position: 'relative',
+        overflow: 'hidden',
+        backgroundColor: '#303030',
+      }}
       onClick={(e) => {
         if (!disabled && timeline) {
           e.preventDefault();
@@ -406,7 +411,6 @@ function App() {
               ref={containerRef}
               style={{
                 position: 'relative',
-                borderBottom: '1px solid #808080',
                 width: '100%',
                 paddingTop: `${(1 / aspect) * 100}%`,
               }}
@@ -420,7 +424,7 @@ function App() {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  zIndex: 1,
+                  zIndex: 11,
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
