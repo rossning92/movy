@@ -47,7 +47,7 @@ import {
   Vector3,
   VideoTexture,
   WebGLMultisampleRenderTarget,
-  WebGLRenderer
+  WebGLRenderer,
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
@@ -2451,28 +2451,6 @@ class SceneObject {
         },
       });
 
-      // Attach clipping planes to each material.
-      tl.set(
-        {},
-        {
-          onComplete: () => {
-            for (const material of materials) {
-              material.clippingPlanes = clippingPlanes;
-            }
-          },
-        }
-      );
-
-      tl.fromTo(
-        object3d,
-        { visible: false },
-        {
-          visible: true,
-          duration: 0.001,
-        },
-        '<'
-      );
-
       const pos = object3d.position.clone();
       object3d.localToWorld(pos);
       if (direction === 'right') {
@@ -2490,22 +2468,36 @@ class SceneObject {
       }
       object3d.worldToLocal(pos);
 
+      // Attach clipping planes to each material.
+      tl.to(
+        materials,
+        {
+          clippingPlanes,
+          duration: 0.001,
+        },
+        '<'
+      );
+
+      tl.fromTo(
+        object3d,
+        { visible: false },
+        {
+          visible: true,
+          duration: 0.001,
+        },
+        '<'
+      );
+
       tl.from(object3d.position, {
         x: pos.x,
         y: pos.y,
       });
 
       // Detach clipping planes to each material.
-      tl.set(
-        {},
-        {
-          onComplete: () => {
-            for (const material of materials) {
-              material.clippingPlanes = null;
-            }
-          },
-        }
-      );
+      tl.to(materials, {
+        clippingPlanes: [],
+        duration: 0.001,
+      });
 
       mainTimeline.add(tl, t);
     });
