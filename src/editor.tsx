@@ -197,54 +197,60 @@ function App() {
   }
 
   function runCode(code: string) {
-    if (!uiDisabled) {
-      setIsLoading(true);
+    if (!containerRef.current) {
+      return;
+    }
 
-      if (iframe) {
-        containerRef.current.removeChild(iframe);
-      }
+    setIsLoading(true);
 
-      const iframeNew = document.createElement('iframe');
-      iframeNew.style.border = 'none';
-      iframeNew.style.position = 'absolute';
-      iframeNew.style.top = '0';
-      iframeNew.style.left = '0';
-      iframeNew.style.width = '100%';
-      iframeNew.style.height = '100%';
-      iframeNew.src = document.URL;
-      containerRef.current.appendChild(iframeNew);
+    const container = containerRef.current;
+    while (container.firstChild) {
+      container.firstChild.remove();
+    }
 
-      const doc = iframeNew.contentWindow.document;
-      doc.open();
-      doc.write('<html><body>');
-      doc.write(`<script type="importmap">
+    const iframeNew = document.createElement('iframe');
+    iframeNew.style.border = 'none';
+    iframeNew.style.position = 'absolute';
+    iframeNew.style.top = '0';
+    iframeNew.style.left = '0';
+    iframeNew.style.width = '100%';
+    iframeNew.style.height = '100%';
+    iframeNew.src = document.URL;
+    container.appendChild(iframeNew);
+
+    const doc = iframeNew.contentWindow.document;
+    doc.open();
+    doc.write('<html><body>');
+    doc.write(`<script type="importmap">
       {
         "imports": {
           "movy": "./movy.js"
         }
       }
       </script>`);
-      doc.write('<script src="mathjax/tex-svg.js"></script>');
-      doc.write('<script type="module">');
-      doc.write(code.replace(/<\/script>/g, '<\\/script>'));
-      doc.write('</script></body></html>');
-      doc.close();
+    doc.write('<script src="mathjax/tex-svg.js"></script>');
+    doc.write('<script type="module">');
+    doc.write(code.replace(/<\/script>/g, '<\\/script>'));
+    doc.write('</script></body></html>');
+    doc.close();
 
-      setIframe(iframeNew);
-    }
+    setIframe(iframeNew);
   }
 
-  const onKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.ctrlKey) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        runCode(liveCode);
-      } else if (e.key === 'm') {
-        e.preventDefault();
-        exportVideo();
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.ctrlKey) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          runCode(liveCode);
+        } else if (e.key === 'm') {
+          e.preventDefault();
+          exportVideo();
+        }
       }
-    }
-  }, []);
+    },
+    [liveCode]
+  );
   useEffect(() => {
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
@@ -458,7 +464,7 @@ function App() {
 
           <button
             type="button"
-            className={`pure-button${uiDisabled ? ' pure-button-disabled' : ''}`}
+            className="pure-button"
             onClick={(e) => {
               e.preventDefault();
               runCode(liveCode);
