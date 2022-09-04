@@ -186,15 +186,16 @@ function App() {
   }, [handleMessage]);
 
   const uiDisabled = isLoading || isExporting;
-  function exportVideo() {
-    setIsExporting(true);
+
+  const exportVideo = useCallback(() => {
     if (iframe) {
       iframe.contentWindow.postMessage(
         { type: 'exportVideo', name: getFileNameWithoutExtension(filePath) || 'untitled' },
         '*'
       );
     }
-  }
+    setIsExporting(true);
+  }, [iframe]);
 
   function runCode(code: string) {
     if (!containerRef.current) {
@@ -249,7 +250,7 @@ function App() {
         }
       }
     },
-    [liveCode]
+    [liveCode, exportVideo]
   );
   useEffect(() => {
     window.addEventListener('keydown', onKeyDown, true);
