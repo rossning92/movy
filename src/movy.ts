@@ -998,15 +998,26 @@ function createLineMaterial(color?: string | number, lineWidth?: number, dashed?
 }
 
 function updateLinePoints(verts: Vector3[], geometry: LineGeometry, progress = 1) {
-  const points = [];
-  const division = (verts.length - 1) * 1;
+  const points: Vector3[] = [];
+
+  let division = [];
+  for (let i = 0; i < verts.length - 1; i++) {
+    const len = new Vector3().subVectors(verts[i], verts[i + 1]).length();
+    division.push(len);
+  }
+  const totalLen = division.reduce((a, b) => a + b);
+  division = division.map((x) => x / totalLen);
+
+  let cumsum = 0;
+  let k = 0;
   for (let i = 0; i < verts.length; i++) {
-    if (i <= progress * division) {
+    if (cumsum <= progress) {
       points.push(verts[i]);
+      k = i;
+      cumsum += division[i];
     } else {
-      const k = Math.floor(progress * division);
       const point = new Vector3();
-      point.lerpVectors(verts[k], verts[k + 1], progress * division - k);
+      point.lerpVectors(verts[k], verts[k + 1], (progress - cumsum + division[k]) / division[k]);
       points.push(point);
     }
   }
