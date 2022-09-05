@@ -1804,7 +1804,7 @@ class SceneObject {
 
   setClipRect(params: AddRectParameters = {}): SceneObject {
     promise = promise.then(async () => {
-      const { width = 1, height = 1 } = params;
+      const { x = 0, y = 0, width = 1, height = 1 } = params;
 
       const clippingPlanes = [
         new Plane(new Vector3(1, 0, 0), 1),
@@ -1818,8 +1818,8 @@ class SceneObject {
           material.clippingPlanes = clippingPlanes;
         });
 
-        const worldPosition = new Vector3();
-        this.object3D.getWorldPosition(worldPosition);
+        const worldPosition = new Vector3(x, y, 0);
+        this.object3D.localToWorld(worldPosition);
         const worldScale = new Vector3();
         this.object3D.getWorldScale(worldScale);
 
