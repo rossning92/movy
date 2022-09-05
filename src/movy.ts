@@ -2199,6 +2199,30 @@ class SceneObject {
     return this;
   }
 
+  setColor(color: string | number, params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
+      const tl = gsap.timeline({ defaults: { duration, ease } });
+
+      const materials = getAllMaterials(this.object3D);
+      const destColor = toThreeColor(color);
+      for (const m of materials) {
+        tl.set(
+          (m as any).color,
+          {
+            r: destColor.r,
+            g: destColor.g,
+            b: destColor.b,
+          },
+          '<'
+        );
+      }
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
   rotate(r: [number?, number?, number?], params: AnimationParameters = {}) {
     promise = promise.then(() => {
       const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
