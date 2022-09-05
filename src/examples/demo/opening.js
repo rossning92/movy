@@ -8,14 +8,11 @@ const bgRect = mo.addRect({ scale: 100, z: -5, color: '#272727' });
 
 const symbol = mo
   .addText('', { font: 'gdh', scale: 2 })
-  .changeText(
-    (t) => (t >= 1 ? '' : SYMBOLS[Math.floor(t * 100) % (SYMBOLS.length - 1)]),
-    {
-      duration: 3,
-      t: '<',
-      ease: 'linear',
-    },
-  );
+  .changeText((t) => (t >= 1 ? '' : SYMBOLS[Math.floor(t * 100) % (SYMBOLS.length - 1)]), {
+    duration: 3,
+    t: '<',
+    ease: 'linear',
+  });
 
 const icons = addExplodingIcons();
 icons.implode2D({ t: '>-0.5' });
@@ -33,7 +30,7 @@ bracketGroup.addText('3', {
   color: '#ffff00',
 });
 bracketGroup.fadeIn({ t: '<0.4' }).grow3({ t: '<' });
-bracketGroup.shake2D({ t: '<', duration: 0.4 });
+mo.shake2D({ t: '<', duration: 0.5 });
 
 mo.cameraMoveTo({ z: 6, t: '<', duration: 0.2 });
 bgRect
@@ -64,7 +61,6 @@ textParent
     x: 10,
   })
   .moveTo({ x: 2, t: '<', ease: 'elastic.out(1, 0.2)' });
-textParent.shake2D({ t: '<', duration: 0.4 });
 
 mo.addText('奇乐编程学院', {
   font: 'gdh',
@@ -122,9 +118,7 @@ function addIcons({ opacity = 1.0, z = 0 } = {}) {
 }
 
 function addFlyingIcons() {
-  return addIcons({ opacity: 0.3, z: -1 })
-    .fadeIn({ t: '<' })
-    .flying({ t: '<', duration: 15 });
+  return addIcons({ opacity: 0.3, z: -1 }).fadeIn({ t: '<' }).flying({ t: '<', duration: 15 });
 }
 
 function addExplodingIcons() {

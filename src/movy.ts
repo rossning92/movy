@@ -853,7 +853,7 @@ interface AnimationParameters {
 interface MoveObjectParameters extends Transform, AnimationParameters {}
 
 interface Shake2DParameters extends AnimationParameters {
-  interval?: number;
+  shakes?: number;
   strength?: number;
 }
 
@@ -2609,7 +2609,7 @@ class SceneObject {
     return this;
   }
 
-  shake2D({ interval = 0.01, duration = 0.2, strength = 0.2, t }: Shake2DParameters = {}) {
+  shake2D({ shakes = 50, duration = 0.25, strength = 0.2, t }: Shake2DParameters = {}) {
     function R(max: number, min: number) {
       return app.rng() * (max - min) + min;
     }
@@ -2617,32 +2617,27 @@ class SceneObject {
     promise = promise.then(() => {
       const object3d = this.object3D;
 
-      const tl = gsap.timeline({ defaults: { ease: 'none' } });
+      const tl = gsap.timeline({ defaults: { ease: 'linear' } });
       tl.set(object3d, { x: '+=0' }); // this creates a full _gsTransform on object3d
 
       // store the transform values that exist before the shake so we can return to them later
-      const initProps = {
-        x: object3d.position.x,
-        y: object3d.position.y,
-        rotation: object3d.position.z,
-      };
+      const x = object3d.position.x;
+      const y = object3d.position.y;
 
       // shake a bunch of times
-      for (let i = 0; i < duration / interval; i++) {
+      for (let i = 0; i < shakes - 1; i++) {
         const offset = R(-strength, strength);
         tl.to(object3d.position, {
-          x: initProps.x + offset,
-          y: initProps.y - offset,
-          // rotation: initProps.rotation + R(-5, 5)
-          duration: interval,
+          x: x + offset,
+          y: y - offset,
+          duration: duration / shakes,
         });
       }
       // return to pre-shake values
-      tl.to(object3d.position, interval, {
-        x: initProps.x,
-        y: initProps.y,
-        // scale: initProps.scale,
-        // rotation: initProps.rotation
+      tl.to(object3d.position, {
+        x: x,
+        y: y,
+        duration: duration / shakes,
       });
 
       mainTimeline.add(tl, t);
@@ -4030,6 +4025,10 @@ export function addArc(
 
 export function moveTo(params: MoveObjectParameters = {}) {
   return getRoot().moveTo(params);
+}
+
+export function shake2D(params: Shake2DParameters = {}) {
+  return getRoot().shake2D(params);
 }
 
 export function usePerspectiveCamera() {
