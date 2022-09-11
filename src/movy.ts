@@ -32,6 +32,7 @@ import {
   Plane,
   PlaneBufferGeometry,
   PlaneGeometry,
+  PointLight,
   Points,
   PointsMaterial,
   QuadraticBezierCurve3,
@@ -586,22 +587,46 @@ function createOpacityAnimation(
   return tl;
 }
 
-function addDefaultLights() {
+function addDefaultLights({ addDirectionalLight = true } = {}) {
   if (app.lightGroup === undefined) {
-    const lightGroup = new Group();
+    app.lightGroup = new Group();
+    app.scene.add(app.lightGroup);
 
     // Create directional light
-    const directionalLight = new DirectionalLight(0xffffff, 0.7);
-    directionalLight.position.set(0.3, 1, 0.5);
-    lightGroup.add(directionalLight);
+    if (addDirectionalLight) {
+      const directionalLight = new DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(0.3, 1, 0.5);
+      app.lightGroup.add(directionalLight);
+    }
 
     // Create ambient light
-    const hemiLight = new HemisphereLight(0xffffff, 0x3f3f3f, 0.3);
-    lightGroup.add(hemiLight);
-
-    app.lightGroup = lightGroup;
-    app.scene.add(lightGroup);
+    const hemiLight = new HemisphereLight(0xffffff, 0x3f3f3f, 0.2);
+    app.lightGroup.add(hemiLight);
   }
+}
+
+export function addDirectionalLight({
+  dir = [0, -1, 0],
+  intensity = 1.0,
+  color = '#ffffff',
+}: { dir?: [number, number, number]; intensity?: number; color?: string | number } = {}) {
+  addDefaultLights({ addDirectionalLight: false });
+
+  const light = new DirectionalLight(color, intensity);
+  light.position.set(-dir[0], -dir[1], -dir[2]);
+  app.lightGroup.add(light);
+}
+
+export function addPointLight({
+  pos,
+  intensity = 1.0,
+  color = '#ffffff',
+}: { pos?: [number, number, number?]; intensity?: number; color?: string | number } = {}) {
+  addDefaultLights({ addDirectionalLight: false });
+
+  const light = new PointLight(color, intensity);
+  light.position.set(pos[0], pos[1], pos[2] || 0);
+  app.lightGroup.add(light);
 }
 
 function createExplosionAnimation(
