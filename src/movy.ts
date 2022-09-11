@@ -1625,8 +1625,10 @@ class SceneObject {
 
     const arrowSize = params.arrowSize !== undefined ? params.arrowSize : lineWidth * 10;
 
-    let from = toThreeVector3(points[points.length - 2]);
-    let to = toThreeVector3(points[points.length - 1]);
+    const pts = [...points];
+
+    let from = toThreeVector3(pts[pts.length - 2]);
+    let to = toThreeVector3(pts[pts.length - 1]);
 
     const dir = new Vector3();
     dir.subVectors(to, from);
@@ -1637,15 +1639,13 @@ class SceneObject {
 
       const to2 = to.clone();
       to2.sub(dir.clone().multiplyScalar(0.5 * arrowSize));
-      points[points.length - 1][0] = to2.x;
-      points[points.length - 1][1] = to2.y;
-      points[points.length - 1][2] = to2.z;
+      pts[pts.length - 1] = [to2.x, to2.y, to2.z];
     }
 
     const obj = new LineObject(params.parent || this);
 
     promise = promise.then(async () => {
-      const vec3d = points.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
+      const vec3d = pts.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
       obj.verts = vec3d;
       const line = new Line_(obj.verts, params);
       obj.object3D = line;
