@@ -22,6 +22,8 @@ import {
   GridHelper,
   Group,
   HemisphereLight,
+  LineBasicMaterial,
+  LineSegments,
   Material,
   Mesh,
   MeshBasicMaterial,
@@ -1077,6 +1079,49 @@ function addObjectToScene(object3D: Object3D, parentObject3D: Object3D) {
   }
 }
 
+class MyGrid extends LineSegments {
+  constructor(sizeX: number, sizeY: number, color: Color) {
+    const halfSizeX = sizeX / 2;
+    const halfSizeY = sizeY / 2;
+
+    const vertices = [];
+    const colors: number[] = [];
+
+    for (let i = 0, j = 0, k = -halfSizeX; i <= sizeX; i++, k += 1) {
+      vertices.push(k, 0, -halfSizeY, k, 0, halfSizeY);
+
+      color.toArray(colors, j);
+      j += 3;
+      color.toArray(colors, j);
+      j += 3;
+      color.toArray(colors, j);
+      j += 3;
+      color.toArray(colors, j);
+      j += 3;
+    }
+    for (let i = 0, j = 0, k = -halfSizeY; i <= sizeY; i++, k += 1) {
+      vertices.push(-halfSizeX, 0, k, halfSizeX, 0, k);
+
+      color.toArray(colors, j);
+      j += 3;
+      color.toArray(colors, j);
+      j += 3;
+      color.toArray(colors, j);
+      j += 3;
+      color.toArray(colors, j);
+      j += 3;
+    }
+
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+
+    const material = new LineBasicMaterial({ vertexColors: true, toneMapped: false });
+
+    super(geometry, material);
+  }
+}
+
 class SceneObject {
   object3D: Object3D;
   parent: SceneObject;
@@ -1495,12 +1540,12 @@ class SceneObject {
   }
 
   addGrid(params: AddGridParameters = {}): SceneObject {
-    const { gridSize = 10, color = '#606060' } = params;
+    const { size = params.gridSize || 10, color = '#606060' } = params;
 
     const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
-      obj.object3D = new GridHelper(gridSize, gridSize, toThreeColor(color), toThreeColor(color));
+      obj.object3D = new MyGrid(params.sizeX || size, params.sizeY || size, toThreeColor(color));
       obj.object3D.rotation.x = Math.PI / 2;
 
       updateTransform(obj.object3D, params);
@@ -3366,7 +3411,15 @@ interface AddAxes3DParameters extends Transform, BasicMaterial {
 }
 
 interface AddGridParameters extends Transform, BasicMaterial {
+  /**
+   * @deprecated use size instead.
+   */
   gridSize?: number;
+
+  size?: number;
+
+  sizeX?: number;
+  sizeY?: number;
 }
 
 function toThreeVector3(v?: { x?: number; y?: number; z?: number } | [number, number, number?]) {
@@ -3429,7 +3482,6 @@ interface AddObjectParameters extends Transform, BasicMaterial {
   fontSize?: any;
   start?: any;
   end?: any;
-  gridSize?: any;
   centralAngle?: any;
   letterSpacing?: any;
   duration?: any;
