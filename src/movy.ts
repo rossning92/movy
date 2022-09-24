@@ -1777,7 +1777,11 @@ class SceneObject {
   }
 
   addSphere(params: AddObjectParameters = {}): SceneObject {
-    const geometry = new SphereGeometry(0.5, defaultSeg(params), defaultSeg(params));
+    const geometry = new SphereGeometry(
+      0.5,
+      params.divisions || defaultSeg(params),
+      params.divisions || defaultSeg(params)
+    );
     return this.add3DGeometry(params, geometry);
   }
 
@@ -3486,6 +3490,7 @@ interface AddObjectParameters extends Transform, BasicMaterial {
   letterSpacing?: any;
   duration?: any;
   type?: any;
+  divisions?: number;
 }
 
 interface AddConeParameters extends AddObjectParameters {
