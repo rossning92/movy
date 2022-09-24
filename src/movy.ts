@@ -2730,10 +2730,20 @@ class SceneObject {
     return this;
   }
 
-  show({ duration = 0.001, t }: Shake2DParameters = {}) {
+  show({ duration = 0.001, t }: AnimationParameters = {}) {
     promise = promise.then(() => {
       const tl = gsap.timeline({ defaults: { ease: 'none', duration } });
       tl.fromTo(this.object3D, { visible: false }, { visible: true });
+
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
+  hide({ duration = 0.001, t }: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const tl = gsap.timeline({ defaults: { ease: 'none', duration } });
+      tl.to(this.object3D, { visible: false });
 
       mainTimeline.add(tl, t);
     });
