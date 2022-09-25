@@ -116,6 +116,8 @@ interface MovyApp {
   renderTarget: WebGLMultisampleRenderTarget;
   rng: any;
 
+  enableShadow: boolean;
+
   bloomPass?: UnrealBloomPass;
   fxaaPass?: ShaderPass;
   glitchPass?: any;
@@ -261,6 +263,7 @@ function createMovyApp(container?: HTMLElement): MovyApp {
   mainTimeline.clear();
 
   // Create renderer
+  const enableShadow = false;
   if (renderer === undefined) {
     console.log('new webgl renderer');
     renderer = new WebGLRenderer({
@@ -270,6 +273,7 @@ function createMovyApp(container?: HTMLElement): MovyApp {
     renderer.localClippingEnabled = true;
     renderer.setSize(renderTargetWidth, renderTargetHeight);
     renderer.setClearColor(0x000000, backgroundAlpha);
+    renderer.shadowMap.enabled = enableShadow;
 
     if (container !== undefined) {
       container.appendChild(renderer.domElement);
@@ -305,7 +309,7 @@ function createMovyApp(container?: HTMLElement): MovyApp {
   // copy pass to resolve MSAA samples.
   composer.insertPass(new ShaderPass(GammaCorrectionShader), 1);
 
-  app = {
+  const app: MovyApp = {
     activeLayer: 'main',
     composer,
     glitchPass: undefined,
@@ -319,6 +323,7 @@ function createMovyApp(container?: HTMLElement): MovyApp {
     uiScene,
     defaultDuration: 0.5,
     defaultEase: 'power2.out',
+    enableShadow,
   };
 
   if (0) {
@@ -598,6 +603,9 @@ function addDefaultLights({ addDirectionalLight = true } = {}) {
     if (addDirectionalLight) {
       const directionalLight = new DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(0.3, 1, 0.5);
+      if (app.enableShadow) {
+        directionalLight.castShadow = true;
+      }
       app.lightGroup.add(directionalLight);
     }
 
@@ -1158,6 +1166,11 @@ class SceneObject {
         }
         const material = createMaterial(params);
         const mesh = new Mesh(geometry, material);
+        if (app.enableShadow) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+        }
+
         if (params.wireframe && params.lineWidth) {
           mesh.onBeforeRender = () => {
             (mesh.material as LineMaterial).linewidth = convertScreenToWorld(
