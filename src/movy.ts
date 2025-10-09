@@ -2591,23 +2591,26 @@ class SceneObject {
       object3d.worldToLocal(pos);
 
       // Attach clipping planes to each material.
-      tl.to(
-        materials,
-        {
-          clippingPlanes,
-          duration: 0.001,
+      const data = { enableClippingPlanes: 0 };
+      tl.to(data, {
+        enableClippingPlanes: 1,
+        onUpdate: () => {
+          if (data.enableClippingPlanes > 0.5) {
+            materials.forEach((material) => {
+              material.clippingPlanes = clippingPlanes;
+            });
+          }
         },
-        '<'
-      );
+        duration: 0,
+      });
 
       tl.fromTo(
         object3d,
         { visible: false },
         {
           visible: true,
-          duration: 0.001,
-        },
-        '<'
+          duration: 0,
+        }
       );
 
       tl.from(object3d.position, {
@@ -2615,10 +2618,16 @@ class SceneObject {
         y: pos.y,
       });
 
-      // Detach clipping planes to each material.
-      tl.to(materials, {
-        clippingPlanes: [],
-        duration: 0.001,
+      tl.to(data, {
+        enableClippingPlanes: 0,
+        onUpdate: () => {
+          if (data.enableClippingPlanes) {
+            materials.forEach((material) => {
+              material.clippingPlanes = null;
+            });
+          }
+        },
+        duration: 0,
       });
 
       mainTimeline.add(tl, t);
