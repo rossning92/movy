@@ -17,7 +17,8 @@
   "scripts": {
     "dev": "concurrently \"webpack --watch --mode=development\" \"node bin/movy.js\"",
     "build": "webpack --mode=production",
-    "lint": "eslint --ext .js bin/ src/editor.jsx webpack.config.js --fix"
+    "lint": "eslint --ext .js bin/ src/editor.jsx webpack.config.js --fix",
+    "watch": "webpack --watch --mode=development"
   },
   "repository": {
     "type": "git",
