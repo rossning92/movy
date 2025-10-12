@@ -154,37 +154,39 @@ function exportVideo({
 } = {}) {
   exportFileName = name;
 
-  if (gridHelper !== undefined) {
-    gridHelper.visible = false;
-  }
-
-  if (resetTiming) {
-    // Reset gsap
-    gsap.ticker.remove(gsap.updateRoot);
-    lastTimestamp = undefined;
-  }
-
-  if (options.format == 'webm-fast') {
-    if (!recorder) {
-      recorder = new WebmMediaRecorder({ name, framerate: framerate });
+  promise = promise.then(() => {
+    if (gridHelper !== undefined) {
+      gridHelper.visible = false;
     }
-    recorder.start();
-  } else {
-    capturer = new CCapture({
-      verbose: true,
-      display: false,
-      framerate: framerate,
-      motionBlurFrames: motionBlurSamples,
-      quality: 100,
-      format: options.format,
-      workersPath: 'dist/src/',
-      timeLimit: 0,
-      frameLimit: 0,
-      autoSaveTime: 0,
-      name,
-    });
-    (capturer as any).start();
-  }
+
+    if (resetTiming) {
+      // Reset gsap
+      gsap.ticker.remove(gsap.updateRoot);
+      lastTimestamp = undefined;
+    }
+
+    if (options.format == 'webm-fast') {
+      if (!recorder) {
+        recorder = new WebmMediaRecorder({ name, framerate: framerate });
+      }
+      recorder.start();
+    } else {
+      capturer = new CCapture({
+        verbose: true,
+        display: false,
+        framerate: framerate,
+        motionBlurFrames: motionBlurSamples,
+        quality: 100,
+        format: options.format,
+        workersPath: 'dist/src/',
+        timeLimit: 0,
+        frameLimit: 0,
+        autoSaveTime: 0,
+        name,
+      });
+      (capturer as any).start();
+    }
+  });
 }
 
 function downloadObjectAsJson(exportObj: any, exportName: string) {
