@@ -28,6 +28,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
+  NearestFilter,
   Object3D,
   OrthographicCamera,
   PerspectiveCamera,
@@ -1570,7 +1571,7 @@ class SceneObject {
     return obj;
   }
 
-  addImage(file: string, params: AddObjectParameters = {}): SceneObject {
+  addImage(file: string, params: AddImageParameters = {}): SceneObject {
     const obj = new SceneObject(params.parent || this);
 
     const { color, ccw } = params;
@@ -1584,6 +1585,11 @@ class SceneObject {
         });
       } else {
         const texture = await loadTexture(file);
+        if (params.filter == 'nearest') {
+          texture.magFilter = NearestFilter;
+          texture.minFilter = NearestFilter;
+        }
+
         texture.encoding = sRGBEncoding;
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
@@ -3586,6 +3592,10 @@ interface AddObjectParameters extends Transform, BasicMaterial {
   divisions?: number;
 }
 
+interface AddImageParameters extends AddObjectParameters {
+  filter?: 'linear' | 'nearest';
+}
+
 interface AddConeParameters extends AddObjectParameters {
   radius?: number;
 }
@@ -3982,7 +3992,7 @@ export function addGroup(params: AddGroupParameters = {}): GroupObject {
   return getRoot().addGroup(params);
 }
 
-export function addImage(file: string, params: AddObjectParameters = {}): SceneObject {
+export function addImage(file: string, params: AddImageParameters = {}): SceneObject {
   return getRoot().addImage(file, params);
 }
 
