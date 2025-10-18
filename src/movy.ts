@@ -2629,7 +2629,11 @@ class SceneObject {
       } = params;
       const object3d = this.object3D;
       const clippingPlanes: Plane[] = [];
-      const bbox = computeAABB(object3d);
+
+      const aabb = computeAABB(object3d);
+      // Slightly expand the aabb to avoid revealing objects outside the clip region
+      aabb.expandByScalar(1e-3);
+
       const materials = getAllMaterials(object3d);
 
       const tl = gsap.timeline({
@@ -2642,17 +2646,17 @@ class SceneObject {
       const pos = object3d.position.clone();
       object3d.localToWorld(pos);
       if (direction === 'right') {
-        clippingPlanes.push(new Plane(new Vector3(1, 0, 0), -bbox.min.x));
-        pos.x -= bbox.max.x - bbox.min.x;
+        clippingPlanes.push(new Plane(new Vector3(1, 0, 0), -aabb.min.x));
+        pos.x -= aabb.max.x - aabb.min.x;
       } else if (direction === 'left') {
-        clippingPlanes.push(new Plane(new Vector3(-1, 0, 0), bbox.max.x));
-        pos.x += bbox.max.x - bbox.min.x;
+        clippingPlanes.push(new Plane(new Vector3(-1, 0, 0), aabb.max.x));
+        pos.x += aabb.max.x - aabb.min.x;
       } else if (direction === 'up') {
-        clippingPlanes.push(new Plane(new Vector3(0, 1, 0), -bbox.min.y));
-        pos.y -= bbox.max.y - bbox.min.y;
+        clippingPlanes.push(new Plane(new Vector3(0, 1, 0), -aabb.min.y));
+        pos.y -= aabb.max.y - aabb.min.y;
       } else if (direction === 'down') {
-        clippingPlanes.push(new Plane(new Vector3(0, -1, 0), bbox.max.y));
-        pos.y += bbox.max.y - bbox.min.y;
+        clippingPlanes.push(new Plane(new Vector3(0, -1, 0), aabb.max.y));
+        pos.y += aabb.max.y - aabb.min.y;
       }
       object3d.worldToLocal(pos);
 
