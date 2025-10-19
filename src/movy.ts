@@ -1768,7 +1768,6 @@ class SceneObject {
   addCurve(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
     const obj = new LineObject(params.parent || this);
 
-    promise = promise.then(async () => {
       const vec3d = points.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
 
       if (vec3d.length === 3) {
@@ -1778,11 +1777,35 @@ class SceneObject {
         throw 'the number of points must be 3';
       }
 
+    promise = promise.then(async () => {
       const line = new Line_(obj.verts, params);
       obj.object3D = line;
       updateTransform(obj.object3D, params);
       addObjectToScene(obj.object3D, obj.parent.object3D);
     });
+
+    // Create arrow
+    if (params.arrowEnd) {
+      const quat = new Quaternion();
+      const direction = new Vector3()
+        .subVectors(obj.verts[obj.verts.length - 1], obj.verts[obj.verts.length - 2])
+        .normalize();
+      quat.setFromUnitVectors(new Vector3(0, 1, 0), direction);
+      const eular = new Euler();
+      eular.setFromQuaternion(quat, 'XYZ');
+
+      const lastVertex = obj.verts[obj.verts.length - 1];
+      const arrowSize = params.arrowSize || (params.lineWidth || DEFAULT_LINE_WIDTH) * 10;
+      obj.arrowEnd = obj.addCone({
+        scale: arrowSize,
+        position: [lastVertex.x, lastVertex.y, lastVertex.z],
+        rx: radToDeg(eular.x) + 360,
+        ry: radToDeg(eular.y) + 360,
+        rz: radToDeg(eular.z) + 360,
+        lighting: false,
+        color: params.color,
+      });
+    }
 
     return obj;
   }
