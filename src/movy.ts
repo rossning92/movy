@@ -128,7 +128,6 @@ interface MovyApp {
 let app: MovyApp;
 
 let gridHelper: GridHelper;
-const backgroundAlpha = 1.0;
 
 let lastTimestamp: number;
 let timeElapsed = 0;
@@ -275,7 +274,7 @@ function createMovyApp(container?: HTMLElement): MovyApp {
     });
     renderer.localClippingEnabled = true;
     renderer.setSize(renderTargetWidth, renderTargetHeight);
-    renderer.setClearColor(0x000000, backgroundAlpha);
+    renderer.setClearColor(0x000000, 1.0);
     renderer.shadowMap.enabled = enableShadow;
 
     if (container !== undefined) {
@@ -3895,9 +3894,15 @@ export function setFPS(fps: number) {
   framerate = fps;
 }
 
-export function setBackgroundColor(color: number | string) {
+export function setBackgroundColor(color: number | string | null) {
   promise = promise.then(() => {
+    if (color === null) {
+      app.scene.background = null;
+      renderer.setClearColor(0x000000, 0);
+    } else {
     app.scene.background = toThreeColor(color);
+      renderer.setClearColor(0x000000, 1);
+    }
   });
 }
 
