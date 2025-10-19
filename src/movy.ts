@@ -4103,6 +4103,13 @@ export function addPolyline(
   return getRoot().addPolyline(points, params);
 }
 
+export function addCurve(
+  points: [number, number, number?][],
+  params: AddLineParameters = {}
+): LineObject {
+  return getRoot().addCurve(points, params);
+}
+
 export function addPolygonOutline(
   points: [number, number, number?][],
   params: AddObjectParameters = {}
