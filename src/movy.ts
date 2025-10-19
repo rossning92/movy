@@ -3197,10 +3197,8 @@ class LineObject extends SceneObject {
     });
 
     if (this.arrowEnd) {
-      this.arrowEnd.fadeIn({
+      this.arrowEnd.show({
         t: '>',
-        duration: 0.25,
-        ease: 'linear',
       });
     }
 
