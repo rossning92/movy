@@ -149,9 +149,11 @@ let exportFileName: string = undefined;
 function exportVideo({
   resetTiming = true,
   name = document.title,
+  format = 'webm',
 }: {
   resetTiming?: boolean;
   name?: string;
+  format?: 'webm' | 'png' | 'webm-fast';
 } = {}) {
   exportFileName = name;
 
@@ -166,7 +168,7 @@ function exportVideo({
       lastTimestamp = undefined;
     }
 
-    if (options.format == 'webm-fast') {
+    if (format == 'webm-fast') {
       if (!recorder) {
         recorder = new WebmMediaRecorder({ name, framerate: framerate });
       }
@@ -178,7 +180,7 @@ function exportVideo({
         framerate: framerate,
         motionBlurFrames: motionBlurSamples,
         quality: 100,
-        format: options.format,
+        format,
         workersPath: 'dist/src/',
         timeLimit: 0,
         frameLimit: 0,
@@ -221,20 +223,18 @@ function exportVideoMetadata() {
 }
 
 function stopRender() {
-  if (options.format == 'webm-fast') {
     if (recorder) {
       recorder.stop();
       exportVideoMetadata();
-    }
   } else if (capturer) {
     (capturer as any).stop();
     (capturer as any).save();
     capturer = undefined;
     exportVideoMetadata();
+  }
 
     // XXX: workaround for requestAnimationFrame() is not running.
     requestAnimationFrame(animate);
-  }
 
   window.top.postMessage({ type: 'videoExported' }, '*');
 }
@@ -4406,7 +4406,7 @@ window.addEventListener('message', (event) => {
   if (event.data.type === 'seek') {
     seek(event.data.position);
   } else if (event.data.type === 'exportVideo') {
-    exportVideo({ name: event.data.name });
+    exportVideo({ name: event.data.name, format: event.data.format });
   }
 });
 

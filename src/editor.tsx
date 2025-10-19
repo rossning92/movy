@@ -17,6 +17,12 @@ interface ExampleMenuItem {
 }
 declare const examples: ExampleMenuItem[];
 
+declare global {
+  interface Window {
+    exportVideo: (options?: { name?: string; format?: string }) => void;
+  }
+}
+
 function loadFile(file: string) {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -187,15 +193,29 @@ function App() {
 
   const uiDisabled = isLoading || isExporting;
 
-  const exportVideo = useCallback(() => {
-    if (iframe) {
-      iframe.contentWindow.postMessage(
-        { type: 'exportVideo', name: getFileNameWithoutExtension(filePath) || 'untitled' },
-        '*'
-      );
-    }
-    setIsExporting(true);
-  }, [iframe]);
+  const exportVideo = useCallback(
+    (options?: { name?: string; format?: string }) => {
+      if (iframe) {
+        iframe.contentWindow.postMessage(
+          {
+            type: 'exportVideo',
+            name: options?.name || getFileNameWithoutExtension(filePath) || 'untitled',
+            format: options?.format,
+          },
+          '*'
+        );
+      }
+      setIsExporting(true);
+    },
+    [iframe, filePath]
+  );
+
+  useEffect(() => {
+    window.exportVideo = exportVideo;
+    return () => {
+      window.exportVideo = undefined;
+    };
+  }, [exportVideo]);
 
   function runCode(code: string) {
     if (!containerRef.current) {
