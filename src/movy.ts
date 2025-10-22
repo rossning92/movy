@@ -2615,6 +2615,29 @@ class SceneObject {
     return this;
   }
 
+  pulse(params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const { t, ease = app.defaultEase, duration = app.defaultDuration } = params;
+
+      const tl = gsap.timeline();
+      tl.to(
+        this.object3D.scale,
+        {
+          x: this.object3D.scale.x * 1.1,
+          y: this.object3D.scale.y * 1.1,
+          z: this.object3D.scale.z * 1.1,
+          ease: 'power2.out',
+          duration: duration * 0.5,
+          yoyo: true,
+          repeat: 1,
+        },
+        '<'
+      );
+      mainTimeline.add(tl, t);
+    });
+    return this;
+  }
+
   flying({ t, duration = 5 }: AnimationParameters = {}) {
     const WIDTH = 30;
     const HEIGHT = 15;
