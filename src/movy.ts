@@ -2671,7 +2671,7 @@ class SceneObject {
     return this;
   }
 
-  reveal(params: RevealParameters = {}) {
+  private revealOrConceal({ isConceal }: { isConceal: boolean }, params: RevealParameters = {}) {
     promise = promise.then(() => {
       const {
         direction = 'up',
@@ -2695,66 +2695,98 @@ class SceneObject {
         },
       });
 
-      const pos = object3d.position.clone();
-      object3d.localToWorld(pos);
+      let dx = 0;
+      let dy = 0;
       if (direction === 'right') {
         clippingPlanes.push(new Plane(new Vector3(1, 0, 0), -aabb.min.x));
-        pos.x -= aabb.max.x - aabb.min.x;
+        dx = -(aabb.max.x - aabb.min.x);
       } else if (direction === 'left') {
         clippingPlanes.push(new Plane(new Vector3(-1, 0, 0), aabb.max.x));
-        pos.x += aabb.max.x - aabb.min.x;
+        dx = aabb.max.x - aabb.min.x;
       } else if (direction === 'up') {
         clippingPlanes.push(new Plane(new Vector3(0, 1, 0), -aabb.min.y));
-        pos.y -= aabb.max.y - aabb.min.y;
+        dy = -(aabb.max.y - aabb.min.y);
       } else if (direction === 'down') {
         clippingPlanes.push(new Plane(new Vector3(0, -1, 0), aabb.max.y));
-        pos.y += aabb.max.y - aabb.min.y;
+        dy = aabb.max.y - aabb.min.y;
       }
-      object3d.worldToLocal(pos);
 
-      // Attach clipping planes to each material.
-      const data = { enableClippingPlanes: 0 };
-      tl.to(data, {
-        enableClippingPlanes: 1,
-        onUpdate: () => {
-          if (data.enableClippingPlanes > 0.5) {
+      if (!isConceal) {
             materials.forEach((material) => {
               material.clippingPlanes = clippingPlanes;
-            });
-          }
-        },
-        duration: 0,
       });
 
       tl.fromTo(
         object3d,
-        { visible: false },
         {
           visible: true,
-          duration: 0,
+          },
+          {
+            visible: true,
+            duration: 0.001,
         }
       );
+      }
 
-      tl.from(object3d.position, {
-        x: pos.x,
-        y: pos.y,
+      // Attach clipping planes to each material.
+      const data = { enableClippingPlanes: 1 };
+      tl.to(data, {
+        enableClippingPlanes: 1,
+        onUpdate: () => {
+          let clippingPlanes2: Plane[];
+          if (isConceal) {
+            const aabb = computeAABB(object3d);
+            if (direction === 'right') {
+              clippingPlanes2 = [new Plane(new Vector3(1, 0, 0), -aabb.min.x)];
+            } else if (direction === 'left') {
+              clippingPlanes2 = [new Plane(new Vector3(-1, 0, 0), aabb.max.x)];
+            } else if (direction === 'up') {
+              clippingPlanes2 = [new Plane(new Vector3(0, 1, 0), -aabb.min.y)];
+            } else if (direction === 'down') {
+              clippingPlanes2 = [new Plane(new Vector3(0, -1, 0), aabb.max.y)];
+            }
+          } else {
+            clippingPlanes2 = clippingPlanes;
+          }
+
+          materials.forEach((material) => {
+            material.clippingPlanes = data.enableClippingPlanes > 0.5 ? clippingPlanes2 : null;
+          });
+        },
+        duration: 0.001, // reverse() not working properly with zero duration
       });
 
+      if (isConceal) {
+        tl.to(object3d.position, {
+          x: `+=${dx}`,
+          y: `+=${dy}`,
+        });
+      } else {
+      tl.from(object3d.position, {
+          x: `+=${dx}`,
+          y: `+=${dy}`,
+      });
+      }
+
+      if (!isConceal) {
       tl.to(data, {
         enableClippingPlanes: 0,
         onUpdate: () => {
-          if (data.enableClippingPlanes) {
             materials.forEach((material) => {
-              material.clippingPlanes = null;
+              material.clippingPlanes = data.enableClippingPlanes > 0.5 ? clippingPlanes : null;
             });
-          }
         },
-        duration: 0,
+          duration: 0.001,
       });
+      }
 
       mainTimeline.add(tl, t);
     });
     return this;
+  }
+
+  reveal(params: RevealParameters = {}) {
+    return this.revealOrConceal({ isConceal: false }, params);
   }
 
   revealL(params: RevealParameters = {}) {
@@ -2771,6 +2803,26 @@ class SceneObject {
 
   revealD(params: RevealParameters = {}) {
     return this.reveal({ ...params, direction: 'down' });
+  }
+
+  conceal(params: RevealParameters = {}) {
+    return this.revealOrConceal({ isConceal: true }, params);
+  }
+
+  concealL(params: RevealParameters = {}) {
+    return this.conceal({ ...params, direction: 'left' });
+  }
+
+  concealR(params: RevealParameters = {}) {
+    return this.conceal({ ...params, direction: 'right' });
+  }
+
+  concealU(params: RevealParameters = {}) {
+    return this.conceal({ ...params, direction: 'up' });
+  }
+
+  concealD(params: RevealParameters = {}) {
+    return this.conceal({ ...params, direction: 'down' });
   }
 
   vertexToAnimate = new Map<number, Vector3>();
