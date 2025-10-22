@@ -123,6 +123,8 @@ interface MovyApp {
   fxaaPass?: ShaderPass;
   glitchPass?: any;
   outlinePass?: any;
+
+  font: string;
 }
 
 let app: MovyApp;
@@ -2083,6 +2085,7 @@ class SceneObject {
         ...params,
         color: toThreeColor(params.color),
         material,
+        font: params.font || app.font,
       });
       await textObject.init();
       textObject.setText(text, true);
@@ -4287,6 +4290,12 @@ export function setDefaultDuration(duration: number) {
 export function setDefaultEase(ease: string) {
   promise = promise.then(() => {
     app.defaultEase = ease;
+  });
+}
+
+export function setFont(font: string) {
+  promise = promise.then(() => {
+    app.font = font;
   });
 }
 
