@@ -226,9 +226,9 @@ function exportVideoMetadata() {
 }
 
 function stopRender() {
-    if (recorder) {
-      recorder.stop();
-      exportVideoMetadata();
+  if (recorder) {
+    recorder.stop();
+    exportVideoMetadata();
   } else if (capturer) {
     (capturer as any).stop();
     (capturer as any).save();
@@ -236,8 +236,8 @@ function stopRender() {
     exportVideoMetadata();
   }
 
-    // XXX: workaround for requestAnimationFrame() is not running.
-    requestAnimationFrame(animate);
+  // XXX: workaround for requestAnimationFrame() is not running.
+  requestAnimationFrame(animate);
 
   window.top.postMessage({ type: 'videoExported' }, '*');
 }
@@ -1771,14 +1771,14 @@ class SceneObject {
   addCurve(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
     const obj = new LineObject(params.parent || this);
 
-      const vec3d = points.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
+    const vec3d = points.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
 
-      if (vec3d.length === 3) {
-        const curve = new QuadraticBezierCurve3(vec3d[0], vec3d[1], vec3d[2]);
-        obj.verts = curve.getPoints(64);
-      } else {
-        throw 'the number of points must be 3';
-      }
+    if (vec3d.length === 3) {
+      const curve = new QuadraticBezierCurve3(vec3d[0], vec3d[1], vec3d[2]);
+      obj.verts = curve.getPoints(64);
+    } else {
+      throw 'the number of points must be 3';
+    }
 
     promise = promise.then(async () => {
       const line = new Line_(obj.verts, params);
@@ -2712,20 +2712,20 @@ class SceneObject {
       }
 
       if (!isConceal) {
-            materials.forEach((material) => {
-              material.clippingPlanes = clippingPlanes;
-      });
+        materials.forEach((material) => {
+          material.clippingPlanes = clippingPlanes;
+        });
 
-      tl.fromTo(
-        object3d,
-        {
-          visible: true,
+        tl.fromTo(
+          object3d,
+          {
+            visible: true,
           },
           {
             visible: true,
             duration: 0.001,
-        }
-      );
+          }
+        );
       }
 
       // Attach clipping planes to each material.
@@ -2762,22 +2762,22 @@ class SceneObject {
           y: `+=${dy}`,
         });
       } else {
-      tl.from(object3d.position, {
+        tl.from(object3d.position, {
           x: `+=${dx}`,
           y: `+=${dy}`,
-      });
+        });
       }
 
       if (!isConceal) {
-      tl.to(data, {
-        enableClippingPlanes: 0,
-        onUpdate: () => {
+        tl.to(data, {
+          enableClippingPlanes: 0,
+          onUpdate: () => {
             materials.forEach((material) => {
               material.clippingPlanes = data.enableClippingPlanes > 0.5 ? clippingPlanes : null;
             });
-        },
+          },
           duration: 0.001,
-      });
+        });
       }
 
       mainTimeline.add(tl, t);
@@ -3982,7 +3982,7 @@ export function setBackgroundColor(color: number | string | null) {
       app.scene.background = null;
       renderer.setClearColor(0x000000, 0);
     } else {
-    app.scene.background = toThreeColor(color);
+      app.scene.background = toThreeColor(color);
       renderer.setClearColor(0x000000, 1);
     }
   });
