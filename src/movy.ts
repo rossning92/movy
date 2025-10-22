@@ -125,6 +125,8 @@ interface MovyApp {
   outlinePass?: any;
 
   font: string;
+
+  lineWidth: number;
 }
 
 let app: MovyApp;
@@ -1337,11 +1339,11 @@ class SceneObject {
     p2: [number, number, number?],
     params: AddArrowParameters = {}
   ): SceneObject {
+    const { lineWidth = app.lineWidth || 0.05, color } = params;
+
     const obj = new SceneObject(params.parent || this);
 
     promise = promise.then(async () => {
-      const { lineWidth = 0.05, color } = params;
-
       obj.object3D = createArrowLine(toThreeVector3(p1), toThreeVector3(p2), {
         arrowStart: false,
         arrowEnd: true,
@@ -1380,7 +1382,7 @@ class SceneObject {
       showTicks = true,
       showTickLabels = true,
     } = params;
-
+    const lineWidth = app.lineWidth || DEFAULT_LINE_WIDTH;
     const stickLabelSpacing = 0.2;
     const stickLength = 0.2;
 
@@ -1398,7 +1400,7 @@ class SceneObject {
               [x, stickLength * 0.5],
             ],
             {
-              lineWidth: DEFAULT_LINE_WIDTH,
+              lineWidth,
             }
           );
           if (showTickLabels) {
@@ -1424,7 +1426,7 @@ class SceneObject {
               [stickLength * 0.5, y],
             ],
             {
-              lineWidth: DEFAULT_LINE_WIDTH,
+              lineWidth,
             }
           );
           if (showTickLabels) {
@@ -1441,10 +1443,10 @@ class SceneObject {
     }
 
     obj.addArrow([xRange[0] - tickIntervalX * 0.5, 0, 0], [xRange[1] + tickIntervalX * 0.5, 0, 0], {
-      lineWidth: DEFAULT_LINE_WIDTH,
+      lineWidth,
     });
     obj.addArrow([0, yRange[0] - tickIntervalY * 0.5, 0], [0, yRange[1] + tickIntervalY * 0.5, 0], {
-      lineWidth: DEFAULT_LINE_WIDTH,
+      lineWidth,
     });
 
     promise = promise.then(async () => {
@@ -1713,7 +1715,7 @@ class SceneObject {
   }
 
   addPolyline(points: [number, number, number?][], params: AddLineParameters = {}): LineObject {
-    const { arrowEnd = false, lineWidth = DEFAULT_LINE_WIDTH, color } = params;
+    const { arrowEnd = false, lineWidth = app.lineWidth || DEFAULT_LINE_WIDTH, color } = params;
 
     const arrowSize = params.arrowSize !== undefined ? params.arrowSize : lineWidth * 10;
 
@@ -1796,7 +1798,8 @@ class SceneObject {
       eular.setFromQuaternion(quat, 'XYZ');
 
       const lastVertex = obj.verts[obj.verts.length - 1];
-      const arrowSize = params.arrowSize || (params.lineWidth || DEFAULT_LINE_WIDTH) * 10;
+      const lineWidth = params.lineWidth || app.lineWidth || DEFAULT_LINE_WIDTH;
+      const arrowSize = params.arrowSize || lineWidth * 10;
       obj.arrowEnd = obj.addCone({
         scale: arrowSize,
         position: [lastVertex.x, lastVertex.y, lastVertex.z],
@@ -1847,7 +1850,7 @@ class SceneObject {
   }
 
   addCircleOutline(params: AddCircleOutlineParameters = {}) {
-    const { lineWidth = DEFAULT_LINE_WIDTH, color } = params;
+    const { lineWidth = app.lineWidth || DEFAULT_LINE_WIDTH, color } = params;
 
     const obj = new SceneObject(params.parent || this);
 
@@ -1872,7 +1875,7 @@ class SceneObject {
   }
 
   addRectOutline(params: AddOutlineParameters = {}) {
-    const { width = 1, height = 1 } = params;
+    const { width = 1, height = 1, lineWidth = app.lineWidth || DEFAULT_LINE_WIDTH } = params;
 
     const obj = new LineObject(params.parent || this);
 
@@ -1889,7 +1892,7 @@ class SceneObject {
         new Vector3(-halfWidth, -halfHeight, 0)
       );
 
-      const line = new Line_(obj.verts, params);
+      const line = new Line_(obj.verts, { ...params, lineWidth });
       obj.object3D = line;
 
       updateTransform(obj.object3D, params);
@@ -2053,7 +2056,7 @@ class SceneObject {
   }
 
   addTriangleOutline(params: AddOutlineParameters = {}) {
-    const { lineWidth = DEFAULT_LINE_WIDTH, color } = params;
+    const { lineWidth = app.lineWidth || DEFAULT_LINE_WIDTH, color } = params;
 
     const obj = new SceneObject(params.parent || this);
 
@@ -2130,6 +2133,7 @@ class SceneObject {
   }
 
   addTextOutline(text: string, params: AddTextOutlineParameters = {}): TextObject {
+    const { lineWidth = app.lineWidth || DEFAULT_LINE_WIDTH } = params;
     const obj = new TextObject(params.parent || this);
 
     promise = promise.then(async () => {
@@ -2139,7 +2143,7 @@ class SceneObject {
         ...params,
         color: toThreeColor(params.color),
         stroke: true,
-        strokeWidth: params.lineWidth || DEFAULT_LINE_WIDTH,
+        strokeWidth: lineWidth,
         material,
       });
       await textObject.init();
@@ -4320,6 +4324,10 @@ export function setFont(font: string) {
   promise = promise.then(() => {
     app.font = font;
   });
+}
+
+export function setLineWidth(lineWidth: number) {
+  app.lineWidth = lineWidth;
 }
 
 interface AddFrustumParameters extends Transform, BasicMaterial {
