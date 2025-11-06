@@ -659,6 +659,27 @@ function createExplosionAnimation(
     stagger = 0.03,
   } = {}
 ) {
+  const children = objectGroup.children;
+
+  // Generate evenly distributed points using the golden angle method
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  const points = Array.from({ length: children.length }, (_, index) => {
+    const t = (index + 0.5) / children.length;
+    const radial = maxRadius * Math.sqrt(t);
+    const angle = index * goldenAngle;
+
+    return {
+      x: radial * Math.cos(angle),
+      y: radial * Math.sin(angle),
+    };
+  });
+
+  // Shuffle points
+  for (let i = points.length - 1; i > 0; i--) {
+    const j = Math.floor(app.rng() * (i + 1));
+    [points[i], points[j]] = [points[j], points[i]];
+  }
+
   const tl = gsap.timeline({
     defaults: {
       duration,
@@ -666,28 +687,23 @@ function createExplosionAnimation(
     },
   });
 
-  let delay = 0;
-  objectGroup.children.forEach((child, i) => {
-    const r = minRadius + (maxRadius - minRadius) * app.rng();
-    const theta = app.rng() * 2 * Math.PI;
-    const x = r * Math.cos(theta);
-    const y = r * Math.sin(theta);
-    child.position.z += 0.01 * i; // z-fighting
-
-    tl.fromTo(child.position, { x: 0, y: 0 }, { x, y }, delay);
+  children.forEach((child, index) => {
+    const { x, y } = points[index];
+    child.position.z += 0.01 * index;
 
     const rotation = minRotation + app.rng() * (maxRotation - minRotation);
-    tl.fromTo(child.rotation, { z: 0 }, { z: rotation }, delay);
+    tl.fromTo(child.rotation, { z: 0 }, { z: rotation }, index * stagger);
 
-    const targetScale = child.scale.setScalar(minScale + (maxScale - minScale) * app.rng());
+    const scaleValue = minScale + (maxScale - minScale) * app.rng();
+    child.scale.setScalar(scaleValue);
+
+    tl.fromTo(child.position, { x: 0, y: 0 }, { x, y }, index * stagger);
     tl.fromTo(
       child.scale,
       { x: 0.001, y: 0.001, z: 0.001 },
-      { x: targetScale.x, y: targetScale.y, z: targetScale.z },
-      delay
+      { x: scaleValue, y: scaleValue, z: scaleValue },
+      index * stagger
     );
-
-    delay += stagger;
   });
 
   return tl;
