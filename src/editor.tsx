@@ -239,16 +239,26 @@ function App() {
     iframeNew.src = document.URL;
     container.appendChild(iframeNew);
 
+    // Scans the code for ES module import statements, collects all imported module names,
+    // and ensures that any non-relative imports (those not starting with '.' or '/')
+    // are mapped to corresponding local file paths in the `imports` object.
+    const imports: Record<string, string> = { movy: './movy.js' };
+    const importRegex = /import\s+(?:[^'";]+?from\s+)?["']([^"']+)["']/g;
+    let match = importRegex.exec(code);
+    while (match) {
+      const moduleName = match[1];
+      if (!moduleName.startsWith('.') && !moduleName.startsWith('/')) {
+        if (!imports[moduleName]) {
+          imports[moduleName] = `./${moduleName}.js`;
+        }
+      }
+      match = importRegex.exec(code);
+    }
+
     const doc = iframeNew.contentWindow.document;
     doc.open();
     doc.write('<html><body>');
-    doc.write(`<script type="importmap">
-      {
-        "imports": {
-          "movy": "./movy.js"
-        }
-      }
-      </script>`);
+    doc.write(`<script type="importmap">${JSON.stringify({ imports }, null, 2)}</script>`);
     doc.write('<script src="mathjax/tex-svg.js"></script>');
     doc.write('<script type="module">');
     doc.write(code.replace(/<\/script>/g, '<\\/script>'));
