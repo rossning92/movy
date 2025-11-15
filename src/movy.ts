@@ -3135,7 +3135,7 @@ class TextObject extends GroupObject {
       let cursor: Mesh;
       if (cursorBlinkCount) {
         const material = createMaterial({ color: 'white', doubleSided: true });
-        const geometry = new PlaneGeometry(0.5, 1);
+        const geometry = new PlaneGeometry(0.5 * textObject.fontSize, 1 * textObject.fontSize);
         cursor = new Mesh(geometry, material);
         cursor.visible = false;
       }
@@ -3154,7 +3154,7 @@ class TextObject extends GroupObject {
         tl.set(letter, { visible: true }, `<${interval}`);
         if (cursor) {
           tl.set(cursor.position, {
-            x: letter.position.x + 1 + textObject.letterSpacing,
+            x: letter.position.x + (1 + textObject.letterSpacing) * textObject.fontSize,
             y: letter.position.y,
             z: letter.position.z,
           });
