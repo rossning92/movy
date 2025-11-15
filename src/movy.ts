@@ -3278,9 +3278,9 @@ class LineObject extends SceneObject {
   }
 
   drawLine(params: AnimationParameters = {}) {
-    const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
-
     promise = promise.then(() => {
+      const { t, duration = app.defaultDuration, ease = app.defaultEase } = params;
+
       const animParams = {
         progress: 0,
       };
