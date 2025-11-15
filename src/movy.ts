@@ -125,6 +125,7 @@ interface MovyApp {
   outlinePass?: any;
 
   font: string;
+  fontSize: number;
 
   lineWidth: number;
 }
@@ -330,6 +331,7 @@ function createMovyApp(container?: HTMLElement): MovyApp {
     defaultDuration: 0.5,
     defaultEase: 'power2.out',
     enableShadow,
+    fontSize: 1.0,
   };
 
   if (0) {
@@ -2105,6 +2107,7 @@ class SceneObject {
         color: toThreeColor(params.color),
         material,
         font: params.font || app.font,
+        fontSize: params.fontSize || app.fontSize,
       });
       await textObject.init();
       textObject.setText(text, true);
@@ -2136,6 +2139,7 @@ class SceneObject {
         color: toThreeColor(params.color),
         material,
         text3D: true,
+        fontSize: params.fontSize || app.fontSize,
       });
       await textObject.init();
       textObject.setText(text, true);
@@ -2161,6 +2165,7 @@ class SceneObject {
         stroke: true,
         strokeWidth: lineWidth,
         material,
+        fontSize: params.fontSize || app.fontSize,
       });
       await textObject.init();
       textObject.setText(text, true);
@@ -4391,6 +4396,12 @@ export function setDefaultEase(ease: string) {
 export function setFont(font: string) {
   promise = promise.then(() => {
     app.font = font;
+  });
+}
+
+export function setFontSize(size: number) {
+  promise = promise.then(() => {
+    app.fontSize = size;
   });
 }
 
