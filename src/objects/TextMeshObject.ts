@@ -24,6 +24,16 @@ async function preloadFont(fontName: string): Promise<Font> {
     let font: Font;
     if (fontName == 'zh') {
       font = await fontLoader.loadAsync('fonts/Source-Han-Sans-SC-Regular.subset.json');
+    } else if (fontName == 'SourceHanSansSCBold') {
+      font = await fontLoader.loadAsync('fonts/Source-Han-Sans-SC-Bold.subset.json');
+    } else if (fontName == 'SourceHanSansSCHeavy') {
+      font = await fontLoader.loadAsync('fonts/Source-Han-Sans-SC-Heavy.subset.json');
+    } else if (fontName == 'FusionPixelFont12px') {
+      font = await fontLoader.loadAsync('fonts/Fusion-Pixel-Font-12px-zh-hans-Regular.subset.json');
+    } else if (fontName == 'PangMenZhengDaoBiaoTiTi') {
+      font = await fontLoader.loadAsync('fonts/PangMenZhengDaoBiaoTiTi-Regular.subset.json');
+    } else if (fontName == 'FiraCode') {
+      font = await fontLoader.loadAsync('fonts/Fira-Code-Regular.json');
     } else if (fontName == 'en') {
       font = await fontLoader.loadAsync('fonts/Roboto-Regular.json');
     } else if (fontName == 'condensed') {
