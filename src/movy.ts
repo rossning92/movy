@@ -240,7 +240,7 @@ function stopRender() {
   // XXX: workaround for requestAnimationFrame() is not running.
   requestAnimationFrame(animate);
 
-  window.top.postMessage({ type: 'videoExported' }, '*');
+  window.parent.postMessage({ type: 'videoExported' }, '*');
 }
 
 function createOrthographicCamera() {
@@ -761,7 +761,7 @@ const startAnimation = () => {
   globalTimeline.play(0, false);
 
   globalTimeline.eventCallback('onUpdate', () => {
-    window.top.postMessage(
+    window.parent.postMessage(
       {
         type: 'positionChanged',
         position: globalTimeline.time(),
@@ -770,7 +770,7 @@ const startAnimation = () => {
       '*'
     );
   });
-  window.top.postMessage(
+  window.parent.postMessage(
     {
       type: 'scriptLoaded',
       timeline: getTimeline(),
