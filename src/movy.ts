@@ -3273,8 +3273,49 @@ class LineObject extends SceneObject {
     return this;
   }
 
+  moveVerts(positions: [number, number, number?][], params: AnimationParameters = {}) {
+    promise = promise.then(() => {
+      const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
+      if (this.object3D.type == 'Line2') {
+        console.assert(this.verts.length > 0);
+        const line = this.object3D as Line2;
+
+        const verts = this.verts;
+
+        const data = { progress: 0 };
+        mainTimeline.to(
+          data,
+          {
+            progress: 1,
+            ease,
+            duration,
+            onUpdate: () => {
+              const vertices: Vector3[] = [];
+              for (let i = 0; i < verts.length; i++) {
+                vertices.push(
+                  new Vector3(
+                    verts[i].x + (positions[i][0] - verts[i].x) * data.progress,
+                    verts[i].y + (positions[i][1] - verts[i].y) * data.progress,
+                    verts[i].z + ((positions[i][2] || 0) - verts[i].z) * data.progress
+                  )
+                );
+              }
+              updateLinePoints(vertices, line.geometry);
+            },
+          },
+          t
+        );
+      }
+    });
+    return this;
+  }
+
   setVert(i: number, position: [number, number, number?], t?: number | string) {
     return this.moveVert(i, position, { t, duration: 0 });
+  }
+
+  setVerts(positions: [number, number, number?][], t?: number | string) {
+    return this.moveVerts(positions, { t, duration: 0 });
   }
 
   drawLine(params: AnimationParameters = {}) {
