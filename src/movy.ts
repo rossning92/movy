@@ -1568,7 +1568,10 @@ class SceneObject {
       obj.verts.reverse();
       const line = new Line_(obj.verts, params);
 
-      obj.object3D = line;
+      obj.object3D = new Group();
+      obj.object3D.add(line);
+      obj.line = line;
+
       updateTransform(obj.object3D, params);
       addObjectToScene(obj.object3D, obj.parent.object3D);
     });
@@ -1760,7 +1763,9 @@ class SceneObject {
       const vec3d = pts.map((pt) => new Vector3(pt[0], pt[1], pt.length <= 2 ? 0 : pt[2]));
       obj.verts = vec3d;
       const line = new Line_(obj.verts, params);
-      obj.object3D = line;
+      obj.object3D = new Group();
+      obj.object3D.add(line);
+      obj.line = line;
       updateTransform(obj.object3D, params);
       addObjectToScene(obj.object3D, obj.parent.object3D);
     });
@@ -1800,7 +1805,9 @@ class SceneObject {
 
     promise = promise.then(async () => {
       const line = new Line_(obj.verts, params);
-      obj.object3D = line;
+      obj.object3D = new Group();
+      obj.object3D.add(line);
+      obj.line = line;
       updateTransform(obj.object3D, params);
       addObjectToScene(obj.object3D, obj.parent.object3D);
     });
@@ -1911,7 +1918,9 @@ class SceneObject {
       );
 
       const line = new Line_(obj.verts, { ...params, lineWidth });
-      obj.object3D = line;
+      obj.object3D = new Group();
+      obj.object3D.add(line);
+      obj.line = line;
 
       updateTransform(obj.object3D, params);
 
@@ -3226,6 +3235,7 @@ class TextObject extends GroupObject {
 
 class LineObject extends SceneObject {
   verts: Vector3[] = [];
+  line: Line2;
   arrowEnd: SceneObject;
 
   /**
@@ -3241,7 +3251,7 @@ class LineObject extends SceneObject {
       const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
       if (this.object3D.type == 'Line2') {
         console.assert(this.verts.length > 0);
-        const line = this.object3D as Line2;
+        const line = this.line;
 
         const vert = this.verts[i];
         const onUpdate = () => {
@@ -3276,9 +3286,9 @@ class LineObject extends SceneObject {
   moveVerts(positions: [number, number, number?][], params: AnimationParameters = {}) {
     promise = promise.then(() => {
       const { duration = app.defaultDuration, ease = app.defaultEase, t } = params;
-      if (this.object3D.type == 'Line2') {
+      if (this.line.type == 'Line2') {
         console.assert(this.verts.length > 0);
-        const line = this.object3D as Line2;
+        const line = this.line;
 
         const verts = this.verts;
 
@@ -3341,8 +3351,8 @@ class LineObject extends SceneObject {
         {
           progress: 1,
           onUpdate: () => {
-            updateLinePoints(this.verts, (this.object3D as Line2).geometry, animParams.progress);
-            (this.object3D as Line2).computeLineDistances();
+            updateLinePoints(this.verts, this.line.geometry, animParams.progress);
+            this.line.computeLineDistances();
           },
         }
       );
