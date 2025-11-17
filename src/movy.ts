@@ -3282,29 +3282,29 @@ class LineObject extends SceneObject {
 
         const verts = this.verts;
 
-        const data = { progress: 0 };
-        mainTimeline.to(
-          data,
-          {
-            progress: 1,
-            ease,
+        const tl = gsap.timeline({
+          defaults: {
             duration,
-            onUpdate: () => {
-              const vertices: Vector3[] = [];
-              for (let i = 0; i < verts.length; i++) {
-                vertices.push(
-                  new Vector3(
-                    verts[i].x + (positions[i][0] - verts[i].x) * data.progress,
-                    verts[i].y + (positions[i][1] - verts[i].y) * data.progress,
-                    verts[i].z + ((positions[i][2] || 0) - verts[i].z) * data.progress
-                  )
-                );
-              }
-              updateLinePoints(vertices, line.geometry);
-            },
+            ease,
           },
-          t
-        );
+          onUpdate: () => {
+            updateLinePoints(verts, line.geometry);
+          },
+        });
+
+        for (let i = 0; i < verts.length; i++) {
+          tl.to(
+            verts[i],
+            {
+              x: positions[i][0],
+              y: positions[i][1],
+              z: positions[i][2] || 0,
+            },
+            0
+          );
+        }
+
+        mainTimeline.add(tl, t);
       }
     });
     return this;
