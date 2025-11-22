@@ -40,7 +40,6 @@ import {
   PointsMaterial,
   QuadraticBezierCurve3,
   Quaternion,
-  Raycaster,
   Scene,
   SphereGeometry,
   sRGBEncoding,
@@ -140,11 +139,6 @@ let timeElapsed = 0;
 let recorder: WebmMediaRecorder;
 
 globalTimeline.add(mainTimeline, '0');
-
-const options = {
-  format: 'webm',
-  timeline: 0,
-};
 
 const seedrandom = require('seedrandom');
 
@@ -4119,10 +4113,6 @@ export function enableBloom() {
   });
 }
 
-function _setCamera(cam: Camera) {
-  app.mainCamera = cam;
-}
-
 async function loadObj(url: string): Promise<Group> {
   return new Promise((resolve, reject) => {
     const loader = new OBJLoader();
@@ -4139,12 +4129,6 @@ async function loadObj(url: string): Promise<Group> {
         reject(error);
       }
     );
-  });
-}
-
-function _animateTo(targets: gsap.TweenTarget, vars: gsap.TweenVars, t?: gsap.Position) {
-  promise = promise.then(() => {
-    mainTimeline.to(targets, vars, t);
   });
 }
 
@@ -4633,28 +4617,3 @@ setTimeout(() => {
     startAnimation();
   });
 });
-
-// Raycast z plane at mouse click, then copy the intersection to clipboard.
-const raycaster = new Raycaster();
-const planeZ = new Plane(new Vector3(0, 0, 1), 0);
-
-function onMouseMove(event: MouseEvent) {
-  if (renderer === undefined) return;
-
-  const bounds = renderer.domElement.getBoundingClientRect();
-
-  const mouse = new Vector2(
-    ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1,
-    -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1
-  );
-
-  raycaster.setFromCamera(mouse, app.mainCamera);
-  const target = new Vector3();
-  raycaster.ray.intersectPlane(planeZ, target);
-
-  // Copy to clipboard
-  navigator.clipboard.writeText(
-    `[${target.x.toFixed(3)}, ${target.y.toFixed(3)}, ${target.z.toFixed(3)}]`
-  );
-}
-// window.addEventListener("click", onMouseMove, false);
